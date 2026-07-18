@@ -5,14 +5,16 @@ import { z } from 'zod'
 
 import type { ProviderType, Selection } from './types.js'
 
+import { EFFORT_LEVELS, PROVIDER_TYPES } from './types.js'
+
 const providerConfigSchema = z.object({
   baseURL: z.string().optional(),
   envKey: z.string().optional(),
-  type: z.enum(['ollama', 'openai-chat', 'vercel-gateway']),
+  type: z.enum(PROVIDER_TYPES),
 })
 
 const selectionSchema = z.object({
-  effort: z.string().optional(),
+  effort: z.enum(EFFORT_LEVELS).optional(),
   harness: z.string(),
   model: z.string(),
   provider: z.string(),
@@ -101,11 +103,20 @@ export function configPath() {
   return path.join(configDir(), 'config.json')
 }
 
-export function emptyConfig() {
-  const profiles: Record<string, Selection> = {}
-  const providers: Record<string, ProviderConfig> = {}
-  return { profiles, providers, recent: [], version: 1 as const }
+export function defaultBaseURLFor(type: ProviderType) {
+  return DEFAULT_BASE_URLS[type]
 }
+
+// Commander subcommands shadow a same-named profile: `eh doctor` always runs
+// the subcommand, so a profile called "doctor" could never be launched.
+const RESERVED_PROFILE_NAMES = [
+  'doctor',
+  'models',
+  'profile',
+  'provider',
+  'providers',
+  'setup',
+]
 
 export function getProvider(config: Config, name: string) {
   return allProviders(config).find((p) => p.name === name)
@@ -149,7 +160,21 @@ export function pushRecent(config: Config, selection: Selection) {
   return { ...config, recent: [entry, ...rest].slice(0, MAX_RECENT) }
 }
 
+// The one wording for a profile-name collision — returned for validators,
+// thrown by the command paths. Undefined when the name is free.
+export function reservedProfileNameMessage(name: string) {
+  return RESERVED_PROFILE_NAMES.includes(name)
+    ? `"${name}" is a subcommand — pick another profile name`
+    : undefined
+}
+
 export function saveConfig(config: Config) {
   mkdirSync(configDir(), { recursive: true })
   writeFileSync(configPath(), `${JSON.stringify(config, null, 2)}\n`)
+}
+
+function emptyConfig() {
+  const profiles: Record<string, Selection> = {}
+  const providers: Record<string, ProviderConfig> = {}
+  return { profiles, providers, recent: [], version: 1 as const }
 }

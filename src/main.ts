@@ -1,7 +1,6 @@
 import { Command } from 'commander'
 
 import pkg from '../package.json' with { type: 'json' }
-import { freshModels, writeModels } from './cache.js'
 import { getProvider, loadConfig, saveConfig } from './config.js'
 import { doctor } from './doctor.js'
 import { launchFlow } from './flow.js'
@@ -14,7 +13,8 @@ import {
   providerKeySet,
   providersCommand,
 } from './manage.js'
-import { listModels } from './providers.js'
+import { listModelsCached } from './providers.js'
+import { EFFORT_LEVELS } from './types.js'
 import { intro } from './ui/output.js'
 import { addProvider, wizard } from './ui/wizard.js'
 import { runUpdate } from './update.js'
@@ -56,12 +56,18 @@ program
       },
     ) => {
       // Flags win over positionals; positionals may also name a profile.
+      const effort = EFFORT_LEVELS.find((level) => level === opts.effort)
+      if (opts.effort !== undefined && effort === undefined) {
+        throw new Error(
+          `unknown effort "${opts.effort}" (known: ${EFFORT_LEVELS.join(', ')})`,
+        )
+      }
       await launchFlow(
         opts.harness ?? harnessOrProfile,
         opts.provider ?? provider,
         opts.model ?? model,
         {
-          effort: opts.effort,
+          effort,
           printEnvOnly: opts.printEnv === true,
           saveAs: opts.save,
         },
@@ -118,14 +124,7 @@ program
   .action(async (providerName: string) => {
     const provider = getProvider(loadConfig(), providerName)
     if (!provider) throw new Error(`unknown provider "${providerName}"`)
-    const cached = freshModels(providerName)
-    if (cached) {
-      modelsList(cached)
-      return
-    }
-    const models = await listModels(provider)
-    writeModels(providerName, models)
-    modelsList(models)
+    modelsList(await listModelsCached(provider))
   })
 
 const providerCmd = program.command('provider').description('manage providers')
@@ -158,9 +157,10 @@ profileCmd
   .description('save the most recent combo as a profile')
   .action((name: string) => {
     const config = loadConfig()
-    if (config.recent.length === 0) throw new Error('no recent launch to save')
-    const last = config.recent[0]
+    const last = config.recent.at(0)
+    if (!last) throw new Error('no recent launch to save')
     profileSave(config, name, {
+      effort: last.effort,
       harness: last.harness,
       model: last.model,
       provider: last.provider,

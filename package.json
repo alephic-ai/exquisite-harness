@@ -13,7 +13,7 @@
     "dev": "tsx src/main.ts",
     "format": "prettier --write .",
     "format:ci": "prettier --check .",
-    "lint": "concurrently --raw 'eslint --fix' 'pnpm format --log-level=error' 'tsc --noEmit'",
+    "lint": "concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'",
     "lint:ci": "concurrently --raw eslint 'pnpm format:ci' 'tsc --noEmit'"
   },
   "dependencies": {

@@ -13,10 +13,7 @@ const cacheSchema = z.record(
   }),
 )
 
-interface CacheEntry {
-  fetchedAt: number
-  models: ModelInfo[]
-}
+type CacheEntry = z.infer<typeof cacheSchema>[string]
 
 const TTL_MS = 5 * 60 * 1000
 
@@ -52,7 +49,7 @@ function readCache() {
       JSON.parse(readFileSync(cachePath(), 'utf8')),
     )
     return parsed.success
-      ? new Map(Object.entries<CacheEntry>(parsed.data))
+      ? new Map(Object.entries(parsed.data))
       : new Map<string, CacheEntry>()
   } catch {
     return new Map<string, CacheEntry>()

@@ -9,12 +9,11 @@ import { findBin } from './which.js'
 
 const run = promisify(execFile)
 
-export type KeySource = 'env' | 'file' | 'keychain' | 'none' | 'secret-service'
+export type KeySource = 'env' | 'file' | 'keychain' | 'secret-service'
 
-export interface ResolvedKey {
-  source: KeySource
-  value?: string
-}
+// `none` never carries a value; every other source always does.
+export type ResolvedKey =
+  { source: 'none' } | { source: KeySource; value: string }
 
 // Service label as shown in Keychain Access.app / Seahorse.
 const SERVICE = 'eh'
@@ -55,6 +54,9 @@ async function runPiped(cmd: string, args: string[], input: string) {
       }
       reject(new Error(`${cmd} exited ${String(code)}: ${stderr.trim()}`))
     })
+    // If the child exits before draining stdin, the stream errors (EPIPE) —
+    // without a listener that crashes the process. A second settle is a no-op.
+    child.stdin.on('error', reject)
     child.stdin.end(input)
   })
 }

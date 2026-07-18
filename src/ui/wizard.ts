@@ -1,19 +1,15 @@
-import { cancel, confirm, isCancel, log, select, text } from '@clack/prompts'
+import { confirm, isCancel, select, text } from '@clack/prompts'
 
 import type { Config } from '../config.js'
 import type { ProviderType } from '../types.js'
 
-import { findBin, HARNESSES } from '../harnesses.js'
-import { secretsPathForDisplay, storeApiKey } from '../keys.js'
+import { defaultBaseURLFor, getProvider } from '../config.js'
+import { HARNESSES } from '../harnesses.js'
+import { storeApiKey } from '../keys.js'
 import { checkProvider } from '../providers.js'
-import { note } from './output.js'
+import { findBin } from '../which.js'
+import { bail, keyStoredText, log, note } from './output.js'
 import { askApiKey } from './prompts.js'
-
-// Annotated: TS cannot infer `never` here, and isCancel narrowing needs it.
-function bail(): never {
-  cancel('bye')
-  process.exit(0)
-}
 
 // First-run setup: detect harnesses, probe Ollama, detect API keys already
 // in the environment, and offer to stash them in the OS credential store.
@@ -25,15 +21,15 @@ export async function wizard(config: Config) {
     lines.push(`${name}: ${findBin(def.bin) ? 'installed' : 'not found'}`)
   }
 
-  const ollama = {
-    baseURL: 'http://localhost:11434',
-    name: 'ollama',
-    type: 'ollama' as const,
+  // Resolve the built-in ollama through config so a baseURL override is
+  // probed instead of a hardcoded localhost (matters for `eh setup` re-runs).
+  const ollama = getProvider(config, 'ollama')
+  if (ollama) {
+    const ollamaStatus = await checkProvider(ollama)
+    lines.push(
+      `ollama @ ${ollama.baseURL}: ${ollamaStatus.ok ? `running · ${ollamaStatus.detail}` : 'not running'}`,
+    )
   }
-  const ollamaStatus = await checkProvider(ollama)
-  lines.push(
-    `ollama @ localhost:11434: ${ollamaStatus.ok ? `running · ${ollamaStatus.detail}` : 'not running'}`,
-  )
 
   const detectedKeys: { envVar: string; provider: string }[] = []
   if (process.env.OPENROUTER_API_KEY) {
@@ -56,11 +52,7 @@ export async function wizard(config: Config) {
     const value = process.env[k.envVar]
     if (wants && value) {
       const where = await storeApiKey(k.provider, value)
-      log.success(
-        where === 'keychain'
-          ? 'stored in macOS Keychain'
-          : `stored in ${secretsPathForDisplay()} (mode 0600)`,
-      )
+      log.success(keyStoredText(where))
     }
   }
 
@@ -101,14 +93,16 @@ export async function addProvider(config: Config) {
   })
   if (isCancel(type)) bail()
 
+  // Blank input falls back to the type's default base URL — which is '' for
+  // openai-chat, so there a base URL is genuinely required (a placeholder is
+  // ghost text, not a default).
   const baseURL = await text({
     message: 'base URL',
-    placeholder:
-      type === 'ollama'
-        ? 'http://localhost:11434'
-        : type === 'vercel-gateway'
-          ? 'https://ai-gateway.vercel.sh/v1'
-          : 'https://openrouter.ai/api/v1',
+    placeholder: defaultBaseURLFor(type) || 'https://openrouter.ai/api/v1',
+    validate: (v) =>
+      type === 'openai-chat' && (v == null || v.length === 0)
+        ? 'required — openai-chat has no default base URL'
+        : undefined,
   })
   if (isCancel(baseURL)) bail()
 
@@ -135,11 +129,7 @@ export async function addProvider(config: Config) {
     if (wantsKey) {
       const key = await askApiKey(name)
       const where = await storeApiKey(name, key)
-      log.success(
-        where === 'keychain'
-          ? 'stored in macOS Keychain'
-          : `stored in ${secretsPathForDisplay()} (mode 0600)`,
-      )
+      log.success(keyStoredText(where))
     }
   }
   return next
