@@ -49,10 +49,18 @@ const DEFAULT_ENV_KEYS: Partial<Record<ProviderType, string>> = {
   'vercel-gateway': 'AI_GATEWAY_API_KEY',
 }
 
-// Ollama works zero-config: it is always available as a provider even with no
-// config file on disk.
+// All three matrix providers are built in — visible with no config file at
+// all. Ollama works zero-config; openrouter/gateway show a "key not set"
+// hint until a key is stored (`eh provider key <name>`) or the env var is set.
+// The config file only needs to override these or add custom providers.
 const BUILTIN_PROVIDERS: Record<string, ProviderConfig> = {
+  gateway: { envKey: 'AI_GATEWAY_API_KEY', type: 'vercel-gateway' },
   ollama: { baseURL: DEFAULT_BASE_URLS.ollama, type: 'ollama' },
+  openrouter: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    envKey: 'OPENROUTER_API_KEY',
+    type: 'openai-chat',
+  },
 }
 
 export function allProviders(config: Config) {

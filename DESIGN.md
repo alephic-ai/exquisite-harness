@@ -73,8 +73,9 @@ Picker flow (via `@clack/prompts`, skipped per already-specified args):
 
 First run (no config file): mini-wizard detects harness binaries, probes
 `localhost:11434`, detects `OPENROUTER_API_KEY` / `AI_GATEWAY_API_KEY` in the
-environment, offers to write the config. Non-TTY stdout ⇒ positional args must
-be complete; no prompts.
+environment, and offers to stash those keys in the OS credential store (there is
+nothing provider-related to write — all three are built in). Non-TTY stdout ⇒
+positional args must be complete; no prompts.
 
 ## Config
 
@@ -110,9 +111,13 @@ Provider `type` implies: protocols served, default base URL, default API-key env
 var, model-listing strategy, Codex `wire_api`. Each harness declares the set of
 protocols it can speak (`claude: [anthropic]`,
 `codex: [openai-responses, openai-chat]`, `grok: [openai-chat]`); a
-harness/provider pair is compatible when the sets intersect. Ollama works
-zero-config (built-in default, no key needed; token value `ollama` is sent where
-required but ignored). Model cache: `~/.config/eh/cache.json`, 5-minute TTL.
+harness/provider pair is compatible when the sets intersect. All three matrix
+providers are built in, so the full 3×3 is visible with no config file at all:
+Ollama works zero-config (no key needed; token value `ollama` is sent where
+required but ignored), while openrouter/gateway appear with a "key not set" hint
+until a key is stored or their env var is set. The config file only overrides
+built-ins or adds custom providers. Model cache: `~/.config/eh/cache.json`,
+5-minute TTL.
 
 ## Key handling
 

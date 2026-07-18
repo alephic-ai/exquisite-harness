@@ -15,9 +15,10 @@ function bail(): never {
   process.exit(0)
 }
 
-// First-run setup: detect harnesses, probe Ollama, detect API keys already in
-// the environment, and offer to persist what we find. Safe to re-run: it only
-// ever adds providers, never removes them.
+// First-run setup: detect harnesses, probe Ollama, detect API keys already
+// in the environment, and offer to stash them in the OS credential store.
+// All three matrix providers are built in, so there is nothing to write to
+// the config file here — keys are the only thing worth setting up.
 export async function wizard(config: Config) {
   const lines: string[] = []
   for (const [name, def] of Object.entries(HARNESSES)) {
@@ -34,49 +35,37 @@ export async function wizard(config: Config) {
     `ollama @ localhost:11434: ${ollamaStatus.ok ? `running · ${ollamaStatus.detail}` : 'not running'}`,
   )
 
-  const detected: { gateway?: ProviderType; openrouter?: ProviderType } = {}
-  if (process.env.OPENROUTER_API_KEY) detected.openrouter = 'openai-chat'
-  if (process.env.AI_GATEWAY_API_KEY) detected.gateway = 'vercel-gateway'
-  for (const name of Object.keys(detected)) {
-    lines.push(`${name}: API key found in environment`)
+  const detectedKeys: { envVar: string; provider: string }[] = []
+  if (process.env.OPENROUTER_API_KEY) {
+    detectedKeys.push({ envVar: 'OPENROUTER_API_KEY', provider: 'openrouter' })
+  }
+  if (process.env.AI_GATEWAY_API_KEY) {
+    detectedKeys.push({ envVar: 'AI_GATEWAY_API_KEY', provider: 'gateway' })
+  }
+  for (const k of detectedKeys) {
+    lines.push(`${k.provider}: ${k.envVar} found in environment`)
   }
 
   note(lines.join('\n'), 'detected')
 
-  const choice = await select({
-    message: 'write this config?',
-    options: [
-      { hint: configSummary(detected), label: 'yes', value: 'yes' },
-      { label: 'no, use built-in defaults only', value: 'no' },
-    ],
-  })
-  if (isCancel(choice)) bail()
-  if (choice === 'no') return config
-
-  const next: Config = { ...config, providers: { ...config.providers } }
-  if (detected.openrouter) {
-    next.providers.openrouter = {
-      baseURL: 'https://openrouter.ai/api/v1',
-      envKey: 'OPENROUTER_API_KEY',
-      type: 'openai-chat',
+  for (const k of detectedKeys) {
+    const wants = await confirm({
+      message: `store ${k.envVar} for "${k.provider}" in the OS credential store?`,
+    })
+    if (isCancel(wants)) bail()
+    const value = process.env[k.envVar]
+    if (wants && value) {
+      const where = await storeApiKey(k.provider, value)
+      log.success(
+        where === 'keychain'
+          ? 'stored in macOS Keychain'
+          : `stored in ${secretsPathForDisplay()} (mode 0600)`,
+      )
     }
   }
-  if (detected.gateway) {
-    next.providers.gateway = {
-      envKey: 'AI_GATEWAY_API_KEY',
-      type: 'vercel-gateway',
-    }
-  }
-  log.success('config written')
-  return next
-}
 
-function configSummary(detected: {
-  gateway?: ProviderType
-  openrouter?: ProviderType
-}) {
-  const names = ['ollama', ...Object.keys(detected)]
-  return `providers: ${names.join(', ')}`
+  log.success('ollama, openrouter and gateway are built in — nothing to write')
+  return config
 }
 
 // `eh provider add` — interactive provider definition.
