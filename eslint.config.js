@@ -271,8 +271,9 @@ export default [
         {
           paths: [
             {
-              importNames: ['intro', 'log', 'note', 'outro'],
-              message: 'import log/intro/outro/note from ./output.js instead',
+              importNames: ['intro', 'log', 'note', 'outro', 'spinner'],
+              message:
+                'import log/intro/outro/note/spinner from ./output.js instead',
               name: '@clack/prompts',
             },
           ],

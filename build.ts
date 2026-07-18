@@ -34,6 +34,9 @@ async function buildTarget(target: (typeof TARGETS)[number]) {
       outfile,
       target: target.bun,
     },
+    // Baked into the binary only — src/runtime.ts uses it to gate `eh update`
+    // so a dev (tsx) run can never try to overwrite its own runtime.
+    define: { IS_BUNDLE: 'true' },
     entrypoints: [entryPath],
     minify: true,
     // Inline so runtime stack traces map back to original TS source positions

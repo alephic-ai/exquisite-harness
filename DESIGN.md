@@ -66,6 +66,7 @@ eh provider add                     # interactive: add a provider to config
 eh profile save <name>              # save last launched combo as a profile
 eh profile list / rm <name>
 eh setup                            # re-run first-run wizard
+eh update                           # self-update to the latest GitHub release
 ```
 
 Picker flow (via `@clack/prompts`, skipped per already-specified args):
@@ -215,13 +216,15 @@ src/providers.ts  provider types: protocols, model listing, status checks
 src/harnesses.ts  harness registry: detection + launch plans
 src/launch.ts     spawn / print-env
 src/doctor.ts     doctor report
+src/update.ts     self-update: gh-auth release lookup → staged download → atomic swap
+src/runtime.ts    build-time constants (standalone-binary detection)
 src/manage.ts     non-interactive commands: models, profiles, provider keys
 src/cache.ts      model-list cache
 src/which.ts      PATH binary lookup (PATHEXT-aware)
 src/time-ago.ts   relative time for recents
 src/types.ts      shared types
 src/ui/home.ts    home screen
-src/ui/output.ts  single re-export site for clack log/intro/outro/note
+src/ui/output.ts  single re-export site for clack output helpers (+ bail, keyStoredText)
 src/ui/prompts.ts pickers + confirm
 src/ui/providers-screen.ts  home → providers: key status + set/delete actions
 src/ui/wizard.ts  first-run wizard + provider add
