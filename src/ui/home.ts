@@ -54,6 +54,7 @@ export async function home(config: Config) {
 
 export function selectionFromRecent(r: RecentEntry) {
   const selection: Selection = {
+    effort: r.effort,
     harness: r.harness,
     model: r.model,
     provider: r.provider,
@@ -62,5 +63,6 @@ export function selectionFromRecent(r: RecentEntry) {
 }
 
 function recentLabel(r: RecentEntry) {
-  return `${r.harness} · ${r.provider} · ${r.model}`
+  const effort = r.effort && r.effort !== 'auto' ? ` @${r.effort}` : ''
+  return `${r.harness} · ${r.provider} · ${r.model}${effort}`
 }
