@@ -63,9 +63,10 @@ pnpm build        # requires bun
 ```bash
 eh                                    # interactive: recents, or harness → provider → model
 eh claude ollama qwen3-coder          # launch, zero prompts
-eh -h codex -p ollama -m qwen3-coder  # same, with flags (flags win over positionals)
+eh --harness codex -p ollama -m qwen3-coder
+                                      # same, with flags (flags win over positionals)
 eh cheap-local                        # launch a saved profile
-eh -h claude -p ollama -s cheap-local # save combo as a profile, then launch
+eh claude -p ollama -s cheap-local    # save combo as a profile, then launch
 eh --print-env claude ollama qwen3-coder
                                       # print the export lines, don't launch
 ```
