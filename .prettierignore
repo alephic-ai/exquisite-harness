@@ -1,0 +1,4 @@
+# prettier specific (.gitignore is already included)
+/dist/
+/pnpm-lock.yaml
+/tmp/

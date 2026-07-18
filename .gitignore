@@ -1,0 +1,6 @@
+/.claude/settings.local.json
+/.env*
+/.firecrawl/
+/dist/
+/node_modules/
+/tmp/

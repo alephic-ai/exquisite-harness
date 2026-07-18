@@ -1,0 +1,9 @@
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+# The global pnpm config sets minimumReleaseAge (24h supply-chain delay), but
+# some @typescript-eslint package metadata is missing the `time` field, which
+# makes the check unsatisfiable at resolution time. Exclude just those.
+minimumReleaseAgeExclude:
+  - '@typescript-eslint/*'
+savePrefix: ''

@@ -1,0 +1,43 @@
+{
+  "name": "exquisite-harness",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Choose a harness, choose a provider, go.",
+  "type": "module",
+  "bin": {
+    "eh": "./dist/eh"
+  },
+  "scripts": {
+    "build": "bun build ./src/main.ts --compile --outfile dist/eh --target=bun",
+    "dev": "tsx src/main.ts",
+    "format": "prettier --write .",
+    "format:ci": "prettier --check .",
+    "lint": "concurrently --raw 'eslint --fix' 'pnpm format --log-level=error' 'tsc --noEmit'",
+    "lint:ci": "concurrently --raw eslint 'pnpm format:ci' 'tsc --noEmit'"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.7.0",
+    "commander": "15.0.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/compat": "2.1.0",
+    "@types/node": "24.13.0",
+    "concurrently": "10.0.3",
+    "eslint": "10.6.0",
+    "eslint-plugin-check-file": "3.3.1",
+    "eslint-plugin-import-x": "4.17.1",
+    "eslint-plugin-perfectionist": "5.10.0",
+    "globals": "17.7.0",
+    "prettier": "3.9.4",
+    "prettier-plugin-packagejson": "3.0.2",
+    "prettier-plugin-sort-json": "4.2.0",
+    "tsx": "4.23.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.63.0"
+  },
+  "packageManager": "pnpm@11.1.1+sha512.d1fdf5f73c617b64fa1a56a81c3c8dfe0e966e33a6010aa256b517ae77be21d93e05affc0de1a83b0e4f29d569f68b446ae8f068cd7247c0bb3df0fb4d7bdf9a",
+  "engines": {
+    "node": "24.x"
+  }
+}
