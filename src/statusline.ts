@@ -1,4 +1,4 @@
-import { createReadStream, mkdirSync, statSync, writeFileSync } from 'node:fs'
+import { createReadStream, mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
 import { z } from 'zod'
@@ -168,6 +168,9 @@ export function statuslineEnv(props: {
     if (props.rates.cacheReadPerMillion != null) {
       env.EH_PRICE_CACHE_READ = String(props.rates.cacheReadPerMillion)
     }
+    if (props.rates.cacheWritePerMillion != null) {
+      env.EH_PRICE_CACHE_WRITE = String(props.rates.cacheWritePerMillion)
+    }
   }
   if (props.contextWindow != null) {
     env.EH_CONTEXT_WINDOW = String(props.contextWindow)
@@ -291,38 +294,15 @@ function shortModel(id: string) {
 
 // Sum per-assistant-message usage from the Claude transcript (tokens only —
 // dollar fields there use Anthropic list rates and are ignored).
+// Claude invokes `eh statusline` as a fresh process each refresh, so an
+// in-process cache would never hit — full rescan is the honest design.
 function num(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
-// Skip re-scanning when the transcript file hasn't grown (statusline refreshes
-// every few seconds on idle).
-const transcriptUsageCache = new Map<
-  string,
-  { mtimeMs: number; size: number; usage: UsageTotals }
->()
-
-interface UsageTotals {
-  cacheRead: number
-  cacheWrite: number
-  input: number
-  output: number
-}
-
 async function sumTranscriptUsage(transcriptPath: string) {
-  const empty: UsageTotals = {
-    cacheRead: 0,
-    cacheWrite: 0,
-    input: 0,
-    output: 0,
-  }
+  const usage = { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 }
   try {
-    const st = statSync(transcriptPath)
-    const cached = transcriptUsageCache.get(transcriptPath)
-    if (cached?.size === st.size && cached.mtimeMs === st.mtimeMs) {
-      return cached.usage
-    }
-    const usage: UsageTotals = { ...empty }
     const rl = createInterface({
       crlfDelay: Infinity,
       input: createReadStream(transcriptPath, { encoding: 'utf8' }),
@@ -348,14 +328,8 @@ async function sumTranscriptUsage(transcriptPath: string) {
       usage.cacheRead += num(u.cache_read_input_tokens)
       usage.cacheWrite += num(u.cache_creation_input_tokens)
     }
-    transcriptUsageCache.set(transcriptPath, {
-      mtimeMs: st.mtimeMs,
-      size: st.size,
-      usage,
-    })
-    return usage
   } catch {
     // Missing/unreadable transcript → zeros; bar still shows rates.
-    return empty
   }
+  return usage
 }

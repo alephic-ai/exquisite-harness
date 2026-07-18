@@ -94,13 +94,12 @@ export function allProviders(config: Config) {
   }))
 }
 
-export function canonicalProviderName(name: string) {
-  return PROVIDER_NAME_ALIASES[name] ?? name
-}
-
-// Human label for pickers / statusline (CLI id stays kebab-case).
 export function cachePath() {
   return path.join(configDir(), 'cache.json')
+}
+
+export function canonicalProviderName(name: string) {
+  return PROVIDER_NAME_ALIASES[name] ?? name
 }
 
 export function configDir() {
@@ -130,6 +129,7 @@ export function defaultBaseURLFor(type: ProviderType) {
   return DEFAULT_BASE_URLS[type]
 }
 
+// Human label for pickers / statusline (CLI id stays kebab-case).
 export function providerLabel(name: string) {
   return BUILTIN_PROVIDER_LABELS[canonicalProviderName(name)] ?? name
 }

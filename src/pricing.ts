@@ -4,9 +4,10 @@ import type { ResolvedProvider } from './config.js'
 
 import { resolveApiKey } from './keys.js'
 
-// USD per 1M tokens. Optional cache-read rate when the provider publishes one.
+// USD per 1M tokens. Optional cache rates when the provider publishes them.
 export interface ModelRates {
   cacheReadPerMillion?: number
+  cacheWritePerMillion?: number
   inputPerMillion: number
   outputPerMillion: number
 }
@@ -31,6 +32,7 @@ const openRouterModelsSchema = z.object({
         .looseObject({
           completion: priceField,
           input_cache_read: priceField,
+          input_cache_write: priceField,
           prompt: priceField,
         })
         .optional(),
@@ -45,9 +47,11 @@ const gatewayModelsSchema = z.object({
       id: z.string(),
       pricing: z
         .looseObject({
+          cacheCreationInputTokens: priceField,
           cachedInputTokens: priceField,
           input: priceField,
           input_cache_read: priceField,
+          input_cache_write: priceField,
           output: priceField,
         })
         .optional(),
@@ -91,7 +95,6 @@ export function formatRatesPerMillion(rates: ModelRates | undefined) {
 export function formatUsd(amount: number) {
   if (amount === 0) return '$0'
   if (amount >= 100) return `$${amount.toFixed(0)}`
-  if (amount >= 10) return `$${trimZeros(amount.toFixed(2))}`
   if (amount >= 1) return `$${trimZeros(amount.toFixed(2))}`
   if (amount >= 0.01) return `$${trimZeros(amount.toFixed(3))}`
   return `$${amount.toPrecision(2)}`
@@ -109,8 +112,8 @@ export function sessionCostUsd(
   if (!rates) return undefined
   if (rates.inputPerMillion === 0 && rates.outputPerMillion === 0) return '$0'
   const cacheReadRate = rates.cacheReadPerMillion ?? rates.inputPerMillion * 0.1
-  // Cache writes billed like input when the provider doesn't publish a write rate.
-  const cacheWriteRate = rates.inputPerMillion
+  // Prefer published cache-write rate; fall back to input when absent.
+  const cacheWriteRate = rates.cacheWritePerMillion ?? rates.inputPerMillion
   const usd =
     (usage.input * rates.inputPerMillion +
       usage.output * rates.outputPerMillion +
@@ -157,10 +160,14 @@ async function fetchGatewayMeta(
   const cacheRead = perTokenToPerMillion(
     match.pricing.cachedInputTokens ?? match.pricing.input_cache_read,
   )
+  const cacheWrite = perTokenToPerMillion(
+    match.pricing.cacheCreationInputTokens ?? match.pricing.input_cache_write,
+  )
   return {
     contextWindow,
     rates: {
       cacheReadPerMillion: cacheRead,
+      cacheWritePerMillion: cacheWrite,
       inputPerMillion: input,
       outputPerMillion: output,
     },
@@ -200,10 +207,12 @@ async function fetchOpenRouterMeta(
     return { contextWindow, rates: undefined }
   }
   const cacheRead = perTokenToPerMillion(match.pricing.input_cache_read)
+  const cacheWrite = perTokenToPerMillion(match.pricing.input_cache_write)
   return {
     contextWindow,
     rates: {
       cacheReadPerMillion: cacheRead,
+      cacheWritePerMillion: cacheWrite,
       inputPerMillion: input,
       outputPerMillion: output,
     },
@@ -262,14 +271,18 @@ export function ratesFromEnv(
   if (!Number.isFinite(inputPerMillion) || !Number.isFinite(outputPerMillion)) {
     return undefined
   }
-  const cacheRaw = env.EH_PRICE_CACHE_READ
-  const cacheReadPerMillion =
-    cacheRaw != null && cacheRaw !== '' && Number.isFinite(Number(cacheRaw))
-      ? Number(cacheRaw)
-      : undefined
+  const cacheReadPerMillion = optionalEnvRate(env.EH_PRICE_CACHE_READ)
+  const cacheWritePerMillion = optionalEnvRate(env.EH_PRICE_CACHE_WRITE)
   return {
     cacheReadPerMillion,
+    cacheWritePerMillion,
     inputPerMillion,
     outputPerMillion,
   } satisfies ModelRates
+}
+
+function optionalEnvRate(raw: string | undefined) {
+  if (raw == null || raw === '') return undefined
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : undefined
 }
