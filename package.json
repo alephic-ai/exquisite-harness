@@ -1,6 +1,6 @@
 {
   "name": "exquisite-harness",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Choose a harness, choose a provider, go.",
   "type": "module",
@@ -8,7 +8,7 @@
     "eh": "./dist/eh"
   },
   "scripts": {
-    "build": "bun build ./src/main.ts --compile --outfile dist/eh --target=bun",
+    "build": "bun build ./src/main.ts --compile --outfile dist/eh --target=bun --define IS_BUNDLE=true",
     "compile": "bun run build.ts",
     "dev": "tsx src/main.ts",
     "format": "prettier --write .",

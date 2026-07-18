@@ -1,11 +1,4 @@
-import {
-  autocomplete,
-  isCancel,
-  password,
-  select,
-  spinner,
-  text,
-} from '@clack/prompts'
+import { autocomplete, isCancel, password, select, text } from '@clack/prompts'
 
 import type { ResolvedProvider } from '../config.js'
 import type { Protocol } from '../types.js'
@@ -17,7 +10,7 @@ import { resolveApiKey, storeApiKey } from '../keys.js'
 import { canServeAny, listModelsCached } from '../providers.js'
 import { EFFORT_LEVELS } from '../types.js'
 import { findBin } from '../which.js'
-import { bail, keyStoredText, log, note } from './output.js'
+import { bail, keyStoredText, log, note, spinner } from './output.js'
 
 // Effort defaults to `auto` (model default); anything else is an override.
 export async function pickEffort() {
