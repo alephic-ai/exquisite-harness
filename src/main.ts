@@ -1,4 +1,4 @@
-import { Command } from 'commander'
+import { Command } from '@commander-js/extra-typings'
 
 import pkg from '../package.json' with { type: 'json' }
 import { getProvider, loadConfig, saveConfig } from './config.js'
@@ -42,39 +42,25 @@ program
     'reasoning effort: auto, low, medium, high, xhigh, max',
   )
   .option('--print-env', 'print env vars instead of launching')
-  .action(
-    async (
-      harnessOrProfile: string | undefined,
-      provider: string | undefined,
-      model: string | undefined,
-      opts: {
-        effort?: string
-        harness?: string
-        model?: string
-        printEnv?: boolean
-        provider?: string
-        save?: string
-      },
-    ) => {
-      // Flags win over positionals; positionals may also name a profile.
-      const effort = EFFORT_LEVELS.find((level) => level === opts.effort)
-      if (opts.effort !== undefined && effort === undefined) {
-        throw new Error(
-          `unknown effort "${opts.effort}" (known: ${EFFORT_LEVELS.join(', ')})`,
-        )
-      }
-      await launchFlow(
-        opts.harness ?? harnessOrProfile,
-        opts.provider ?? provider,
-        opts.model ?? model,
-        {
-          effort,
-          printEnvOnly: opts.printEnv === true,
-          saveAs: opts.save,
-        },
+  .action(async (harnessOrProfile, provider, model, opts) => {
+    // Flags win over positionals; positionals may also name a profile.
+    const effort = EFFORT_LEVELS.find((level) => level === opts.effort)
+    if (opts.effort !== undefined && effort === undefined) {
+      throw new Error(
+        `unknown effort "${opts.effort}" (known: ${EFFORT_LEVELS.join(', ')})`,
       )
-    },
-  )
+    }
+    await launchFlow(
+      opts.harness ?? harnessOrProfile,
+      opts.provider ?? provider,
+      opts.model ?? model,
+      {
+        effort,
+        printEnvOnly: opts.printEnv === true,
+        saveAs: opts.save,
+      },
+    )
+  })
   .addHelpText(
     'after',
     `
@@ -122,7 +108,7 @@ program
 program
   .command('models <provider>')
   .description('list models available from a provider')
-  .action(async (providerName: string) => {
+  .action(async (providerName) => {
     const provider = getProvider(loadConfig(), providerName)
     if (!provider) throw new Error(`unknown provider "${providerName}"`)
     modelsList(await listModelsCached(provider))
@@ -140,7 +126,7 @@ providerCmd
   .command('key <name>')
   .description('store a provider API key (Keychain or 0600 secrets file)')
   .option('--delete', 'delete the stored key instead')
-  .action(async (name: string, opts: { delete?: boolean }) => {
+  .action(async (name, opts) => {
     const config = loadConfig()
     if (opts.delete) {
       await providerKeyDelete(config, name)
@@ -156,7 +142,7 @@ const profileCmd = program.command('profile').description('manage profiles')
 profileCmd
   .command('save <name>')
   .description('save the most recent combo as a profile')
-  .action((name: string) => {
+  .action((name) => {
     const config = loadConfig()
     const last = config.recent.at(0)
     if (!last) throw new Error('no recent launch to save')
@@ -176,7 +162,7 @@ profileCmd
 profileCmd
   .command('rm <name>')
   .description('remove a profile')
-  .action((name: string) => {
+  .action((name) => {
     profileRemove(loadConfig(), name)
   })
 
