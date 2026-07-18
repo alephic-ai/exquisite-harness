@@ -8,8 +8,6 @@ import {
   resolveKey,
 } from './providers.js'
 
-export { findBin } from './which.js'
-
 export interface HarnessDef {
   bin: string
   label: string
@@ -23,8 +21,8 @@ export interface HarnessDef {
 
 // Ollama ignores the token value but requires one to be present.
 async function authTokenFor(provider: ResolvedProvider) {
-  const { value } = await resolveKey(provider)
-  if (value) return value
+  const key = await resolveKey(provider)
+  if (key.source !== 'none') return key.value
   if (provider.type === 'ollama') return 'ollama'
   throw new Error(
     `no API key for "${provider.name}" — set ${provider.envKey ?? 'the key env var'} or run \`eh provider key ${provider.name}\``,
@@ -53,11 +51,9 @@ async function planClaude(
   if (effort && effort !== 'auto') {
     env.CLAUDE_CODE_EFFORT_LEVEL = effort
     // Through a non-Anthropic provider the model ID is not effort-recognized,
-    // so force the parameter through.
-    if (provider.type !== 'vercel-gateway') {
-      env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT = '1'
-      notes.push('effort forced on for non-Anthropic provider')
-    }
+    // so force the parameter through (DESIGN.md "Launch plans").
+    env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT = '1'
+    notes.push('effort forced on for non-Anthropic provider')
   }
   return { args: [], bin: 'claude', env, notes }
 }
@@ -73,8 +69,9 @@ async function planCodex(
 ) {
   const env: Record<string, string> = {}
   if (provider.envKey && !process.env[provider.envKey]) {
-    const { value } = await resolveKey(provider)
-    if (value) env[provider.envKey] = value
+    // Throws an actionable error when no key resolves anywhere — codex would
+    // otherwise launch and fail with a raw upstream 401.
+    env[provider.envKey] = await authTokenFor(provider)
   }
   const args = [
     '-c',

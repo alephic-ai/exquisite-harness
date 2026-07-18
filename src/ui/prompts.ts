@@ -1,7 +1,5 @@
 import {
   autocomplete,
-  cancel,
-  confirm,
   isCancel,
   password,
   select,
@@ -12,12 +10,14 @@ import {
 import type { ResolvedProvider } from '../config.js'
 import type { Protocol } from '../types.js'
 
-import { cachedModels, freshModels, writeModels } from '../cache.js'
-import { findBin, HARNESSES } from '../harnesses.js'
-import { resolveApiKey, secretsPathForDisplay, storeApiKey } from '../keys.js'
-import { canServeAny, listModels } from '../providers.js'
+import { freshModels } from '../cache.js'
+import { isReservedProfileName } from '../config.js'
+import { HARNESSES } from '../harnesses.js'
+import { resolveApiKey, storeApiKey } from '../keys.js'
+import { canServeAny, listModelsCached } from '../providers.js'
 import { EFFORT_LEVELS } from '../types.js'
-import { log, note } from './output.js'
+import { findBin } from '../which.js'
+import { bail, keyStoredText, log, note } from './output.js'
 
 // Effort defaults to `auto` (model default); anything else is an override.
 export async function pickEffort() {
@@ -58,16 +58,31 @@ export async function pickProvider(
   providers: ResolvedProvider[],
 ) {
   for (;;) {
-    const value = await select({
-      message: 'provider',
-      options: providers.map((p) => ({
-        hint: canServeAny(p.type, protocols)
-          ? `${p.type} · ${p.baseURL}`
-          : 'needs router (phase 2)',
-        label: p.name,
-        value: p.name,
-      })),
-    })
+    // Status hints per DESIGN.md: ✓ key set / ✗ KEY not set (incompatible rows
+    // get `needs router`). Reachability probing stays in doctor/providers —
+    // network checks don't belong in a picker.
+    const options = await Promise.all(
+      providers.map(async (p) => {
+        if (!canServeAny(p.type, protocols)) {
+          return {
+            hint: `${p.type} · needs router`,
+            label: p.name,
+            value: p.name,
+          }
+        }
+        const status = p.envKey
+          ? (await resolveApiKey(p.envKey, p.name)).source === 'none'
+            ? `✗ ${p.envKey} not set`
+            : '✓ key set'
+          : 'no key needed'
+        return {
+          hint: `${p.type} · ${p.baseURL} · ${status}`,
+          label: p.name,
+          value: p.name,
+        }
+      }),
+    )
+    const value = await select({ message: 'provider', options })
     if (isCancel(value)) bail()
     const provider = providers.find((p) => p.name === value)
     if (!provider) throw new Error(`unknown provider "${value}"`)
@@ -88,33 +103,16 @@ export async function pickProvider(
 async function ensureKey(provider: ResolvedProvider) {
   if (!provider.envKey) return true
   const key = await resolveApiKey(provider.envKey, provider.name)
-  if (key.value) return true
+  if (key.source !== 'none') return true
   log.warn(`"${provider.name}" needs ${provider.envKey} — none found`)
   const value = await askApiKeyOptional(provider.name)
   if (!value) return false
   const where = await storeApiKey(provider.name, value)
-  log.success(
-    where === 'keychain'
-      ? 'stored in macOS Keychain'
-      : `stored in ${secretsPathForDisplay()} (mode 0600)`,
-  )
+  log.success(keyStoredText(where))
   return true
 }
 
-// Annotated: TS cannot infer `never` here, and the narrowing at every
-// isCancel call site depends on it.
-function bail(): never {
-  cancel('bye')
-  process.exit(0)
-}
-
 const MANUAL = '__manual__'
-
-export async function askConfirm(message: string) {
-  const value = await confirm({ message })
-  if (isCancel(value)) bail()
-  return value
-}
 
 // Masked key entry — the key never echoes and never touches argv/history.
 export async function askApiKey(providerName: string) {
@@ -138,10 +136,15 @@ export async function askApiKeyOptional(providerName: string) {
 export async function askProfileName() {
   const value = await text({
     message: 'profile name',
-    validate: (v) =>
-      v != null && /^[\w-]+$/.test(v)
-        ? undefined
-        : 'letters, digits, - and _ only',
+    validate: (v) => {
+      if (v == null || !/^[\w-]+$/.test(v)) {
+        return 'letters, digits, - and _ only'
+      }
+      if (isReservedProfileName(v)) {
+        return `"${v}" is a subcommand — pick another name`
+      }
+      return undefined
+    },
   })
   if (isCancel(value)) bail()
   return value
@@ -173,8 +176,6 @@ export async function pickModel(provider: ResolvedProvider) {
     options.push({ hint: 'type a model id', label: 'other…', value: MANUAL })
   }
   const value = await autocomplete({
-    filter: (search, option) =>
-      (option.label ?? '').toLowerCase().includes(search.toLowerCase()),
     maxItems: 12,
     message: `model · ${provider.name}`,
     options,
@@ -193,19 +194,17 @@ export async function pickModel(provider: ResolvedProvider) {
 }
 
 async function loadModels(provider: ResolvedProvider) {
+  // Skip the spinner flash when the fresh cache can answer instantly.
   const fresh = freshModels(provider.name)
   if (fresh) return fresh
   const s = spinner()
   s.start(`fetching models from ${provider.name}`)
   try {
-    const models = await listModels(provider)
-    writeModels(provider.name, models)
+    const models = await listModelsCached(provider)
     s.stop(`${String(models.length)} models`)
     return models
   } catch (error) {
     s.stop('model fetch failed')
-    const stale = cachedModels(provider.name)
-    if (stale) return stale
     throw error
   }
 }

@@ -1,16 +1,17 @@
 import { isCancel, select } from '@clack/prompts'
 
 import type { Config, ResolvedProvider } from '../config.js'
+import type { ResolvedKey } from '../keys.js'
 
 import { allProviders } from '../config.js'
 import { deleteApiKey, resolveApiKey, storeApiKey } from '../keys.js'
-import { log, note } from './output.js'
+import { keyStoredText, log, note } from './output.js'
 import { askApiKeyOptional } from './prompts.js'
 
 const BACK = '__back__'
 
-function keyHint(key: undefined | { source: string; value?: string }) {
-  return key?.value ? `key from ${key.source}` : '⚠ no key'
+function keyHint(key: ResolvedKey | undefined) {
+  return key && key.source !== 'none' ? `key from ${key.source}` : '⚠ no key'
 }
 
 // Home → providers: status per provider, with set/delete-key actions for the
@@ -44,7 +45,7 @@ async function providerActions(provider: ResolvedProvider) {
       `${provider.name} (${provider.type})`,
       provider.baseURL,
       provider.envKey
-        ? `key: ${key?.value ? `set (${key.source})` : 'not set'}`
+        ? `key: ${key && key.source !== 'none' ? `set (${key.source})` : 'not set'}`
         : 'no key needed',
     ].join('\n'),
     'provider',
@@ -53,7 +54,7 @@ async function providerActions(provider: ResolvedProvider) {
 
   const options = [{ label: 'set key…', value: 'set' }]
   // Can't delete a key that lives in the shell environment — only stored ones.
-  if (key?.value && key.source !== 'env') {
+  if (key && key.source !== 'none' && key.source !== 'env') {
     options.push({ label: 'delete stored key', value: 'delete' })
   }
   options.push({ label: '← back', value: BACK })
@@ -64,11 +65,7 @@ async function providerActions(provider: ResolvedProvider) {
     const value = await askApiKeyOptional(provider.name)
     if (value) {
       const where = await storeApiKey(provider.name, value)
-      log.success(
-        where === 'keychain'
-          ? 'stored in macOS Keychain'
-          : 'stored in secrets file (0600)',
-      )
+      log.success(keyStoredText(where))
     }
     return
   }

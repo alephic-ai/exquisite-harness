@@ -1,10 +1,11 @@
 import type { Config } from './config.js'
-import type { Protocol, Selection } from './types.js'
+import type { EffortLevel, Protocol, Selection } from './types.js'
 
 import {
   allProviders,
   configExists,
   getProvider,
+  isReservedProfileName,
   loadConfig,
   pushRecent,
   saveConfig,
@@ -29,7 +30,7 @@ import { wizard } from './ui/wizard.js'
 const isTTY = process.stdout.isTTY
 
 export interface LaunchOptions {
-  effort?: string
+  effort?: EffortLevel
   printEnvOnly: boolean
   saveAs?: string
 }
@@ -46,13 +47,22 @@ export async function launchFlow(
 ) {
   let config = loadConfig()
 
-  // First positional can name a saved profile instead of a harness.
+  // First positional can name a saved profile instead of a harness. Copy it —
+  // merging overrides below must not mutate (and eventually persist) the
+  // stored profile. Extra positionals override the profile for this launch,
+  // same as the effort flag.
   const profile = harnessArg ? config.profiles[harnessArg] : undefined
-  let selection: Partial<Selection> = profile ?? {
-    harness: harnessArg,
-    model: modelArg,
-    provider: providerArg,
-  }
+  let selection: Partial<Selection> = profile
+    ? {
+        ...profile,
+        model: modelArg ?? profile.model,
+        provider: providerArg ?? profile.provider,
+      }
+    : {
+        harness: harnessArg,
+        model: modelArg,
+        provider: providerArg,
+      }
   // Effort: explicit flag wins, then a saved profile's, else interactive/default.
   if (options.effort) selection.effort = options.effort
 
@@ -129,14 +139,22 @@ export async function launchFlow(
     if (action === 'back') return
     if (action === 'save') {
       const name = await askProfileName()
-      config.profiles[name] = complete
+      config = { ...config, profiles: { ...config.profiles, [name]: complete } }
       log.success(`profile "${name}" saved`)
     }
   }
 
   // Explicit --save: persist the combo without any prompt.
   if (options.saveAs) {
-    config.profiles[options.saveAs] = complete
+    if (isReservedProfileName(options.saveAs)) {
+      throw new Error(
+        `"${options.saveAs}" is a subcommand — pick another profile name`,
+      )
+    }
+    config = {
+      ...config,
+      profiles: { ...config.profiles, [options.saveAs]: complete },
+    }
     log.success(`profile "${options.saveAs}" saved`)
   }
 

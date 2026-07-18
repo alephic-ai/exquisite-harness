@@ -168,6 +168,18 @@ export default [
       'no-octal': ['error'],
       'no-prototype-builtins': ['error'],
       'no-regex-spaces': [autofix],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              message:
+                'clack stays in src/ui/ — import output helpers from src/ui/output.js',
+              name: '@clack/prompts',
+            },
+          ],
+        },
+      ],
       'no-self-assign': ['error'],
       'no-setter-return': ['error'],
       'no-shadow-restricted-names': ['error'],
@@ -248,6 +260,34 @@ export default [
     },
   },
 
+  // Inside src/ui/ clack widgets are fine, but the log/intro/outro/note
+  // helpers must come through the output.ts re-export (DESIGN.md "Stack").
+  {
+    files: ['src/ui/**/*.ts'],
+    name: 'alephic-ai/clack-ui',
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              importNames: ['intro', 'log', 'note', 'outro'],
+              message: 'import log/intro/outro/note from ./output.js instead',
+              name: '@clack/prompts',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // output.ts IS the re-export site.
+  {
+    files: ['src/ui/output.ts'],
+    name: 'alephic-ai/clack-output',
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
   // Typed rules
   {
     files: ['**/*.ts'],
@@ -258,7 +298,6 @@ export default [
       },
     },
     name: 'alephic-ai/typed',
-    plugins: { tsEslint: tsEslint.plugin },
     rules: {
       '@typescript-eslint/await-thenable': ['error'],
       '@typescript-eslint/consistent-type-exports': [autofix],
