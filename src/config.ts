@@ -12,6 +12,7 @@ const providerConfigSchema = z.object({
 })
 
 const selectionSchema = z.object({
+  effort: z.string().optional(),
   harness: z.string(),
   model: z.string(),
   provider: z.string(),

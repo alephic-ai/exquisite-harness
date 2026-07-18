@@ -1,4 +1,5 @@
 import {
+  autocomplete,
   cancel,
   confirm,
   isCancel,
@@ -15,7 +16,27 @@ import { cachedModels, freshModels, writeModels } from '../cache.js'
 import { findBin, HARNESSES } from '../harnesses.js'
 import { resolveApiKey, secretsPathForDisplay, storeApiKey } from '../keys.js'
 import { canServeAny, listModels } from '../providers.js'
+import { EFFORT_LEVELS } from '../types.js'
 import { log, note } from './output.js'
+
+// Effort defaults to `auto` (model default); anything else is an override.
+export async function pickEffort() {
+  const value = await select({
+    message: 'effort',
+    options: EFFORT_LEVELS.map((level) => ({
+      hint:
+        level === 'auto'
+          ? 'model default (recommended)'
+          : level === 'xhigh' || level === 'max'
+            ? 'claude only; codex maps to high'
+            : undefined,
+      label: level,
+      value: level,
+    })),
+  })
+  if (isCancel(value)) bail()
+  return value
+}
 
 export async function pickHarness() {
   const value = await select({
@@ -147,15 +168,17 @@ export async function pickModel(provider: ResolvedProvider) {
     label: m.id,
     value: m.id,
   }))
-  // Sentinel value for the manual-entry escape hatch — never offer it if a
-  // real model id collides with it (select values must stay unique).
+  // Manual-entry escape hatch — never offer it if a real model id collides.
   if (!models.some((m) => m.id === MANUAL)) {
     options.push({ hint: 'type a model id', label: 'other…', value: MANUAL })
   }
-  const value = await select({
+  const value = await autocomplete({
+    filter: (search, option) =>
+      (option.label ?? '').toLowerCase().includes(search.toLowerCase()),
     maxItems: 12,
     message: `model · ${provider.name}`,
     options,
+    placeholder: 'type to filter…',
   })
   if (isCancel(value)) bail()
   if (value === MANUAL) {

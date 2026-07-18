@@ -42,6 +42,14 @@ Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
 appears as a synthetic provider that serves all protocols, so the picker logic
 (protocol set intersection) does not change.
 
+> **Evaluated and skipped:**
+> [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) (Go proxy: OAuth
+> subscriptions + multi-account balancing as OpenAI/Claude endpoints). Its
+> unique value is subscription arbitrage and self-hosting, not aggregation —
+> OpenRouter + Vercel AI Gateway already cover aggregation, and Gateway natively
+> closes the Anthropic-protocol gap. Revisit only if we ever want
+> OAuth-subscription providers (Claude Pro / ChatGPT Plus as APIs).
+
 ## UX
 
 ```text
@@ -171,12 +179,23 @@ resolve at launch time without eh storing anything.
 
 - **claude**: env `ANTHROPIC_BASE_URL` (provider's Anthropic endpoint),
   `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL`, `ANTHROPIC_SMALL_FAST_MODEL`.
+  Effort (when not `auto`): `CLAUDE_CODE_EFFORT_LEVEL=<level>`, plus
+  `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT=1` for non-Anthropic providers (the model ID
+  isn't effort-recognized there, so force the parameter through).
 - **codex**: `-c` TOML overrides — `model`, `model_provider=eh`,
-  `model_providers.eh.{name,base_url,wire_api,env_key}`. No writes to
-  `~/.codex/config.toml`.
-- **grok**: env `GROK_API_KEY`, `GROK_BASE_URL`, args `--model <id>`. (Flag
-  shape follows grok-cli's README; verify against installed version —
-  `eh doctor` reports the binary path.)
+  `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
+  `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
+  down). No writes to `~/.codex/config.toml`.
+- **grok**: env `GROK_API_KEY`, `GROK_BASE_URL`, args `--model <id>`. grok-cli
+  has no effort knob; an explicit effort is noted and ignored. (Flag shape
+  follows grok-cli's README; verify against installed version — `eh doctor`
+  reports the binary path.)
+
+**Effort** is an optional part of a selection (`auto`, `low`, `medium`, `high`,
+`xhigh`, `max`), resolved flag → profile → interactive default (`auto` = model
+default, sends nothing). Vercel AI Gateway also exposes the OpenAI
+`reasoning.effort` pass-through, so effort works end-to-end for gateway-backed
+codex/OpenAI models.
 
 ## Stack
 

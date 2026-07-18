@@ -18,6 +18,7 @@ import { intro, log, outro } from './ui/output.js'
 import {
   askProfileName,
   confirmLaunch,
+  pickEffort,
   pickHarness,
   pickModel,
   pickProvider,
@@ -28,7 +29,9 @@ import { wizard } from './ui/wizard.js'
 const isTTY = process.stdout.isTTY
 
 export interface LaunchOptions {
+  effort?: string
   printEnvOnly: boolean
+  saveAs?: string
 }
 
 // Values that exist to be launched, not to be read off a screen.
@@ -50,6 +53,8 @@ export async function launchFlow(
     model: modelArg,
     provider: providerArg,
   }
+  // Effort: explicit flag wins, then a saved profile's, else interactive/default.
+  if (options.effort) selection.effort = options.effort
 
   if (
     selection.harness !== undefined &&
@@ -101,11 +106,16 @@ export async function launchFlow(
   if (!harness || !providerName || !model) {
     throw new Error('incomplete selection')
   }
-  const complete: Selection = { harness, model, provider: providerName }
+  const complete: Selection = {
+    effort: selection.effort,
+    harness,
+    model,
+    provider: providerName,
+  }
   const provider = getProvider(config, providerName)
   if (!provider) throw new Error(`unknown provider "${providerName}"`)
 
-  const plan = await buildLaunchPlan(harness, provider, model)
+  const plan = await buildLaunchPlan(harness, provider, model, complete.effort)
 
   if (options.printEnvOnly) {
     printEnv(plan)
@@ -124,6 +134,12 @@ export async function launchFlow(
     }
   }
 
+  // Explicit --save: persist the combo without any prompt.
+  if (options.saveAs) {
+    config.profiles[options.saveAs] = complete
+    log.success(`profile "${options.saveAs}" saved`)
+  }
+
   config = pushRecent(config, complete)
   saveConfig(config)
 
@@ -140,7 +156,10 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
     ? mustGetProvider(config, partial.provider, def.protocols)
     : await pickProvider(def.protocols, allProviders(config))
   const model = partial.model ?? (await pickModel(provider))
-  return { harness, model, provider: provider.name }
+  // Only ask when the user is picking interactively and hasn't chosen one.
+  const effort =
+    partial.effort ?? (harness === 'grok' ? 'auto' : await pickEffort())
+  return { effort, harness, model, provider: provider.name }
 }
 
 function mustGetProvider(config: Config, name: string, protocols: Protocol[]) {

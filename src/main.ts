@@ -24,23 +24,65 @@ program
   .name('eh')
   .description('exquisite harness — pick a harness, pick a provider, go')
   .version(pkg.version)
+  // -h belongs to --harness; help lives on the long flag only.
+  .helpOption('--help', 'display help for command')
 
 program
   .argument('[harness-or-profile]', 'harness name or saved profile')
   .argument('[provider]', 'provider name')
   .argument('[model]', 'model id')
+  .option('-h, --harness <name>', 'harness: claude, codex, grok')
+  .option('-p, --provider <name>', 'provider: ollama, openrouter, gateway, …')
+  .option('-m, --model <id>', 'model id')
+  .option('-s, --save <name>', 'save the combo as a profile, then launch')
+  .option(
+    '-e, --effort <level>',
+    'reasoning effort: auto, low, medium, high, xhigh, max',
+  )
   .option('--print-env', 'print env vars instead of launching')
   .action(
     async (
       harnessOrProfile: string | undefined,
       provider: string | undefined,
       model: string | undefined,
-      opts: { printEnv?: boolean },
+      opts: {
+        effort?: string
+        harness?: string
+        model?: string
+        printEnv?: boolean
+        provider?: string
+        save?: string
+      },
     ) => {
-      await launchFlow(harnessOrProfile, provider, model, {
-        printEnvOnly: opts.printEnv === true,
-      })
+      // Flags win over positionals; positionals may also name a profile.
+      await launchFlow(
+        opts.harness ?? harnessOrProfile,
+        opts.provider ?? provider,
+        opts.model ?? model,
+        {
+          effort: opts.effort,
+          printEnvOnly: opts.printEnv === true,
+          saveAs: opts.save,
+        },
+      )
     },
+  )
+  .addHelpText(
+    'after',
+    `
+Common workflows:
+  eh                                  interactive: recents, or harness → provider → model
+  eh claude ollama qwen3-coder        launch with zero prompts (positional)
+  eh -h codex -p ollama -m qwen3-coder
+      same, with flags — flags win over positionals
+  eh cheap-local                      launch a saved profile
+  eh -h claude -p ollama -s cheap-local
+      save the combo as profile "cheap-local", then launch
+  eh --print-env claude ollama qwen3-coder
+      print the export lines instead of launching
+  eh doctor                           harnesses installed? providers reachable? keys set?
+  eh provider key gateway             store an API key (masked prompt → OS credential store)
+`,
   )
 
 program
