@@ -12,15 +12,15 @@ export interface ModelInfo {
 
 export type Protocol = 'anthropic' | 'openai-chat' | 'openai-responses'
 
-export interface ProviderStatus {
-  detail: string
-  ok: boolean
-}
-
-export type ProviderType = 'ollama' | 'openai-chat' | 'vercel-gateway'
+export const PROVIDER_TYPES = [
+  'ollama',
+  'openai-chat',
+  'vercel-gateway',
+] as const
+export type ProviderType = (typeof PROVIDER_TYPES)[number]
 
 export interface Selection {
-  effort?: string
+  effort?: EffortLevel
   harness: string
   model: string
   provider: string

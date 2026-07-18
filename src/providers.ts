@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { ResolvedProvider } from './config.js'
 import type { ModelInfo, Protocol, ProviderType } from './types.js'
 
+import { cachedModels, freshModels, writeModels } from './cache.js'
 import { resolveApiKey } from './keys.js'
 
 interface ProviderBehavior {
@@ -124,11 +125,14 @@ export function canServeAny(type: ProviderType, protocols: Protocol[]) {
 }
 
 // env (explicit shell/1Password/dotenvx) → macOS Keychain → 0600 secrets file.
+// A missing key is a normal unconfigured state, not a failure — the `keyless`
+// flag lets callers pick a milder severity for it.
 export async function checkProvider(provider: ResolvedProvider) {
   const key = provider.envKey ? await resolveKey(provider) : undefined
-  if (provider.envKey && !key?.value) {
+  if (provider.envKey && key?.source === 'none') {
     return {
       detail: `${provider.envKey} not set — run \`eh provider key ${provider.name}\``,
+      keyless: true,
       ok: false,
     }
   }
@@ -150,7 +154,25 @@ export function codexWireApiFor(provider: ResolvedProvider) {
 
 export async function listModels(provider: ResolvedProvider) {
   const key = provider.envKey ? await resolveKey(provider) : undefined
-  return BEHAVIORS[provider.type].listModels(provider.baseURL, key?.value)
+  const apiKey = key && key.source !== 'none' ? key.value : undefined
+  return BEHAVIORS[provider.type].listModels(provider.baseURL, apiKey)
+}
+
+// The one copy of the cache flow: fresh cache → live fetch (write-through) →
+// stale cache fallback (DESIGN.md "cached 5 min, stale fallback"). The model
+// picker wraps this with a spinner (src/ui/prompts.ts).
+export async function listModelsCached(provider: ResolvedProvider) {
+  const fresh = freshModels(provider.name)
+  if (fresh) return fresh
+  try {
+    const models = await listModels(provider)
+    writeModels(provider.name, models)
+    return models
+  } catch (error) {
+    const stale = cachedModels(provider.name)
+    if (stale) return stale
+    throw error
+  }
 }
 
 export function openAIBaseURLFor(provider: ResolvedProvider) {

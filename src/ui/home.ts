@@ -1,9 +1,10 @@
-import { cancel, isCancel, select } from '@clack/prompts'
+import { isCancel, select } from '@clack/prompts'
 
 import type { Config, RecentEntry } from '../config.js'
 import type { Selection } from '../types.js'
 
 import { timeAgo } from '../time-ago.js'
+import { bail } from './output.js'
 
 export type HomeChoice =
   | { kind: 'doctor' }
@@ -38,10 +39,7 @@ export async function home(config: Config) {
       { hint: 'check harnesses & providers', label: 'doctor', value: DOCTOR },
     ],
   })
-  if (isCancel(value)) {
-    cancel('bye')
-    process.exit(0)
-  }
+  if (isCancel(value)) bail()
   if (value === NEW) return { kind: 'new' } as const
   if (value === PROVIDERS) return { kind: 'providers' } as const
   if (value === DOCTOR) return { kind: 'doctor' } as const
