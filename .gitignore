@@ -6,3 +6,5 @@
 /release/
 /tmp/
 *.bun-build
+/eh-darwin-*
+/eh-linux-*
