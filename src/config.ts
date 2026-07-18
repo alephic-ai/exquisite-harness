@@ -122,10 +122,6 @@ export function getProvider(config: Config, name: string) {
   return allProviders(config).find((p) => p.name === name)
 }
 
-export function isReservedProfileName(name: string) {
-  return RESERVED_PROFILE_NAMES.includes(name)
-}
-
 export function loadConfig() {
   let raw: string
   try {
@@ -162,6 +158,14 @@ export function pushRecent(config: Config, selection: Selection) {
       ),
   )
   return { ...config, recent: [entry, ...rest].slice(0, MAX_RECENT) }
+}
+
+// The one wording for a profile-name collision — returned for validators,
+// thrown by the command paths. Undefined when the name is free.
+export function reservedProfileNameMessage(name: string) {
+  return RESERVED_PROFILE_NAMES.includes(name)
+    ? `"${name}" is a subcommand — pick another profile name`
+    : undefined
 }
 
 export function saveConfig(config: Config) {

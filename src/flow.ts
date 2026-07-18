@@ -5,9 +5,9 @@ import {
   allProviders,
   configExists,
   getProvider,
-  isReservedProfileName,
   loadConfig,
   pushRecent,
+  reservedProfileNameMessage,
   saveConfig,
 } from './config.js'
 import { doctor } from './doctor.js'
@@ -146,11 +146,8 @@ export async function launchFlow(
 
   // Explicit --save: persist the combo without any prompt.
   if (options.saveAs) {
-    if (isReservedProfileName(options.saveAs)) {
-      throw new Error(
-        `"${options.saveAs}" is a subcommand — pick another profile name`,
-      )
-    }
+    const taken = reservedProfileNameMessage(options.saveAs)
+    if (taken) throw new Error(taken)
     config = {
       ...config,
       profiles: { ...config.profiles, [options.saveAs]: complete },

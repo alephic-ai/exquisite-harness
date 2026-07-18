@@ -11,7 +11,7 @@ import type { ResolvedProvider } from '../config.js'
 import type { Protocol } from '../types.js'
 
 import { freshModels } from '../cache.js'
-import { isReservedProfileName } from '../config.js'
+import { reservedProfileNameMessage } from '../config.js'
 import { HARNESSES } from '../harnesses.js'
 import { resolveApiKey, storeApiKey } from '../keys.js'
 import { canServeAny, listModelsCached } from '../providers.js'
@@ -140,10 +140,7 @@ export async function askProfileName() {
       if (v == null || !/^[\w-]+$/.test(v)) {
         return 'letters, digits, - and _ only'
       }
-      if (isReservedProfileName(v)) {
-        return `"${v}" is a subcommand — pick another name`
-      }
-      return undefined
+      return reservedProfileNameMessage(v)
     },
   })
   if (isCancel(value)) bail()

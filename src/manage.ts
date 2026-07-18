@@ -4,7 +4,7 @@ import type { ModelInfo, Selection } from './types.js'
 import {
   allProviders,
   getProvider,
-  isReservedProfileName,
+  reservedProfileNameMessage,
   saveConfig,
 } from './config.js'
 import { deleteApiKey, storeApiKey } from './keys.js'
@@ -45,9 +45,8 @@ export function profileSave(
   name: string,
   selection: Selection,
 ) {
-  if (isReservedProfileName(name)) {
-    throw new Error(`"${name}" is a subcommand — pick another profile name`)
-  }
+  const taken = reservedProfileNameMessage(name)
+  if (taken) throw new Error(taken)
   saveConfig({ ...config, profiles: { ...config.profiles, [name]: selection } })
   log.success(
     `profile "${name}" saved — ${selection.harness} · ${selection.provider} · ${selection.model}`,
