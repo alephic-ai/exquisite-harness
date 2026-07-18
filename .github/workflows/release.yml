@@ -6,6 +6,14 @@ name: Release
 # re-runs are idempotent. Lint/tests aren't re-gated here — changes reach main
 # through PRs that already ran CI.
 #
+# This workflow runs on EVERY push to main — there is deliberately no paths
+# filter. GitHub requires literal globs there, and a filter narrower than the
+# release-affecting list (scripts/release-affecting-files.sh) would silently
+# skip the release entirely — a drift channel worse than the one it guards
+# against. Docs-only pushes no-op through the release-existence gate in
+# seconds, the same "always runs, self-skips" trade version-guard.yml makes
+# for PRs.
+#
 # Exception to "no-op": if the release already exists but the push changed
 # files that get baked into the binary, that's a missed version bump — the
 # changes shipped nothing — so the "Fail loudly on a missed release" step
@@ -15,13 +23,6 @@ name: Release
 on:
   push:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'build.ts'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'tsconfig.json'
-      - 'tsconfig.base.json'
   workflow_dispatch:
 
 # Serialize runs so two near-simultaneous pushes (or a dispatch overlapping a
@@ -93,15 +94,16 @@ jobs:
             exit 0
           fi
           # Use the compare API so we don't depend on the checkout holding
-          # both SHAs. Same release-affecting filter as version-guard.yml:
-          # everything baked into the binary.
+          # both SHAs. The release-affecting filter is sourced from the same
+          # file version-guard uses, so the two can't drift.
           files=$(gh api "repos/$GITHUB_REPOSITORY/compare/$BEFORE_SHA...$AFTER_SHA" \
             --jq '.files[].filename') || {
             echo "compare API failed; skipping missed-release guard to avoid a false alarm."
             exit 0
           }
+          source scripts/release-affecting-files.sh
           changed=$(printf '%s\n' "$files" \
-            | grep -E '^(src/|build\.ts$|package\.json$|pnpm-lock\.yaml$|tsconfig\.json$|tsconfig\.base\.json$)' || true)
+            | grep -E "$RELEASE_AFFECTING_ERE" || true)
           if [ -n "$changed" ]; then
             printf '%s\n' "$changed" | sed 's/^/  - /'
             echo "::error::eh-v$version is already released, but this push changed release-affecting files without a new version — they shipped nothing. Bump \"version\" in package.json to a new, unreleased version to ship them."
@@ -129,9 +131,21 @@ jobs:
         if: steps.rel.outputs.exists == 'false'
         run: pnpm compile
 
-      - name: Smoke-test the linux-x64 binary
+      # The x64 ubuntu runner can only execute the linux-x64 binary, so the
+      # darwin and linux-arm64 binaries are verified by existence and
+      # non-emptiness only — execution coverage for them would need an OS
+      # matrix, which isn't worth it for a --version check. build.ts already
+      # fails the compile step if any target errors, so this catches a
+      # silently misplaced or empty output.
+      - name: Verify binaries and smoke-test linux-x64
         if: steps.rel.outputs.exists == 'false'
         run: |
+          for f in eh-darwin-arm64 eh-darwin-x64 eh-linux-arm64 eh-linux-x64; do
+            if [ ! -s "release/$f" ]; then
+              echo "Missing or empty: release/$f" >&2
+              exit 1
+            fi
+          done
           got="$(./release/eh-linux-x64 --version)"
           echo "eh-linux-x64 --version: $got"
           [ "$got" = "${{ steps.ver.outputs.version }}" ]

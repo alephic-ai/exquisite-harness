@@ -63,13 +63,13 @@ else
   head=HEAD
 fi
 
-# Files that get baked into the compiled binary. Keep in sync with the push
-# paths filter in release.yml and the missed-release grep there. Docs,
-# workflows, and lint/format config never enter the binary.
-release_affecting='^(src/|build\.ts$|package\.json$|pnpm-lock\.yaml$|tsconfig\.json$|tsconfig\.base\.json$)'
+# Files that get baked into the compiled binary, sourced from the single
+# shared list so this guard and release.yml's missed-release step can't drift.
+# Docs, workflows, and lint/format config never enter the binary.
+source "$(dirname "${BASH_SOURCE[0]}")/release-affecting-files.sh"
 
 changed=$(git diff --name-only "$change_base" "$head" \
-  | grep -E "$release_affecting" || true)
+  | grep -E "$RELEASE_AFFECTING_ERE" || true)
 
 if [ -z "$changed" ]; then
   echo "No release-affecting changes -- nothing to guard."
@@ -78,6 +78,14 @@ fi
 
 base_ver=$(read_package_version "$version_base")
 head_ver=$(read_package_version "$head")
+
+# version_gt parses exactly three numeric segments, so anything else
+# (prerelease, build metadata) would compare wrongly — fail loudly instead of
+# silently mis-ordering.
+semver='^[0-9]+\.[0-9]+\.[0-9]+$'
+if ! [[ "$base_ver" =~ $semver ]] || ! [[ "$head_ver" =~ $semver ]]; then
+  fail "$pkg" "Versions must be plain X.Y.Z numeric semver for comparison (base=$base_ver, head=$head_ver). Prerelease and build-metadata versions are not supported by this guard."
+fi
 
 if [ "$base_ver" = "$head_ver" ]; then
   printf '%s\n' "$changed" | sed 's/^/  - /'
