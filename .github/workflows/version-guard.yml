@@ -1,0 +1,40 @@
+name: Version Guard
+
+# A merge to main only ships a new `eh` binary when package.json's version
+# changed — release.yml gates on the eh-v<version> release not yet existing.
+# Without this guard, a PR that edits release-affecting files but forgets to
+# bump the version (or reuses a version another PR already released) merges
+# green and silently releases nothing. So: when a PR changes files that get
+# baked into the binary (src/, build.ts, package.json, pnpm-lock.yaml, the
+# tsconfigs), require `version` to move strictly forward AND to not collide
+# with an already-published eh-v<version> release (the same gate release.yml
+# uses). Docs, workflows, and other files that never enter the binary are
+# exempt.
+#
+# The job runs on EVERY PR (no workflow-level paths: filter) and self-skips
+# inside the job when nothing release-affecting changed. That is deliberate:
+# a path-filtered check never reports a status on unrelated PRs, so it can't
+# be marked "required" without hanging them on "Expected — waiting for
+# status." Running always-but-short-circuit keeps this job eligible to be a
+# required status check, which is what would actually *block* the silent
+# no-op rather than only flag it.
+on:
+  pull_request:
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Require a version bump for release-affecting changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/check-version-guard.sh

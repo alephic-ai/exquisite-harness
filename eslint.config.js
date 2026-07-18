@@ -391,4 +391,11 @@ export default [
     languageOptions: { globals: globals.nodeBuiltin },
     name: 'alephic-ai/node',
   },
+
+  // Cross-compile script runs under Bun, not Node
+  {
+    files: ['build.ts'],
+    languageOptions: { globals: { Bun: 'readonly' } },
+    name: 'alephic-ai/bun-build',
+  },
 ]

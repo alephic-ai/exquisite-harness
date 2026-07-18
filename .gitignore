@@ -3,4 +3,6 @@
 /.firecrawl/
 /dist/
 /node_modules/
+/release/
 /tmp/
+*.bun-build
