@@ -1,6 +1,6 @@
 {
   "name": "exquisite-harness",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Choose a harness, choose a provider, go.",
   "type": "module",
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "bun build ./src/main.ts --compile --outfile dist/eh --target=bun",
+    "compile": "bun run build.ts",
     "dev": "tsx src/main.ts",
     "format": "prettier --write .",
     "format:ci": "prettier --check .",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/compat": "2.1.0",
+    "@types/bun": "1.3.14",
     "@types/node": "24.13.0",
     "concurrently": "10.0.3",
     "eslint": "10.6.0",
