@@ -13,8 +13,9 @@ import type { Protocol } from '../types.js'
 
 import { cachedModels, freshModels, writeModels } from '../cache.js'
 import { findBin, HARNESSES } from '../harnesses.js'
+import { resolveApiKey, secretsPathForDisplay, storeApiKey } from '../keys.js'
 import { canServeAny, listModels } from '../providers.js'
-import { note } from './output.js'
+import { log, note } from './output.js'
 
 export async function pickHarness() {
   const value = await select({
@@ -35,25 +36,48 @@ export async function pickProvider(
   protocols: Protocol[],
   providers: ResolvedProvider[],
 ) {
-  const value = await select({
-    message: 'provider',
-    options: providers.map((p) => ({
-      hint: canServeAny(p.type, protocols)
-        ? `${p.type} · ${p.baseURL}`
-        : 'needs router (phase 2)',
-      label: p.name,
-      value: p.name,
-    })),
-  })
-  if (isCancel(value)) bail()
-  const provider = providers.find((p) => p.name === value)
-  if (!provider) throw new Error(`unknown provider "${value}"`)
-  if (!canServeAny(provider.type, protocols)) {
-    throw new Error(
-      `provider "${provider.name}" cannot serve ${protocols.join(' or ')} yet`,
-    )
+  for (;;) {
+    const value = await select({
+      message: 'provider',
+      options: providers.map((p) => ({
+        hint: canServeAny(p.type, protocols)
+          ? `${p.type} · ${p.baseURL}`
+          : 'needs router (phase 2)',
+        label: p.name,
+        value: p.name,
+      })),
+    })
+    if (isCancel(value)) bail()
+    const provider = providers.find((p) => p.name === value)
+    if (!provider) throw new Error(`unknown provider "${value}"`)
+    if (!canServeAny(provider.type, protocols)) {
+      log.warn(
+        `"${provider.name}" can't serve ${protocols.join(' or ')} — that needs the phase-2 router`,
+      )
+      continue
+    }
+    if (await ensureKey(provider)) return provider
+    // key entry cancelled → back to the provider list
   }
-  return provider
+}
+
+// A provider with an envKey needs a key from somewhere. If none resolves
+// (env → OS store → file), offer to store one right here. Returns false when
+// the user bails out of the key prompt.
+async function ensureKey(provider: ResolvedProvider) {
+  if (!provider.envKey) return true
+  const key = await resolveApiKey(provider.envKey, provider.name)
+  if (key.value) return true
+  log.warn(`"${provider.name}" needs ${provider.envKey} — none found`)
+  const value = await askApiKeyOptional(provider.name)
+  if (!value) return false
+  const where = await storeApiKey(provider.name, value)
+  log.success(
+    where === 'keychain'
+      ? 'stored in macOS Keychain'
+      : `stored in ${secretsPathForDisplay()} (mode 0600)`,
+  )
+  return true
 }
 
 // Annotated: TS cannot infer `never` here, and the narrowing at every
@@ -79,6 +103,15 @@ export async function askApiKey(providerName: string) {
   })
   if (isCancel(value)) bail()
   return value
+}
+
+// Cancelable variant: returns undefined instead of exiting on Esc.
+export async function askApiKeyOptional(providerName: string) {
+  const value = await password({
+    message: `API key for ${providerName} (esc to go back)`,
+  })
+  if (isCancel(value)) return undefined
+  return value.length > 0 ? value : undefined
 }
 
 export async function askProfileName() {

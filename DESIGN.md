@@ -65,8 +65,11 @@ Picker flow (via `@clack/prompts`, skipped per already-specified args):
 1. **Home** — recent combos (Enter relaunches last), or new session.
 2. **Harness** — installed status in the hint.
 3. **Provider** — filtered to protocol-compatible; incompatible rows shown with
-   a `needs router` hint. Status hints: `● running`, `✓ key set`,
-   `✗ KEY not set`.
+   a `needs router` hint. Selecting a provider that needs a key but has none
+   prompts for it inline (masked, Esc to go back) — no separate command needed.
+   Home → providers is a management screen: per-provider key status with
+   set/delete-key actions. a `needs router` hint. Status hints: `● running`,
+   `✓ key set`, `✗ KEY not set`.
 4. **Model** — live list from the provider (cached 5 min, stale fallback),
    scrollable, with a manual-entry escape hatch.
 5. **Confirm** — `note()` with resolved env/args → go / save as profile / back.

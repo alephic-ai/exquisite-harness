@@ -12,7 +12,6 @@ import {
 import { doctor } from './doctor.js'
 import { buildLaunchPlan, getHarness, harnessNames } from './harnesses.js'
 import { exec, printEnv } from './launch.js'
-import { providersCommand } from './manage.js'
 import { canServeAny } from './providers.js'
 import { home, selectionFromRecent } from './ui/home.js'
 import { intro, log, outro } from './ui/output.js'
@@ -23,6 +22,7 @@ import {
   pickModel,
   pickProvider,
 } from './ui/prompts.js'
+import { providersScreen } from './ui/providers-screen.js'
 import { wizard } from './ui/wizard.js'
 
 const isTTY = process.stdout.isTTY
@@ -77,17 +77,20 @@ export async function launchFlow(
     }
 
     if (!harnessArg && !profile) {
-      const choice = await home(config)
-      if (choice.kind === 'doctor') {
-        await doctor(config)
-        return
-      }
-      if (choice.kind === 'providers') {
-        await providersCommand(config)
-        return
-      }
-      if (choice.kind === 'recent') {
-        selection = selectionFromRecent(choice.recent)
+      for (;;) {
+        const choice = await home(config)
+        if (choice.kind === 'doctor') {
+          await doctor(config)
+          continue
+        }
+        if (choice.kind === 'providers') {
+          await providersScreen(config)
+          continue
+        }
+        if (choice.kind === 'recent') {
+          selection = selectionFromRecent(choice.recent)
+        }
+        break
       }
     }
 
