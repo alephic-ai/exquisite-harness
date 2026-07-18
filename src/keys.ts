@@ -4,7 +4,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { z } from 'zod'
 
-import { configDir } from './config.js'
+import { configDir, providerKeyAccounts } from './config.js'
 import { findBin } from './which.js'
 
 const run = promisify(execFile)
@@ -239,6 +239,8 @@ function writeSecrets(secrets: Record<string, string>) {
 
 // Resolution order: explicit environment wins (keeps `op run` / dotenvx
 // composable), then the OS credential store, then the 0600 secrets file.
+// Account lookup tries the canonical name plus legacy aliases (e.g. key
+// stored under "gateway" still resolves for "vercel-ai-gateway").
 export async function resolveApiKey(
   envKey: string | undefined,
   providerName: string,
@@ -247,28 +249,35 @@ export async function resolveApiKey(
     const fromEnv = process.env[envKey]
     if (fromEnv) return { source: 'env', value: fromEnv }
   }
+  const accounts = providerKeyAccounts(providerName)
   const backend = await usableBackend()
   if (backend) {
-    const fromStore = await backend.get(providerName)
-    if (fromStore) return { source: backend.id, value: fromStore }
+    for (const account of accounts) {
+      const fromStore = await backend.get(account)
+      if (fromStore) return { source: backend.id, value: fromStore }
+    }
   }
-  const fromFile = lookupFile(providerName)
-  if (fromFile) return { source: 'file', value: fromFile }
+  for (const account of accounts) {
+    const fromFile = lookupFile(account)
+    if (fromFile) return { source: 'file', value: fromFile }
+  }
   return { source: 'none' }
 }
 
 export async function storeApiKey(providerName: string, value: string) {
+  // Always write under the canonical id so aliases share one slot.
+  const account = providerKeyAccounts(providerName)[0] ?? providerName
   const backend = await usableBackend()
   if (backend) {
     try {
-      await backend.set(providerName, value)
+      await backend.set(account, value)
       return backend.id
     } catch {
       // fall through to the file store
     }
   }
   const secrets = readSecrets()
-  secrets[providerName] = value
+  secrets[account] = value
   writeSecrets(secrets)
   return 'file' as const
 }
@@ -276,20 +285,27 @@ export async function storeApiKey(providerName: string, value: string) {
 // Returns true if anything was actually removed.
 export async function deleteApiKey(providerName: string) {
   let removed = false
+  const accounts = providerKeyAccounts(providerName)
   const backend = await usableBackend()
   if (backend) {
-    const had = await backend.get(providerName)
-    if (had !== undefined) {
-      await backend.delete(providerName)
-      removed = true
+    for (const account of accounts) {
+      const had = await backend.get(account)
+      if (had !== undefined) {
+        await backend.delete(account)
+        removed = true
+      }
     }
   }
   const secrets = readSecrets()
-  if (Object.hasOwn(secrets, providerName)) {
-    const { [providerName]: _dropped, ...rest } = secrets
-    writeSecrets(rest)
-    removed = true
+  let next = secrets
+  for (const account of accounts) {
+    if (Object.hasOwn(next, account)) {
+      const { [account]: _dropped, ...rest } = next
+      next = rest
+      removed = true
+    }
   }
+  if (removed && next !== secrets) writeSecrets(next)
   return removed
 }
 

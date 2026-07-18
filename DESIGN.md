@@ -23,11 +23,11 @@ them is the whole game, and the matrix is already mostly green natively:
 
 Resulting compatibility (✅ = native, ⚠️ = needs protocol translation):
 
-|             | Ollama | OpenRouter | Vercel Gateway |
-| ----------- | ------ | ---------- | -------------- |
-| Claude Code | ✅     | ⚠️ router  | ✅             |
-| Codex       | ✅     | ✅         | ✅             |
-| Grok        | ✅     | ✅         | ✅             |
+|             | Ollama | OpenRouter | Vercel AI Gateway |
+| ----------- | ------ | ---------- | ----------------- |
+| Claude Code | ✅     | ⚠️ router  | ✅                |
+| Codex       | ✅     | ✅         | ✅                |
+| Grok        | ✅     | ✅         | ✅                |
 
 ## Architecture
 
@@ -46,9 +46,9 @@ appears as a synthetic provider that serves all protocols, so the picker logic
 > [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) (Go proxy: OAuth
 > subscriptions + multi-account balancing as OpenAI/Claude endpoints). Its
 > unique value is subscription arbitrage and self-hosting, not aggregation —
-> OpenRouter + Vercel AI Gateway already cover aggregation, and Gateway natively
-> closes the Anthropic-protocol gap. Revisit only if we ever want
-> OAuth-subscription providers (Claude Pro / ChatGPT Plus as APIs).
+> OpenRouter + Vercel AI Gateway already cover aggregation, and Vercel AI
+> Gateway natively closes the Anthropic-protocol gap. Revisit only if we ever
+> want OAuth-subscription providers (Claude Pro / ChatGPT Plus as APIs).
 
 ## UX
 
@@ -99,7 +99,10 @@ positional args must be complete; no prompts.
   "providers": {
     "ollama": { "type": "ollama", "baseURL": "http://localhost:11434" },
     "openrouter": { "type": "openai-chat", "envKey": "OPENROUTER_API_KEY" },
-    "gateway": { "type": "vercel-gateway", "envKey": "AI_GATEWAY_API_KEY" },
+    "vercel-ai-gateway": {
+      "type": "vercel-gateway",
+      "envKey": "AI_GATEWAY_API_KEY",
+    },
   },
   "profiles": {
     "cheap-local": {
@@ -126,10 +129,10 @@ protocols it can speak (`claude: [anthropic]`,
 harness/provider pair is compatible when the sets intersect. All three matrix
 providers are built in, so the full 3×3 is visible with no config file at all:
 Ollama works zero-config (no key needed; token value `ollama` is sent where
-required but ignored), while openrouter/gateway appear with a "key not set" hint
-until a key is stored or their env var is set. The config file only overrides
-built-ins or adds custom providers. Model cache: `~/.config/eh/cache.json`,
-5-minute TTL.
+required but ignored), while openrouter and vercel-ai-gateway appear with a "key
+not set" hint until a key is stored or their env var is set. The config file
+only overrides built-ins or adds custom providers. Model cache:
+`~/.config/eh/cache.json`, 5-minute TTL.
 
 ## Key handling
 
@@ -183,6 +186,17 @@ resolve at launch time without eh storing anything.
   Effort (when not `auto`): `CLAUDE_CODE_EFFORT_LEVEL=<level>`, plus
   `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT=1` for non-Anthropic providers (the model ID
   isn't effort-recognized there, so force the parameter through).
+  **Statusline:** session override via
+  `claude --settings ~/.config/eh/claude-statusline.json` pointing at
+  `eh statusline`. Env `EH_PROVIDER` / `EH_MODEL` / `EH_EFFORT` / `EH_PRICE_IN`
+  / `EH_PRICE_OUT` / `EH_CONTEXT_WINDOW` (list rates
+  $/1M + real context size
+  from the provider models API at launch). Context % is recomputed as
+  `(input + cache_write + cache_read) / provider_window` from live
+  `current_usage` — not Claude's default 200k-based `used_percentage`. Session
+  $
+  uses transcript tokens × list rates. Claude's `cost.total_cost_usd` is
+  ignored.
 - **codex**: `-c` TOML overrides — `model`, `model_provider=eh`,
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
   `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
@@ -195,8 +209,8 @@ resolve at launch time without eh storing anything.
 **Effort** is an optional part of a selection (`auto`, `low`, `medium`, `high`,
 `xhigh`, `max`), resolved flag → profile → interactive default (`auto` = model
 default, sends nothing). Vercel AI Gateway also exposes the OpenAI
-`reasoning.effort` pass-through, so effort works end-to-end for gateway-backed
-codex/OpenAI models.
+`reasoning.effort` pass-through, so effort works end-to-end for Vercel AI
+Gateway–backed codex/OpenAI models.
 
 ## Stack
 
@@ -213,6 +227,8 @@ src/main.ts       entry: commander wiring
 src/flow.ts       positional/profile resolution → pickers → launch
 src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
+src/pricing.ts    provider list rates ($/1M) for statusline session cost
+src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
 src/launch.ts     spawn / print-env
 src/doctor.ts     doctor report

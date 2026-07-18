@@ -14,6 +14,7 @@ import {
   providersCommand,
 } from './manage.js'
 import { listModelsCached } from './providers.js'
+import { runStatusline } from './statusline.js'
 import { EFFORT_LEVELS } from './types.js'
 import { intro } from './ui/output.js'
 import { addProvider, wizard } from './ui/wizard.js'
@@ -34,7 +35,10 @@ program
   .argument('[provider]', 'provider name')
   .argument('[model]', 'model id')
   .option('--harness <name>', 'harness: claude, codex, grok')
-  .option('-p, --provider <name>', 'provider: ollama, openrouter, gateway, …')
+  .option(
+    '-p, --provider <name>',
+    'provider: ollama, openrouter, vercel-ai-gateway, …',
+  )
   .option('-m, --model <id>', 'model id')
   .option('-s, --save <name>', 'save the combo as a profile, then launch')
   .option(
@@ -75,7 +79,7 @@ Common workflows:
   eh --print-env claude ollama qwen3-coder
       print the export lines instead of launching
   eh doctor                           harnesses installed? providers reachable? keys set?
-  eh provider key gateway             store an API key (masked prompt → OS credential store)
+  eh provider key vercel-ai-gateway   store an API key (masked prompt → OS credential store)
   eh update                           self-update to the latest release
 `,
   )
@@ -96,6 +100,15 @@ program
     await runUpdate().catch(() => {
       process.exitCode = 1
     })
+  })
+
+// Invoked by Claude Code's statusLine command (stdin JSON → powerline bar).
+// Not a user-facing workflow; hidden from help.
+program
+  .command('statusline', { hidden: true })
+  .description('render the eh Claude statusline (stdin: Claude status JSON)')
+  .action(async () => {
+    await runStatusline()
   })
 
 program

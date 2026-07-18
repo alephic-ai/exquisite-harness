@@ -3,6 +3,7 @@ import { isCancel, select } from '@clack/prompts'
 import type { Config, RecentEntry } from '../config.js'
 import type { Selection } from '../types.js'
 
+import { canonicalProviderName, providerLabel } from '../config.js'
 import { timeAgo } from '../time-ago.js'
 import { bail } from './output.js'
 
@@ -55,12 +56,12 @@ export function selectionFromRecent(r: RecentEntry) {
     effort: r.effort,
     harness: r.harness,
     model: r.model,
-    provider: r.provider,
+    provider: canonicalProviderName(r.provider),
   }
   return selection
 }
 
 function recentLabel(r: RecentEntry) {
   const effort = r.effort && r.effort !== 'auto' ? ` @${r.effort}` : ''
-  return `${r.harness} · ${r.provider} · ${r.model}${effort}`
+  return `${r.harness} · ${providerLabel(r.provider)} · ${r.model}${effort}`
 }

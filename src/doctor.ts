@@ -1,6 +1,6 @@
 import type { Config } from './config.js'
 
-import { allProviders, configPath } from './config.js'
+import { allProviders, configPath, providerLabel } from './config.js'
 import { HARNESSES } from './harnesses.js'
 import { checkProvider } from './providers.js'
 import { log } from './ui/output.js'
@@ -26,7 +26,7 @@ export async function doctor(config: Config) {
     })),
   )
   for (const { provider, status } of statuses) {
-    const line = `${provider.name} (${provider.type}) — ${status.detail}`
+    const line = `${providerLabel(provider.name)} (${provider.name}) — ${status.detail}`
     if (status.ok) {
       log.success(line)
     } else if ('keyless' in status) {

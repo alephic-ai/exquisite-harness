@@ -3,7 +3,7 @@ import { isCancel, select } from '@clack/prompts'
 import type { Config, ResolvedProvider } from '../config.js'
 import type { ResolvedKey } from '../keys.js'
 
-import { allProviders } from '../config.js'
+import { allProviders, providerLabel } from '../config.js'
 import { deleteApiKey, resolveApiKey, storeApiKey } from '../keys.js'
 import { keyStoredText, log, note } from './output.js'
 import { askApiKeyOptional } from './prompts.js'
@@ -24,7 +24,7 @@ export async function providersScreen(config: Config) {
         hint: p.envKey
           ? `${p.type} · ${keyHint(await resolveApiKey(p.envKey, p.name))}`
           : `${p.type} · no key needed`,
-        label: p.name,
+        label: providerLabel(p.name),
         value: p.name,
       })),
     )
@@ -42,7 +42,7 @@ async function providerActions(provider: ResolvedProvider) {
     : undefined
   note(
     [
-      `${provider.name} (${provider.type})`,
+      `${providerLabel(provider.name)} (${provider.name})`,
       provider.baseURL,
       provider.envKey
         ? `key: ${key && key.source !== 'none' ? `set (${key.source})` : 'not set'}`

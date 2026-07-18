@@ -6,6 +6,7 @@ import {
   configExists,
   getProvider,
   loadConfig,
+  providerLabel,
   pushRecent,
   reservedProfileNameMessage,
   saveConfig,
@@ -116,14 +117,15 @@ export async function launchFlow(
   if (!harness || !providerName || !model) {
     throw new Error('incomplete selection')
   }
+  const provider = getProvider(config, providerName)
+  if (!provider) throw new Error(`unknown provider "${providerName}"`)
+  // Persist the canonical id so recents/profiles don't store legacy aliases.
   const complete: Selection = {
     effort: selection.effort,
     harness,
     model,
-    provider: providerName,
+    provider: provider.name,
   }
-  const provider = getProvider(config, providerName)
-  if (!provider) throw new Error(`unknown provider "${providerName}"`)
 
   const plan = await buildLaunchPlan(harness, provider, model, complete.effort)
 
@@ -191,7 +193,7 @@ function mustGetProvider(config: Config, name: string, protocols: Protocol[]) {
 function planSummary(selection: Selection, env: Record<string, string>) {
   const lines = [
     `harness:  ${selection.harness}`,
-    `provider: ${selection.provider}`,
+    `provider: ${providerLabel(selection.provider)} (${selection.provider})`,
     `model:    ${selection.model}`,
     '',
     ...Object.entries(env).map(

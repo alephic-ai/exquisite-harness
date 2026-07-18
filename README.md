@@ -25,6 +25,13 @@ CLI) pointed at the model provider you want (Ollama, OpenRouter, Vercel AI
 Gateway) — with the right env vars, args, effort level, and keys wired up for
 you. Interactive when you want it, flags when you don't.
 
+![Claude Code launched via eh, with a powerline statusline showing Vercel AI Gateway, model, list rates, session cost, and context usage](docs/images/eh-statusline.jpg)
+
+When you launch Claude through `eh`, it injects a session statusline: provider,
+model, list rates ($/1M), session cost from real tokens × those rates, and
+context % against the provider’s published window — not Claude’s default cost
+meter.
+
 ## Install
 
 Releases are self-contained binaries on GitHub. The repo is private
@@ -84,8 +91,8 @@ non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map 
 ### Keys
 
 ```bash
-eh provider key gateway               # masked prompt → OS credential store
-eh provider key gateway --delete
+eh provider key vercel-ai-gateway               # masked prompt → OS credential store
+eh provider key vercel-ai-gateway --delete
 ```
 
 Keys resolve **env → OS credential store → file** (macOS Keychain, Linux Secret
