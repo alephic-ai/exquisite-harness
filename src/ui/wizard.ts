@@ -1,11 +1,13 @@
-import { cancel, isCancel, log, select, text } from '@clack/prompts'
+import { cancel, confirm, isCancel, log, select, text } from '@clack/prompts'
 
 import type { Config } from '../config.js'
 import type { ProviderType } from '../types.js'
 
 import { findBin, HARNESSES } from '../harnesses.js'
+import { secretsPathForDisplay, storeApiKey } from '../keys.js'
 import { checkProvider } from '../providers.js'
 import { note } from './output.js'
+import { askApiKey } from './prompts.js'
 
 // Annotated: TS cannot infer `never` here, and isCancel narrowing needs it.
 function bail(): never {
@@ -134,5 +136,22 @@ export async function addProvider(config: Config) {
     type,
   }
   log.success(`provider "${name}" added`)
+
+  // Non-ollama providers need a key — offer to store it right away.
+  if (type !== 'ollama') {
+    const wantsKey = await confirm({
+      message: `store an API key for "${name}" now?`,
+    })
+    if (isCancel(wantsKey)) bail()
+    if (wantsKey) {
+      const key = await askApiKey(name)
+      const where = await storeApiKey(name, key)
+      log.success(
+        where === 'keychain'
+          ? 'stored in macOS Keychain'
+          : `stored in ${secretsPathForDisplay()} (mode 0600)`,
+      )
+    }
+  }
   return next
 }
