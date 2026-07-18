@@ -17,13 +17,14 @@ import {
 import { listModels } from './providers.js'
 import { intro } from './ui/output.js'
 import { addProvider, wizard } from './ui/wizard.js'
+import { runUpdate } from './update.js'
 
 const program = new Command()
 
 program
   .name('eh')
   .description('exquisite harness — pick a harness, pick a provider, go')
-  .version(pkg.version)
+  .version(pkg.version, '-v, --version')
   // -h belongs to --harness; help lives on the long flag only.
   .helpOption('--help', 'display help for command')
 
@@ -82,6 +83,7 @@ Common workflows:
       print the export lines instead of launching
   eh doctor                           harnesses installed? providers reachable? keys set?
   eh provider key gateway             store an API key (masked prompt → OS credential store)
+  eh update                           self-update to the latest release
 `,
   )
 
@@ -91,6 +93,16 @@ program
   .action(async () => {
     intro('eh · doctor')
     await doctor(loadConfig())
+  })
+
+program
+  .command('update')
+  .description('update eh to the latest release')
+  .action(async () => {
+    // runUpdate's spinner already reported the failure; just exit non-zero.
+    await runUpdate().catch(() => {
+      process.exitCode = 1
+    })
   })
 
 program

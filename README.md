@@ -25,6 +25,23 @@ CLI) pointed at the model provider you want (Ollama, OpenRouter, Vercel AI
 Gateway) — with the right env vars, args, effort level, and keys wired up for
 you. Interactive when you want it, flags when you don't.
 
+## Install
+
+Releases are self-contained binaries on GitHub. The repo is private
+(internal-only for now), so install goes through an authenticated `gh`:
+
+```bash
+# pick your platform: eh-darwin-arm64 | eh-darwin-x64 | eh-linux-arm64 | eh-linux-x64
+gh release download --repo alephic-ai/exquisite-harness --pattern eh-darwin-arm64
+chmod +x eh-darwin-arm64
+xattr -d com.apple.quarantine eh-darwin-arm64  # macOS only
+mv eh-darwin-arm64 ~/.local/bin/eh             # or anywhere on your PATH
+eh doctor
+```
+
+No runtime needed — the binary is self-contained. Later, `eh update`
+self-updates to the latest release (also via `gh` auth).
+
 ## Run it
 
 ```bash
@@ -78,6 +95,7 @@ eh models ollama                      # live model list (5-min cache)
 eh provider add                       # add a custom provider interactively
 eh profile save|list|rm               # manage saved combos
 eh setup                              # re-run the first-run wizard
+eh update                             # self-update to the latest release
 ```
 
 ## The matrix
