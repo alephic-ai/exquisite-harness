@@ -4,7 +4,7 @@ import type { ResolvedProvider } from '../config.js'
 import type { Protocol } from '../types.js'
 
 import { freshModels } from '../cache.js'
-import { reservedProfileNameMessage } from '../config.js'
+import { providerLabel, reservedProfileNameMessage } from '../config.js'
 import { HARNESSES } from '../harnesses.js'
 import { resolveApiKey, storeApiKey } from '../keys.js'
 import { canServeAny, listModelsCached } from '../providers.js'
@@ -59,7 +59,7 @@ export async function pickProvider(
         if (!canServeAny(p.type, protocols)) {
           return {
             hint: `${p.type} · needs router`,
-            label: p.name,
+            label: providerLabel(p.name),
             value: p.name,
           }
         }
@@ -70,7 +70,7 @@ export async function pickProvider(
           : 'no key needed'
         return {
           hint: `${p.type} · ${p.baseURL} · ${status}`,
-          label: p.name,
+          label: providerLabel(p.name),
           value: p.name,
         }
       }),

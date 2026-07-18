@@ -13,8 +13,9 @@ directly; interactive clack flows run under a PTY harness.
 - Harness binaries (`claude`, `codex`, `grok`) only need to exist for doctor and
   spawn steps; the launch step uses a **fake harness binary** so no real agent
   session starts.
-- No real API keys needed: OpenRouter/Gateway steps use `--print-env` and a fake
-  `secret-tool`/Keychain probe; steps needing a live key are marked conditional.
+- No real API keys needed: OpenRouter/Vercel AI Gateway steps use `--print-env`
+  and a fake `secret-tool`/Keychain probe; steps needing a live key are marked
+  conditional.
 - PTY harness: `scripts/pty-drive.mjs` (node-pty if available, else `script(1)`
   on macOS / `python3 -c pty`) drives interactive flows.
 
@@ -38,8 +39,9 @@ Each prints env/args and exits 0 without launching.
    `wire_api="chat"`, `env_key="OPENROUTER_API_KEY"`.
 5. `eh --print-env claude openrouter x` → error "cannot serve the Anthropic
    protocol (needs the eh router, phase 2)", non-zero exit.
-6. `eh --print-env claude gateway x` with `AI_GATEWAY_API_KEY` unset and no
-   stored key → error "no API key for \"gateway\"", non-zero exit.
+6. `eh --print-env claude vercel-ai-gateway x` with `AI_GATEWAY_API_KEY` unset
+   and no stored key → error "no API key for \"vercel-ai-gateway\"", non-zero
+   exit.
 
 ## C. Config / error paths
 
@@ -124,8 +126,8 @@ Drive each with the PTY; assert on screen text.
   of clack in a real terminal emulator are not fully covered.
 - No real `claude`/`codex`/`grok` sessions are started (a fake harness covers
   the spawn contract; live-agent behavior is out of scope).
-- OpenRouter/Gateway live model-list fetches need real keys and are SKIPPED
-  unless keys are present.
+- OpenRouter/Vercel AI Gateway live model-list fetches need real keys and are
+  SKIPPED unless keys are present.
 - Linux Secret Service is verified against a simulated `secret-tool`; a real
   GNOME Keyring/KWallet run needs a Linux machine.
 

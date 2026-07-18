@@ -1,12 +1,14 @@
 import type { ResolvedProvider } from './config.js'
 import type { LaunchPlan, Protocol } from './types.js'
 
+import { fetchModelMeta } from './pricing.js'
 import {
   anthropicBaseURLFor,
   codexWireApiFor,
   openAIBaseURLFor,
   resolveKey,
 } from './providers.js'
+import { statuslineEnv, writeClaudeStatuslineSettings } from './statusline.js'
 
 export interface HarnessDef {
   bin: string
@@ -30,6 +32,8 @@ async function authTokenFor(provider: ResolvedProvider) {
 }
 
 // Claude Code speaks Anthropic Messages; everything it needs is env vars.
+// Session statusline: override Claude's (wrong for third-party models) cost
+// display with provider/model/effort/list rates + recomputed session $.
 async function planClaude(
   provider: ResolvedProvider,
   model: string,
@@ -41,13 +45,29 @@ async function planClaude(
       `provider "${provider.name}" cannot serve the Anthropic protocol (needs the eh router, phase 2)`,
     )
   }
+  // Meta fetch and key resolve are independent — run together so launch
+  // doesn't pay two sequential round-trips.
+  const [meta, authToken] = await Promise.all([
+    fetchModelMeta(provider, model),
+    authTokenFor(provider),
+  ])
+  const settingsPath = writeClaudeStatuslineSettings()
   const env: Record<string, string> = {
-    ANTHROPIC_AUTH_TOKEN: await authTokenFor(provider),
+    ANTHROPIC_AUTH_TOKEN: authToken,
     ANTHROPIC_BASE_URL: baseURL,
     ANTHROPIC_MODEL: model,
     ANTHROPIC_SMALL_FAST_MODEL: model,
+    ...statuslineEnv({
+      contextWindow: meta.contextWindow,
+      effort,
+      model,
+      provider: provider.name,
+      rates: meta.rates,
+    }),
   }
-  const notes: string[] = []
+  const notes: string[] = [
+    'statusline: eh (provider rates, context window, session cost)',
+  ]
   if (effort && effort !== 'auto') {
     env.CLAUDE_CODE_EFFORT_LEVEL = effort
     // Through a non-Anthropic provider the model ID is not effort-recognized,
@@ -55,7 +75,16 @@ async function planClaude(
     env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT = '1'
     notes.push('effort forced on for non-Anthropic provider')
   }
-  return { args: [], bin: 'claude', env, notes }
+  if (!meta.rates) notes.push('list rates unavailable for this model')
+  if (meta.contextWindow == null) {
+    notes.push('context window unknown — falling back to Claude context size')
+  }
+  return {
+    args: ['--settings', settingsPath],
+    bin: 'claude',
+    env,
+    notes,
+  }
 }
 
 // Codex takes a full custom-provider definition via -c TOML overrides, so we

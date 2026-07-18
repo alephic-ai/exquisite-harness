@@ -53,21 +53,39 @@ const DEFAULT_ENV_KEYS: Partial<Record<ProviderType, string>> = {
 }
 
 // All three matrix providers are built in — visible with no config file at
-// all. Ollama works zero-config; openrouter/gateway show a "key not set"
-// hint until a key is stored (`eh provider key <name>`) or the env var is set.
+// all. Ollama works zero-config; openrouter / vercel-ai-gateway show a
+// "key not set" hint until a key is stored or the env var is set.
 // The config file only needs to override these or add custom providers.
 const BUILTIN_PROVIDERS: Record<string, ProviderConfig> = {
-  gateway: { envKey: 'AI_GATEWAY_API_KEY', type: 'vercel-gateway' },
-  ollama: { baseURL: DEFAULT_BASE_URLS.ollama, type: 'ollama' },
-  openrouter: {
+  'ollama': { baseURL: DEFAULT_BASE_URLS.ollama, type: 'ollama' },
+  'openrouter': {
     baseURL: 'https://openrouter.ai/api/v1',
     envKey: 'OPENROUTER_API_KEY',
     type: 'openai-chat',
   },
+  'vercel-ai-gateway': {
+    envKey: 'AI_GATEWAY_API_KEY',
+    type: 'vercel-gateway',
+  },
+}
+
+// Old short name still resolves so profiles/recents/keys keep working.
+const PROVIDER_NAME_ALIASES: Record<string, string> = {
+  gateway: 'vercel-ai-gateway',
+}
+
+const BUILTIN_PROVIDER_LABELS: Record<string, string> = {
+  'ollama': 'Ollama',
+  'openrouter': 'OpenRouter',
+  'vercel-ai-gateway': 'Vercel AI Gateway',
 }
 
 export function allProviders(config: Config) {
-  const merged = { ...BUILTIN_PROVIDERS, ...config.providers }
+  const merged: Record<string, ProviderConfig> = { ...BUILTIN_PROVIDERS }
+  // Fold config overrides under canonical names (e.g. legacy "gateway" → …).
+  for (const [name, p] of Object.entries(config.providers)) {
+    merged[canonicalProviderName(name)] = p
+  }
   return Object.entries(merged).map(([name, p]) => ({
     baseURL: p.baseURL ?? DEFAULT_BASE_URLS[p.type],
     envKey: p.envKey ?? DEFAULT_ENV_KEYS[p.type],
@@ -78,6 +96,10 @@ export function allProviders(config: Config) {
 
 export function cachePath() {
   return path.join(configDir(), 'cache.json')
+}
+
+export function canonicalProviderName(name: string) {
+  return PROVIDER_NAME_ALIASES[name] ?? name
 }
 
 export function configDir() {
@@ -107,6 +129,21 @@ export function defaultBaseURLFor(type: ProviderType) {
   return DEFAULT_BASE_URLS[type]
 }
 
+// Human label for pickers / statusline (CLI id stays kebab-case).
+export function providerLabel(name: string) {
+  return BUILTIN_PROVIDER_LABELS[canonicalProviderName(name)] ?? name
+}
+
+// Keychain/file account names to try for a provider (canonical first, then
+// legacy aliases so a key stored as "gateway" still resolves).
+export function providerKeyAccounts(name: string) {
+  const canon = canonicalProviderName(name)
+  const aliases = Object.entries(PROVIDER_NAME_ALIASES)
+    .filter(([, target]) => target === canon)
+    .map(([alias]) => alias)
+  return [...new Set([canon, ...aliases, name])]
+}
+
 // Commander subcommands shadow a same-named profile: `eh doctor` always runs
 // the subcommand, so a profile called "doctor" could never be launched.
 const RESERVED_PROFILE_NAMES = [
@@ -116,10 +153,13 @@ const RESERVED_PROFILE_NAMES = [
   'provider',
   'providers',
   'setup',
+  'statusline',
+  'update',
 ]
 
 export function getProvider(config: Config, name: string) {
-  return allProviders(config).find((p) => p.name === name)
+  const canon = canonicalProviderName(name)
+  return allProviders(config).find((p) => p.name === canon)
 }
 
 export function loadConfig() {

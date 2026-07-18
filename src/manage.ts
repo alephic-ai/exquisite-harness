@@ -4,6 +4,7 @@ import type { ModelInfo, Selection } from './types.js'
 import {
   allProviders,
   getProvider,
+  providerLabel,
   reservedProfileNameMessage,
   saveConfig,
 } from './config.js'
@@ -27,7 +28,9 @@ export function profileList(config: Config) {
     return
   }
   for (const [name, p] of entries) {
-    console.log(`${name}  ${p.harness} · ${p.provider} · ${p.model}`)
+    console.log(
+      `${name}  ${p.harness} · ${providerLabel(p.provider)} · ${p.model}`,
+    )
   }
 }
 
@@ -84,7 +87,7 @@ export async function providersCommand(config: Config) {
     })),
   )
   for (const { provider, status } of statuses) {
-    const line = `${provider.name} (${provider.type}) — ${provider.baseURL} · ${status.detail}`
+    const line = `${providerLabel(provider.name)} (${provider.name}) — ${provider.baseURL} · ${status.detail}`
     if (status.ok) {
       log.success(line)
     } else {

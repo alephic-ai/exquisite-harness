@@ -36,7 +36,10 @@ export async function wizard(config: Config) {
     detectedKeys.push({ envVar: 'OPENROUTER_API_KEY', provider: 'openrouter' })
   }
   if (process.env.AI_GATEWAY_API_KEY) {
-    detectedKeys.push({ envVar: 'AI_GATEWAY_API_KEY', provider: 'gateway' })
+    detectedKeys.push({
+      envVar: 'AI_GATEWAY_API_KEY',
+      provider: 'vercel-ai-gateway',
+    })
   }
   for (const k of detectedKeys) {
     lines.push(`${k.provider}: ${k.envVar} found in environment`)
@@ -56,7 +59,9 @@ export async function wizard(config: Config) {
     }
   }
 
-  log.success('ollama, openrouter and gateway are built in — nothing to write')
+  log.success(
+    'ollama, openrouter and vercel-ai-gateway are built in — nothing to write',
+  )
   return config
 }
 
@@ -85,8 +90,8 @@ export async function addProvider(config: Config) {
         value: 'openai-chat',
       },
       {
-        hint: 'Vercel AI Gateway — all protocols',
-        label: 'vercel-gateway',
+        hint: 'all protocols (Anthropic + OpenAI)',
+        label: 'Vercel AI Gateway',
         value: 'vercel-gateway',
       },
     ],
