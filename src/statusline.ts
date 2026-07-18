@@ -255,6 +255,10 @@ function ehStatuslineCommand() {
   return parts.map(shellQuote).join(' ')
 }
 
+function num(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
 async function readStdin() {
   // Text mode keeps the statusline free of Buffer typing edge cases under
   // eslint's no-unsafe-argument on Readable streams.
@@ -296,10 +300,6 @@ function shortModel(id: string) {
 // dollar fields there use Anthropic list rates and are ignored).
 // Claude invokes `eh statusline` as a fresh process each refresh, so an
 // in-process cache would never hit — full rescan is the honest design.
-function num(value: unknown) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0
-}
-
 async function sumTranscriptUsage(transcriptPath: string) {
   const usage = { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 }
   try {
