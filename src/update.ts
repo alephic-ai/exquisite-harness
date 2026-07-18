@@ -189,6 +189,15 @@ async function downloadAssetToFile({
         downloaded += value.length
         onProgress(downloaded, total)
       }
+      // A clean `done` is not proof of completeness — a TLS-intercepting
+      // proxy can terminate the stream early without a client error. A
+      // mismatch always means something is genuinely wrong (release assets
+      // are immutable, asset.size is authoritative), so never false-fires.
+      if (total && downloaded !== total) {
+        throw new Error(
+          `Download of ${asset.name} incomplete: ${downloaded}/${total} bytes.`,
+        )
+      }
     } finally {
       await handle.close()
     }
