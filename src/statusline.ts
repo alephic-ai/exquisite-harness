@@ -186,17 +186,7 @@ function basename(p: string) {
 // Prefer provider window (EH_CONTEXT_WINDOW) + live current_usage tokens.
 // Fall back to Claude's context_window_size, then its precomputed %.
 function formatContextLabel(
-  window:
-    | undefined
-    | {
-        context_window_size?: number
-        current_usage?: null | {
-          cache_creation_input_tokens?: number
-          cache_read_input_tokens?: number
-          input_tokens?: number
-        }
-        used_percentage?: null | number
-      },
+  window: z.infer<typeof statuslineInputSchema>['context_window'],
 ) {
   const usage = window?.current_usage
   const input = num(usage?.input_tokens)
