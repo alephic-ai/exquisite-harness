@@ -39,7 +39,8 @@ const ollamaTagsSchema = z.object({
 
 const FETCH_TIMEOUT_MS = 4000
 
-async function fetchJson(url: string, apiKey?: string) {
+// Shared with pricing.ts — same timeout, auth header, and /v1 handling.
+export async function fetchJson(url: string, apiKey?: string) {
   const headers: Record<string, string> = {}
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`
   const res = await fetch(url, {
@@ -49,6 +50,11 @@ async function fetchJson(url: string, apiKey?: string) {
   if (!res.ok) throw new Error(`HTTP ${String(res.status)} from ${url}`)
   const body: unknown = await res.json()
   return body
+}
+
+export function withV1(url: string) {
+  const base = stripTrailingSlash(url)
+  return base.endsWith('/v1') ? base : `${base}/v1`
 }
 
 async function listOllamaModels(baseURL: string) {
@@ -84,11 +90,6 @@ function stripTrailingSlash(url: string) {
 
 function withoutV1(url: string) {
   return stripTrailingSlash(url).replace(/\/v1$/, '')
-}
-
-function withV1(url: string) {
-  const base = stripTrailingSlash(url)
-  return base.endsWith('/v1') ? base : `${base}/v1`
 }
 
 const BEHAVIORS: Record<ProviderType, ProviderBehavior> = {
