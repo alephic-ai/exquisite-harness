@@ -25,6 +25,23 @@ CLI) pointed at the model provider you want (Ollama, OpenRouter, Vercel AI
 Gateway) — with the right env vars, args, effort level, and keys wired up for
 you. Interactive when you want it, flags when you don't.
 
+## Install
+
+Install the latest self-contained binary with no runtime or GitHub account:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/alephic-ai/exquisite-harness/main/install.sh | bash
+```
+
+The installer detects macOS or Linux and arm64 or x64, then installs `eh` to
+`~/.local/bin`. Set `EH_INSTALL_DIR` to use another directory. Direct binaries
+are also available from
+[GitHub Releases](https://github.com/alephic-ai/exquisite-harness/releases). Run
+`eh doctor` after installation to check your harnesses, providers, and keys.
+
+No runtime needed — the binary is self-contained. Later, `eh update`
+self-updates to the latest public release.
+
 ![Claude Code launched via eh, with a powerline statusline showing Vercel AI Gateway, model, list rates, session cost, and context usage](docs/images/eh-statusline.jpg)
 
 When you launch Claude through `eh`, it injects a session statusline: provider,
@@ -78,29 +95,6 @@ eh profile save|list|rm               # manage saved combos
 eh setup                              # re-run the first-run wizard
 eh update                             # self-update to the latest release
 ```
-
-## Install
-
-Releases are self-contained binaries on GitHub. The repo is private
-(internal-only for now), so install goes through an authenticated `gh`. Pick the
-asset for your platform — `eh-darwin-arm64` (Apple Silicon), `eh-darwin-x64`
-(Intel), `eh-linux-arm64`, `eh-linux-x64`:
-
-```bash
-gh release download --repo alephic-ai/exquisite-harness --pattern eh-darwin-arm64
-chmod +x eh-darwin-arm64
-xattr -d com.apple.quarantine eh-darwin-arm64
-mv eh-darwin-arm64 ~/.local/bin/eh
-eh doctor
-```
-
-The block is comment-free so it pastes cleanly into both bash and zsh
-(interactive zsh doesn't parse `#` comments). The `xattr` line is macOS-only and
-may print "No such xattr" — harmless. `~/.local/bin` can be anywhere on your
-PATH.
-
-No runtime needed — the binary is self-contained. Later, `eh update`
-self-updates to the latest release (also via `gh` auth).
 
 ## The matrix
 
