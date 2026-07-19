@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
@@ -113,12 +113,7 @@ export function configDir() {
 }
 
 export function configExists() {
-  try {
-    readFileSync(configPath())
-    return true
-  } catch {
-    return false
-  }
+  return existsSync(configPath())
 }
 
 export function configPath() {
