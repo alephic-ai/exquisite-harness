@@ -25,7 +25,11 @@ const DOWNLOAD_STALL_TIMEOUT_MS = 30_000
 const releaseListSchema = z.array(z.object({ tag_name: z.string() }))
 const releaseSchema = z.object({
   assets: z.array(
-    z.object({ name: z.string(), size: z.number(), url: z.string() }),
+    z.object({
+      browser_download_url: z.string(),
+      name: z.string(),
+      size: z.number(),
+    }),
   ),
 })
 
@@ -47,8 +51,7 @@ export async function runUpdate() {
   const s = spinner()
   s.start('checking for the latest eh release …')
   try {
-    const token = await getGitHubToken()
-    const latest = await findLatestVersion(token)
+    const latest = await findLatestVersion()
     if (!latest) {
       throw new Error(
         `No released eh version found on GitHub (${RELEASE_OWNER}/${RELEASE_REPO}).`,
@@ -64,7 +67,7 @@ export async function runUpdate() {
     const { asset: assetName, isMacOS } = detectPlatform()
     s.message(`resolving eh v${latest} (${assetName}) …`)
     const release = releaseSchema.parse(
-      await apiFetch(`/releases/tags/${TAG_PREFIX}${latest}`, token),
+      await apiFetch(`/releases/tags/${TAG_PREFIX}${latest}`),
     )
     const asset = release.assets.find((entry) => entry.name === assetName)
     if (!asset) {
@@ -90,7 +93,6 @@ export async function runUpdate() {
         }
       },
       stagedPath,
-      token,
     })
 
     s.message(`installing eh v${latest} …`)
@@ -103,11 +105,10 @@ export async function runUpdate() {
 }
 
 // Every metadata request is bounded so a hung network can't stall the command.
-async function apiFetch(path: string, token: string) {
+async function apiFetch(path: string) {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
       'accept': 'application/vnd.github+json',
-      'authorization': `token ${token}`,
       'user-agent': USER_AGENT,
       'x-github-api-version': '2022-11-28',
     },
@@ -136,12 +137,10 @@ async function downloadAssetToFile({
   asset,
   onProgress,
   stagedPath,
-  token,
 }: {
-  asset: { name: string; size: number; url: string }
+  asset: { browser_download_url: string; name: string; size: number }
   onProgress: (downloaded: number, total: number) => void
   stagedPath: string
-  token: string
 }) {
   // Reset on every chunk; if it ever fires, the socket has gone silent and we
   // abort the in-flight fetch so the read loop rejects instead of hanging.
@@ -154,15 +153,12 @@ async function downloadAssetToFile({
 
   try {
     armStallTimer()
-    // Raw fetch: GitHub 302-redirects the asset URL to a signed S3 URL and the
-    // auth header is stripped cross-origin on the way. Streaming keeps a
-    // ~90 MB binary out of memory and lets us report byte progress.
-    const response = await fetch(asset.url, {
+    // GitHub redirects the public download URL to a signed asset URL.
+    // Streaming keeps a ~90 MB binary out of memory and lets us report byte
+    // progress.
+    const response = await fetch(asset.browser_download_url, {
       headers: {
-        'accept': 'application/octet-stream',
-        'authorization': `token ${token}`,
         'user-agent': USER_AGENT,
-        'x-github-api-version': '2022-11-28',
       },
       signal: stall.signal,
     })
@@ -216,31 +212,18 @@ async function downloadAssetToFile({
   }
 }
 
-async function findLatestVersion(token: string) {
+async function findLatestVersion() {
   // Walk every page: the list order from GitHub is not version order, so the
   // true latest can sit anywhere in the list.
   const tags: string[] = []
   for (let page = 1; ; page++) {
     const releases = releaseListSchema.parse(
-      await apiFetch(`/releases?per_page=100&page=${page}`, token),
+      await apiFetch(`/releases?per_page=100&page=${page}`),
     )
     tags.push(...releases.map((r) => r.tag_name))
     if (releases.length < 100) break
   }
   return pickLatestVersion(tags)
-}
-
-async function getGitHubToken() {
-  try {
-    const { stdout } = await execFileAsync('gh', ['auth', 'token'])
-    const token = stdout.trim()
-    if (!token) throw new Error('empty token')
-    return token
-  } catch {
-    throw new Error(
-      'Could not get a GitHub token. Install the GitHub CLI and run `gh auth login`.',
-    )
-  }
 }
 
 async function installStagedBinary({
