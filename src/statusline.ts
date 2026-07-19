@@ -1,6 +1,7 @@
 import { createReadStream, mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
+import { text } from 'node:stream/consumers'
 import { z } from 'zod'
 
 import { configDir, providerLabel as configProviderLabel } from './config.js'
@@ -70,7 +71,7 @@ interface Segment {
 
 // `eh statusline` — Claude Code invokes this with session JSON on stdin.
 export async function runStatusline() {
-  const raw = await readStdin()
+  const raw = await text(process.stdin)
   let parsed: unknown
   try {
     parsed = JSON.parse(raw)
@@ -257,17 +258,6 @@ function ehStatuslineCommand() {
 
 function num(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
-}
-
-async function readStdin() {
-  // Text mode keeps the statusline free of Buffer typing edge cases under
-  // eslint's no-unsafe-argument on Readable streams.
-  const chunks: string[] = []
-  process.stdin.setEncoding('utf8')
-  for await (const chunk of process.stdin) {
-    chunks.push(String(chunk))
-  }
-  return chunks.join('')
 }
 
 function renderPowerline(segments: Segment[]) {
