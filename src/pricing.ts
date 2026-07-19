@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { ResolvedProvider } from './config.js'
 
 import { resolveApiKey } from './keys.js'
+import { fetchJson, withV1 } from './providers.js'
 
 // USD per 1M tokens. Optional cache rates when the provider publishes them.
 export interface ModelRates {
@@ -17,8 +18,6 @@ export interface ModelMeta {
   contextWindow: number | undefined
   rates: ModelRates | undefined
 }
-
-const FETCH_TIMEOUT_MS = 4000
 
 // Providers disagree on string vs number and camelCase vs snake_case.
 const priceField = z.union([z.string(), z.number()]).optional()
@@ -174,17 +173,6 @@ async function fetchGatewayMeta(
   }
 }
 
-async function fetchJson(url: string, apiKey?: string) {
-  const headers: Record<string, string> = {}
-  if (apiKey) headers.Authorization = `Bearer ${apiKey}`
-  const res = await fetch(url, {
-    headers,
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  })
-  if (!res.ok) throw new Error(`HTTP ${String(res.status)} from ${url}`)
-  return res.json()
-}
-
 async function fetchOpenRouterMeta(
   baseURL: string,
   modelId: string,
@@ -234,17 +222,8 @@ function perTokenToPerMillion(raw: number | string | undefined) {
   return n * 1_000_000
 }
 
-function stripTrailingSlash(url: string) {
-  return url.replace(/\/+$/, '')
-}
-
 function trimZeros(s: string) {
   return s.replace(/\.?0+$/, '')
-}
-
-function withV1(url: string) {
-  const base = stripTrailingSlash(url)
-  return base.endsWith('/v1') ? base : `${base}/v1`
 }
 
 // Used by statusline to rebuild rates from env without re-fetching.
