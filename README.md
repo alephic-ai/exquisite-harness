@@ -32,39 +32,6 @@ model, list rates ($/1M), session cost from real tokens × those rates, and
 context % against the provider’s published window — not Claude’s default cost
 meter.
 
-## Install
-
-Releases are self-contained binaries on GitHub. The repo is private
-(internal-only for now), so install goes through an authenticated `gh`. Pick the
-asset for your platform — `eh-darwin-arm64` (Apple Silicon), `eh-darwin-x64`
-(Intel), `eh-linux-arm64`, `eh-linux-x64`:
-
-```bash
-gh release download --repo alephic-ai/exquisite-harness --pattern eh-darwin-arm64
-chmod +x eh-darwin-arm64
-xattr -d com.apple.quarantine eh-darwin-arm64
-mv eh-darwin-arm64 ~/.local/bin/eh
-eh doctor
-```
-
-The block is comment-free so it pastes cleanly into both bash and zsh
-(interactive zsh doesn't parse `#` comments). The `xattr` line is macOS-only and
-may print "No such xattr" — harmless. `~/.local/bin` can be anywhere on your
-PATH.
-
-No runtime needed — the binary is self-contained. Later, `eh update`
-self-updates to the latest release (also via `gh` auth).
-
-## Run it
-
-```bash
-pnpm install
-pnpm dev          # = tsx src/main.ts
-
-# release build (single binary → dist/eh):
-pnpm build        # requires bun
-```
-
 ## Use it
 
 ```bash
@@ -112,6 +79,29 @@ eh setup                              # re-run the first-run wizard
 eh update                             # self-update to the latest release
 ```
 
+## Install
+
+Releases are self-contained binaries on GitHub. The repo is private
+(internal-only for now), so install goes through an authenticated `gh`. Pick the
+asset for your platform — `eh-darwin-arm64` (Apple Silicon), `eh-darwin-x64`
+(Intel), `eh-linux-arm64`, `eh-linux-x64`:
+
+```bash
+gh release download --repo alephic-ai/exquisite-harness --pattern eh-darwin-arm64
+chmod +x eh-darwin-arm64
+xattr -d com.apple.quarantine eh-darwin-arm64
+mv eh-darwin-arm64 ~/.local/bin/eh
+eh doctor
+```
+
+The block is comment-free so it pastes cleanly into both bash and zsh
+(interactive zsh doesn't parse `#` comments). The `xattr` line is macOS-only and
+may print "No such xattr" — harmless. `~/.local/bin` can be anywhere on your
+PATH.
+
+No runtime needed — the binary is self-contained. Later, `eh update`
+self-updates to the latest release (also via `gh` auth).
+
 ## The matrix
 
 |             | Ollama | OpenRouter | Vercel AI Gateway |
@@ -128,6 +118,17 @@ protocol router (see [DESIGN.md](DESIGN.md)).
 `~/.config/eh/config.json` (`$XDG_CONFIG_HOME/eh`, `%APPDATA%\eh` on Windows) —
 providers, profiles, recents. `~/.config/eh/cache.json` — model lists. All three
 matrix providers are built in; config only overrides or adds custom ones.
+
+## Developing
+
+Only needed if you're hacking on `eh` itself — users should
+[install a release](#install) instead.
+
+```bash
+pnpm install
+pnpm dev          # run from source (tsx src/main.ts)
+pnpm build        # release build: single binary → dist/eh (requires bun)
+```
 
 Design doc: [DESIGN.md](DESIGN.md) · QA runbook:
 [docs/qa/eh-cli.md](docs/qa/eh-cli.md)
