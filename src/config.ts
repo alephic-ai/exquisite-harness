@@ -167,7 +167,8 @@ export function loadConfig() {
   try {
     raw = readFileSync(configPath(), 'utf8')
   } catch {
-    return emptyConfig()
+    // No config file yet — the schema defaults are the empty config.
+    return configSchema.parse({ version: 1 })
   }
   let data: unknown
   try {
@@ -211,10 +212,4 @@ export function reservedProfileNameMessage(name: string) {
 export function saveConfig(config: Config) {
   mkdirSync(configDir(), { recursive: true })
   writeFileSync(configPath(), `${JSON.stringify(config, null, 2)}\n`)
-}
-
-function emptyConfig() {
-  const profiles: Record<string, Selection> = {}
-  const providers: Record<string, ProviderConfig> = {}
-  return { profiles, providers, recent: [], version: 1 as const }
 }
