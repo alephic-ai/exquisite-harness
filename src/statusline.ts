@@ -104,7 +104,7 @@ export async function runStatusline() {
   const costLabel = sessionCostUsd(rates, usage) ?? '—'
   const ctxLabel = formatContextLabel(input.data.context_window)
 
-  const dir = basename(input.data.workspace?.current_dir ?? process.cwd())
+  const dir = path.basename(input.data.workspace?.current_dir ?? process.cwd())
 
   const segments: Segment[] = [
     { bg: C.root.bg, fg: C.root.fg, text: dir },
@@ -176,11 +176,6 @@ export function statuslineEnv(props: {
     env.EH_CONTEXT_WINDOW = String(props.contextWindow)
   }
   return env
-}
-
-function basename(p: string) {
-  const parts = p.replace(/\/+$/, '').split(path.sep)
-  return parts.at(-1) || p
 }
 
 // Prefer provider window (EH_CONTEXT_WINDOW) + live current_usage tokens.
