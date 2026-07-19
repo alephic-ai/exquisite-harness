@@ -23,36 +23,25 @@ const FETCH_TIMEOUT_MS = 4000
 // Providers disagree on string vs number and camelCase vs snake_case.
 const priceField = z.union([z.string(), z.number()]).optional()
 
-const openRouterModelsSchema = z.object({
+// One schema for both providers: field names differ (gateway: input/output/
+// context_window, OpenRouter: prompt/completion/context_length) but never
+// collide, so the fetcher just prefers the canonical name and falls back.
+const modelsSchema = z.object({
   data: z.array(
     z.looseObject({
       context_length: z.number().optional(),
-      id: z.string(),
-      pricing: z
-        .looseObject({
-          completion: priceField,
-          input_cache_read: priceField,
-          input_cache_write: priceField,
-          prompt: priceField,
-        })
-        .optional(),
-    }),
-  ),
-})
-
-const gatewayModelsSchema = z.object({
-  data: z.array(
-    z.looseObject({
       context_window: z.number().optional(),
       id: z.string(),
       pricing: z
         .looseObject({
           cacheCreationInputTokens: priceField,
           cachedInputTokens: priceField,
+          completion: priceField,
           input: priceField,
           input_cache_read: priceField,
           input_cache_write: priceField,
           output: priceField,
+          prompt: priceField,
         })
         .optional(),
     }),
@@ -75,10 +64,7 @@ export async function fetchModelMeta(
     : undefined
   const apiKey = key && key.source !== 'none' ? key.value : undefined
   try {
-    if (provider.type === 'vercel-gateway') {
-      return await fetchGatewayMeta(provider.baseURL, modelId, apiKey)
-    }
-    return await fetchOpenRouterMeta(provider.baseURL, modelId, apiKey)
+    return await fetchProviderMeta(provider.baseURL, modelId, apiKey)
   } catch {
     return { contextWindow: undefined, rates: undefined }
   }
@@ -137,43 +123,6 @@ export function contextUsedPercentage(props: {
   return Math.min(100, (used / size) * 100)
 }
 
-async function fetchGatewayMeta(
-  baseURL: string,
-  modelId: string,
-  apiKey?: string,
-): Promise<ModelMeta> {
-  const body = await fetchJson(`${withV1(baseURL)}/models`, apiKey)
-  const match = gatewayModelsSchema
-    .parse(body)
-    .data.find((m) => m.id === modelId)
-  if (!match) return { contextWindow: undefined, rates: undefined }
-  const contextWindow =
-    typeof match.context_window === 'number' && match.context_window > 0
-      ? match.context_window
-      : undefined
-  if (!match.pricing) return { contextWindow, rates: undefined }
-  const input = perTokenToPerMillion(match.pricing.input)
-  const output = perTokenToPerMillion(match.pricing.output)
-  if (input == null || output == null) {
-    return { contextWindow, rates: undefined }
-  }
-  const cacheRead = perTokenToPerMillion(
-    match.pricing.cachedInputTokens ?? match.pricing.input_cache_read,
-  )
-  const cacheWrite = perTokenToPerMillion(
-    match.pricing.cacheCreationInputTokens ?? match.pricing.input_cache_write,
-  )
-  return {
-    contextWindow,
-    rates: {
-      cacheReadPerMillion: cacheRead,
-      cacheWritePerMillion: cacheWrite,
-      inputPerMillion: input,
-      outputPerMillion: output,
-    },
-  }
-}
-
 async function fetchJson(url: string, apiKey?: string) {
   const headers: Record<string, string> = {}
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`
@@ -185,34 +134,33 @@ async function fetchJson(url: string, apiKey?: string) {
   return res.json()
 }
 
-async function fetchOpenRouterMeta(
+async function fetchProviderMeta(
   baseURL: string,
   modelId: string,
   apiKey?: string,
 ): Promise<ModelMeta> {
   const body = await fetchJson(`${withV1(baseURL)}/models`, apiKey)
-  const match = openRouterModelsSchema
-    .parse(body)
-    .data.find((m) => m.id === modelId)
+  const match = modelsSchema.parse(body).data.find((m) => m.id === modelId)
   if (!match) return { contextWindow: undefined, rates: undefined }
-  const contextWindow =
-    typeof match.context_length === 'number' && match.context_length > 0
-      ? match.context_length
-      : undefined
-  if (!match.pricing) return { contextWindow, rates: undefined }
-  const input = perTokenToPerMillion(match.pricing.prompt)
-  const output = perTokenToPerMillion(match.pricing.completion)
+  const ctx = match.context_window ?? match.context_length
+  const contextWindow = ctx != null && ctx > 0 ? ctx : undefined
+  const p = match.pricing
+  if (!p) return { contextWindow, rates: undefined }
+  const input = perTokenToPerMillion(p.input ?? p.prompt)
+  const output = perTokenToPerMillion(p.output ?? p.completion)
   // OpenRouter uses "-1" for dynamic/router pricing — treat as unknown.
   if (input == null || output == null) {
     return { contextWindow, rates: undefined }
   }
-  const cacheRead = perTokenToPerMillion(match.pricing.input_cache_read)
-  const cacheWrite = perTokenToPerMillion(match.pricing.input_cache_write)
   return {
     contextWindow,
     rates: {
-      cacheReadPerMillion: cacheRead,
-      cacheWritePerMillion: cacheWrite,
+      cacheReadPerMillion: perTokenToPerMillion(
+        p.cachedInputTokens ?? p.input_cache_read,
+      ),
+      cacheWritePerMillion: perTokenToPerMillion(
+        p.cacheCreationInputTokens ?? p.input_cache_write,
+      ),
       inputPerMillion: input,
       outputPerMillion: output,
     },
