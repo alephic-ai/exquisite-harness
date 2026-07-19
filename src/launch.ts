@@ -1,15 +1,7 @@
 import { spawn } from 'node:child_process'
+import os from 'node:os'
 
 import type { LaunchPlan } from './types.js'
-
-// Exit code convention: 128 + signal number for signaled processes.
-const SIGNAL_CODES = new Map([
-  ['SIGHUP', 1],
-  ['SIGINT', 2],
-  ['SIGKILL', 9],
-  ['SIGQUIT', 3],
-  ['SIGTERM', 15],
-])
 
 export async function exec(plan: LaunchPlan) {
   return new Promise<number>((resolve, reject) => {
@@ -25,11 +17,8 @@ export async function exec(plan: LaunchPlan) {
       reject(error)
     })
     child.on('close', (code, signal) => {
-      if (code != null) {
-        resolve(code)
-        return
-      }
-      resolve(128 + (SIGNAL_CODES.get(signal ?? '') ?? 1))
+      // Exit code convention: 128 + signal number for signaled processes.
+      resolve(code ?? 128 + (signal ? os.constants.signals[signal] : 1))
     })
   })
 }
