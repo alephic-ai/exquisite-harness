@@ -1,6 +1,6 @@
 {
   "name": "exquisite-harness",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "private": true,
   "description": "Choose a harness, choose a provider, go.",
   "type": "module",
