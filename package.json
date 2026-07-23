@@ -1,6 +1,6 @@
 {
   "name": "exquisite-harness",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "description": "Choose a harness, choose a provider, go.",
   "type": "module",
@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "format:ci": "prettier --check .",
     "lint": "concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'",
-    "lint:ci": "concurrently --raw eslint 'pnpm format:ci' 'tsc --noEmit'"
+    "lint:ci": "concurrently --raw eslint 'pnpm format:ci' 'tsc --noEmit'",
+    "test": "bun test"
   },
   "dependencies": {
     "@clack/prompts": "1.7.0",

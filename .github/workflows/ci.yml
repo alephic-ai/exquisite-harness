@@ -1,0 +1,33 @@
+name: CI
+
+# PR gate release.yml assumes exists ("changes reach main through PRs that
+# already ran CI"): lint + typecheck + tests. Mirrors release.yml's toolchain
+# (pnpm + Bun, frozen lockfile) so what passes here compiles there.
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint and typecheck
+        run: pnpm lint:ci
+
+      - name: Test
+        run: pnpm test
