@@ -70,6 +70,9 @@ Each prints env/args and exits 0 without launching.
    provider/model, no prompts. `-p` naming the recent's provider still inherits
    the model; `-p` naming a different provider → "incomplete arguments" non-TTY.
    A non-codex recent → no inheritance (prompts, or non-TTY error).
+9. cd into a directory, delete it from another shell, then any `eh` command →
+   the runtime refuses before eh's code runs ("The current working directory was
+   deleted…"), non-zero exit — no raw `uv_cwd` stack trace.
 
 ## D. Interactive flows (PTY harness)
 

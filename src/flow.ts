@@ -3,6 +3,7 @@ import type { EffortLevel, Protocol, Selection } from './types.js'
 
 import {
   allProviders,
+  canonicalProviderName,
   configExists,
   getProvider,
   loadConfig,
@@ -83,12 +84,16 @@ export async function launchFlow(
       selection.harness === recent.harness
     ) {
       const provider = selection.provider ?? recent.provider
+      // Aliases (e.g. "gateway") resolve everywhere else in eh — canonicalize
+      // here too, or the model is dropped for the same provider under
+      // another name.
+      const sameProvider =
+        canonicalProviderName(provider) ===
+        canonicalProviderName(recent.provider)
       selection = {
         ...selectionFromRecent(recent),
         effort: selection.effort ?? recent.effort,
-        model:
-          selection.model ??
-          (provider === recent.provider ? recent.model : undefined),
+        model: selection.model ?? (sameProvider ? recent.model : undefined),
         provider,
       }
     }
@@ -122,7 +127,10 @@ export async function launchFlow(
       saveConfig(config)
     }
 
-    if (!harnessArg && !profile) {
+    // Resume never routes to home — the resume block above already resolved
+    // the recent, and home's recent-picker would silently discard explicit
+    // overrides (-p/-m).
+    if (!harnessArg && !profile && !options.resume) {
       for (;;) {
         const choice = await home(config)
         if (choice.kind === 'doctor') {

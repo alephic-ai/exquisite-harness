@@ -224,11 +224,11 @@ most recent one launched in the cwd (recents carry a `cwd` stamp, and dedup is
 per combo+cwd so one directory never evicts another's), falling back to the
 global most recent. Explicit positionals/flags override it; unspecified fields
 inherit when the recent has the same harness (a foreign harness's provider may
-not serve its protocol), and the model only when the provider stays — model ids
-are provider-scoped. claude/codex open their cwd-filtered session picker; grok
-resumes its most recent session (its picker lives inside the TUI). Resuming onto
-different wiring than the session started on is supported — the env/`-c`
-overrides apply to the resumed session.
+not serve its protocol), and the model only when the provider stays (aliases
+canonicalized) — model ids are provider-scoped. claude/codex open their
+cwd-filtered session picker; grok resumes its most recent session (its picker
+lives inside the TUI). Resuming onto different wiring than the session started
+on is supported — the env/`-c` overrides apply to the resumed session.
 
 ## Stack
 
