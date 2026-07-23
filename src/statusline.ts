@@ -275,8 +275,13 @@ function shortModel(id: string) {
 // dollar fields there use Anthropic list rates and are ignored).
 // Claude invokes `eh statusline` as a fresh process each refresh, so an
 // in-process cache would never hit — full rescan is the honest design.
-async function sumTranscriptUsage(transcriptPath: string) {
+//
+// Claude Code writes one line per content block (thinking/text/tool_use) and
+// stamps the full usage object on each, so the same API response appears
+// several times. Dedupe by message id or cost is multiplied by block count.
+export async function sumTranscriptUsage(transcriptPath: string) {
   const usage = { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 }
+  const seen = new Set<string>()
   try {
     const rl = createInterface({
       crlfDelay: Infinity,
@@ -292,12 +297,17 @@ async function sumTranscriptUsage(transcriptPath: string) {
       }
       if (!row || typeof row !== 'object') continue
       const rec = row as {
-        message?: { usage?: Record<string, unknown> }
+        message?: { id?: string; usage?: Record<string, unknown> }
         type?: string
       }
       if (rec.type !== 'assistant') continue
       const u = rec.message?.usage
       if (!u) continue
+      const id = rec.message?.id
+      if (id) {
+        if (seen.has(id)) continue
+        seen.add(id)
+      }
       usage.input += num(u.input_tokens)
       usage.output += num(u.output_tokens)
       usage.cacheRead += num(u.cache_read_input_tokens)
