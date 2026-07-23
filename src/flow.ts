@@ -65,18 +65,32 @@ export async function launchFlow(
         model: modelArg,
         provider: providerArg,
       }
-  // `-r` with no harness/profile: pick up the combo last launched in this
-  // directory (harness session stores are cwd-scoped), falling back to the
-  // global most recent. No pickers — resume is the zero-prompt fast path.
-  // Provider/model flags still override the recent, same as for profiles.
-  if (options.resume && selection.harness === undefined) {
+  // `-r`: seed the selection from the combo last launched in this directory
+  // (harness session stores are cwd-scoped), falling back to the global most
+  // recent. Explicit fields win; unspecified ones inherit. Inherit only from
+  // a same-harness recent — a foreign harness's provider may not serve its
+  // protocol — and inherit the model only when the provider stays, since
+  // model ids are provider-scoped.
+  if (options.resume) {
     const recent =
       config.recent.find((r) => r.cwd === process.cwd()) ?? config.recent.at(0)
-    if (!recent) throw new Error('no recent launch to resume')
-    selection = {
-      ...selectionFromRecent(recent),
-      model: selection.model ?? recent.model,
-      provider: selection.provider ?? recent.provider,
+    if (!recent) {
+      if (selection.harness === undefined) {
+        throw new Error('no recent launch to resume')
+      }
+    } else if (
+      selection.harness === undefined ||
+      selection.harness === recent.harness
+    ) {
+      const provider = selection.provider ?? recent.provider
+      selection = {
+        ...selectionFromRecent(recent),
+        effort: selection.effort ?? recent.effort,
+        model:
+          selection.model ??
+          (provider === recent.provider ? recent.model : undefined),
+        provider,
+      }
     }
   }
 

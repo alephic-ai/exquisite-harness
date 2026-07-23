@@ -217,13 +217,16 @@ Gateway–backed codex/OpenAI models.
 
 **Resume** (`-r`): rebuild the plan for the resolved combo and append the
 harness's resume args — claude `--resume`, codex `resume` (a subcommand; the
-global `-c` overrides precede it), grok `--resume`. With no args, the combo is
-the most recent one launched in the cwd (recents carry a `cwd` stamp), falling
-back to the global most recent; positionals/flags override any part of it.
-claude/codex open their cwd-filtered session picker; grok resumes its most
-recent session (its picker lives inside the TUI). Resuming onto different wiring
-than the session started on is supported — the env/`-c` overrides apply to the
-resumed session.
+global `-c` overrides precede it), grok `--resume`. The combo starts from the
+most recent one launched in the cwd (recents carry a `cwd` stamp, and dedup is
+per combo+cwd so one directory never evicts another's), falling back to the
+global most recent. Explicit positionals/flags override it; unspecified fields
+inherit when the recent has the same harness (a foreign harness's provider may
+not serve its protocol), and the model only when the provider stays — model ids
+are provider-scoped. claude/codex open their cwd-filtered session picker; grok
+resumes its most recent session (its picker lives inside the TUI). Resuming onto
+different wiring than the session started on is supported — the env/`-c`
+overrides apply to the resumed session.
 
 ## Stack
 

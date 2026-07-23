@@ -80,7 +80,8 @@ non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map 
 directory (falling back to the global most recent) and drops you into the
 harness's own resume: claude and codex open their session picker (filtered to
 the directory), grok resumes its most recent session. Add positionals or flags
-to resume onto different wiring — start local, resume on a gateway model.
+to resume onto different wiring — start local, resume on a gateway model;
+anything you don't specify inherits from that combo.
 
 ### Keys
 

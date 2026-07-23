@@ -63,6 +63,13 @@ Each prints env/args and exits 0 without launching.
 6. Config with two recents — one's `cwd` matching the current directory, one
    older with a different `cwd` — then `eh -r --print-env` → uses the
    cwd-matching combo. Delete the `cwd` fields → falls back to the most recent.
+7. Launch the same combo in two directories (fake harness binary), then again in
+   the first → recents keep one entry per directory; the second launch in a
+   directory replaces only that directory's entry.
+8. `eh -r codex --print-env` with a codex recent for this directory → inherits
+   provider/model, no prompts. `-p` naming the recent's provider still inherits
+   the model; `-p` naming a different provider → "incomplete arguments" non-TTY.
+   A non-codex recent → no inheritance (prompts, or non-TTY error).
 
 ## D. Interactive flows (PTY harness)
 

@@ -193,12 +193,15 @@ export function pushRecent(config: Config, selection: Selection) {
     cwd: process.cwd(),
     usedAt: new Date().toISOString(),
   }
+  // Identity includes cwd: a launch in one directory must not evict another
+  // directory's last combo — `eh -r` matches recents on cwd.
   const rest = config.recent.filter(
     (r) =>
       !(
         r.harness === selection.harness &&
         r.provider === selection.provider &&
-        r.model === selection.model
+        r.model === selection.model &&
+        r.cwd === process.cwd()
       ),
   )
   return { ...config, recent: [entry, ...rest].slice(0, MAX_RECENT) }
