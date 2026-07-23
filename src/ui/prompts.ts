@@ -12,6 +12,8 @@ import { EFFORT_LEVELS } from '../types.js'
 import { findBin } from '../which.js'
 import { bail, keyStoredText, log, note, spinner } from './output.js'
 
+type ProviderRowState = 'incompatible' | 'key-missing' | 'key-set' | 'no-key'
+
 // Effort defaults to `auto` (model default); anything else is an override.
 export async function pickEffort() {
   const value = await select({
@@ -46,6 +48,16 @@ export async function pickHarness() {
   return value
 }
 
+// Picker sort order: providers with a key set first, then no-key-needed, then
+// ones missing a key, then protocol-incompatible. Array.sort is stable, so
+// config order is preserved within each group.
+const ROW_ORDER: Record<ProviderRowState, number> = {
+  'incompatible': 3,
+  'key-missing': 2,
+  'key-set': 0,
+  'no-key': 1,
+}
+
 export async function pickProvider(
   protocols: Protocol[],
   providers: ResolvedProvider[],
@@ -54,28 +66,41 @@ export async function pickProvider(
     // Status hints per DESIGN.md: ✓ key set / ✗ KEY not set (incompatible rows
     // get `needs router`). Reachability probing stays in doctor/providers —
     // network checks don't belong in a picker.
-    const options = await Promise.all(
+    const rows = await Promise.all(
       providers.map(async (p) => {
+        const label = providerLabel(p.name)
         if (!canServeAny(p.type, protocols)) {
           return {
-            hint: `${p.type} · needs router`,
-            label: providerLabel(p.name),
-            value: p.name,
+            option: { hint: `${p.type} · needs router`, label, value: p.name },
+            state: 'incompatible' as const,
           }
         }
-        const status = p.envKey
-          ? (await resolveApiKey(p.envKey, p.name)).source === 'none'
-            ? `✗ ${p.envKey} not set`
-            : '✓ key set'
-          : 'no key needed'
+        if (!p.envKey) {
+          return {
+            option: {
+              hint: `${p.type} · ${p.baseURL} · no key needed`,
+              label,
+              value: p.name,
+            },
+            state: 'no-key' as const,
+          }
+        }
+        const keySet = (await resolveApiKey(p.envKey, p.name)).source !== 'none'
         return {
-          hint: `${p.type} · ${p.baseURL} · ${status}`,
-          label: providerLabel(p.name),
-          value: p.name,
+          option: {
+            hint: `${p.type} · ${p.baseURL} · ${keySet ? '✓ key set' : `✗ ${p.envKey} not set`}`,
+            label: keySet ? label : `✗ ${label}`,
+            value: p.name,
+          },
+          state: keySet ? ('key-set' as const) : ('key-missing' as const),
         }
       }),
     )
-    const value = await select({ message: 'provider', options })
+    rows.sort((a, b) => ROW_ORDER[a.state] - ROW_ORDER[b.state])
+    const value = await select({
+      message: 'provider',
+      options: rows.map((r) => r.option),
+    })
     if (isCancel(value)) bail()
     const provider = providers.find((p) => p.name === value)
     if (!provider) throw new Error(`unknown provider "${value}"`)
