@@ -19,6 +19,9 @@ export interface HarnessDef {
     effort?: string,
   ) => Promise<LaunchPlan>
   protocols: Protocol[]
+  // Appended to the plan's args for `eh -r`. claude/codex open their
+  // cwd-filtered session picker; grok resumes its most recent session.
+  resumeArgs: string[]
 }
 
 // Ollama ignores the token value but requires one to be present.
@@ -160,18 +163,23 @@ export const HARNESSES: Record<string, HarnessDef> = {
     label: 'Claude Code',
     plan: planClaude,
     protocols: ['anthropic'],
+    resumeArgs: ['--resume'],
   },
   codex: {
     bin: 'codex',
     label: 'Codex CLI',
     plan: planCodex,
     protocols: ['openai-chat', 'openai-responses'],
+    // `resume` is a subcommand; clap still accepts the global `-c` overrides
+    // that precede it.
+    resumeArgs: ['resume'],
   },
   grok: {
     bin: 'grok',
     label: 'Grok CLI',
     plan: planGrok,
     protocols: ['openai-chat'],
+    resumeArgs: ['--resume'],
   },
 }
 
@@ -180,11 +188,13 @@ export async function buildLaunchPlan(
   harness: string,
   provider: ResolvedProvider,
   model: string,
-  effort?: string,
+  options: { effort?: string; resume?: boolean } = {},
 ) {
   const def = getHarness(harness)
   if (!def) throw new Error(`unknown harness "${harness}"`)
-  return def.plan(provider, model, effort)
+  const plan = await def.plan(provider, model, options.effort)
+  if (options.resume) plan.args.push(...def.resumeArgs)
+  return plan
 }
 
 export function getHarness(name: string) {

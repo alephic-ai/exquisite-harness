@@ -33,6 +33,7 @@ const isTTY = process.stdout.isTTY
 export interface LaunchOptions {
   effort?: EffortLevel
   printEnvOnly: boolean
+  resume?: boolean
   saveAs?: string
 }
 
@@ -64,6 +65,21 @@ export async function launchFlow(
         model: modelArg,
         provider: providerArg,
       }
+  // `-r` with no harness/profile: pick up the combo last launched in this
+  // directory (harness session stores are cwd-scoped), falling back to the
+  // global most recent. No pickers — resume is the zero-prompt fast path.
+  // Provider/model flags still override the recent, same as for profiles.
+  if (options.resume && selection.harness === undefined) {
+    const recent =
+      config.recent.find((r) => r.cwd === process.cwd()) ?? config.recent.at(0)
+    if (!recent) throw new Error('no recent launch to resume')
+    selection = {
+      ...selectionFromRecent(recent),
+      model: selection.model ?? recent.model,
+      provider: selection.provider ?? recent.provider,
+    }
+  }
+
   // Effort: explicit flag wins, then a saved profile's, else interactive/default.
   if (options.effort) selection.effort = options.effort
 
@@ -127,7 +143,10 @@ export async function launchFlow(
     provider: provider.name,
   }
 
-  const plan = await buildLaunchPlan(harness, provider, model, complete.effort)
+  const plan = await buildLaunchPlan(harness, provider, model, {
+    effort: complete.effort,
+    resume: options.resume,
+  })
 
   if (options.printEnvOnly) {
     printEnv(plan)

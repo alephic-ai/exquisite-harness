@@ -20,7 +20,11 @@ const selectionSchema = z.object({
   provider: z.string(),
 })
 
-const recentEntrySchema = selectionSchema.extend({ usedAt: z.string() })
+// cwd is optional so recents written before `eh -r` existed still parse.
+const recentEntrySchema = selectionSchema.extend({
+  cwd: z.string().optional(),
+  usedAt: z.string(),
+})
 
 const configSchema = z.object({
   profiles: z.record(z.string(), selectionSchema).default({}),
@@ -184,7 +188,11 @@ export function loadConfig() {
 }
 
 export function pushRecent(config: Config, selection: Selection) {
-  const entry: RecentEntry = { ...selection, usedAt: new Date().toISOString() }
+  const entry: RecentEntry = {
+    ...selection,
+    cwd: process.cwd(),
+    usedAt: new Date().toISOString(),
+  }
   const rest = config.recent.filter(
     (r) =>
       !(

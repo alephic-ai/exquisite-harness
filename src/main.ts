@@ -46,6 +46,10 @@ program
     'reasoning effort: auto, low, medium, high, xhigh, max',
   )
   .option('--print-env', 'print env vars instead of launching')
+  .option(
+    '-r, --resume',
+    'resume a previous session; reuses the last combo for this directory',
+  )
   .action(async (harnessOrProfile, provider, model, opts) => {
     // Flags win over positionals; positionals may also name a profile.
     const effort = EFFORT_LEVELS.find((level) => level === opts.effort)
@@ -61,6 +65,7 @@ program
       {
         effort,
         printEnvOnly: opts.printEnv === true,
+        resume: opts.resume === true,
         saveAs: opts.save,
       },
     )
@@ -76,6 +81,9 @@ Common workflows:
   eh cheap-local                      launch a saved profile
   eh claude -p ollama -s cheap-local
       save the combo as profile "cheap-local", then launch
+  eh -r                               resume a session with the last combo's wiring
+  eh -r codex -p ollama               resume, overriding harness/provider/model
+      (claude/codex open a session picker; grok resumes the most recent)
   eh --print-env claude ollama qwen3-coder
       print the export lines instead of launching
   eh doctor                           harnesses installed? providers reachable? keys set?

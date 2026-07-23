@@ -42,6 +42,10 @@ Each prints env/args and exits 0 without launching.
 6. `eh --print-env claude vercel-ai-gateway x` with `AI_GATEWAY_API_KEY` unset
    and no stored key → error "no API key for \"vercel-ai-gateway\"", non-zero
    exit.
+7. `eh -r --print-env claude ollama qwen3-coder` → args end with `--resume`.
+8. `eh -r --print-env codex ollama qwen3-coder` → args end with `resume` (after
+   the `-c` overrides).
+9. `eh -r --print-env grok ollama qwen3-coder` → args end with `--resume`.
 
 ## C. Config / error paths
 
@@ -54,6 +58,11 @@ Each prints env/args and exits 0 without launching.
    grok)", non-zero exit.
 4. `eh claude ollama` with stdout not a TTY → "incomplete arguments and stdout
    is not a TTY", non-zero exit.
+5. `eh -r` with an empty config dir → "no recent launch to resume", non-zero
+   exit.
+6. Config with two recents — one's `cwd` matching the current directory, one
+   older with a different `cwd` — then `eh -r --print-env` → uses the
+   cwd-matching combo. Delete the `cwd` fields → falls back to the most recent.
 
 ## D. Interactive flows (PTY harness)
 

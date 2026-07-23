@@ -58,6 +58,8 @@ eh --harness codex -p ollama -m qwen3-coder
                                       # same, with flags (flags win over positionals)
 eh cheap-local                        # launch a saved profile
 eh claude -p ollama -s cheap-local    # save combo as a profile, then launch
+eh -r                                 # resume a session with the last combo's wiring
+eh -r codex -p ollama                 # resume, overriding harness/provider/model
 eh --print-env claude ollama qwen3-coder
                                       # print the export lines, don't launch
 ```
@@ -71,6 +73,14 @@ eh claude ollama qwen3-coder -e high  # low|medium|high|xhigh|max (default auto)
 claude → `CLAUDE_CODE_EFFORT_LEVEL` (+ `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT` for
 non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map to
 `high`); grok has no knob and ignores it. Profiles and recents remember it.
+
+### Resume
+
+`eh -r` rebuilds the wiring from the combo you last launched in the current
+directory (falling back to the global most recent) and drops you into the
+harness's own resume: claude and codex open their session picker (filtered to
+the directory), grok resumes its most recent session. Add positionals or flags
+to resume onto different wiring — start local, resume on a gateway model.
 
 ### Keys
 

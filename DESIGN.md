@@ -58,6 +58,8 @@ eh claude                           # interactive: provider + model pickers
 eh claude ollama                    # interactive: model picker only
 eh claude ollama qwen3-coder        # no UI, just launches
 eh cheap-local                      # launch saved profile
+eh -r                               # resume with the last combo for this dir (picker; grok: most recent)
+eh -r codex -p ollama               # resume, overriding harness/provider/model
 eh --print-env claude ollama …      # print the export lines, don't launch
 eh doctor                           # harnesses installed? providers reachable? keys set?
 eh models ollama                    # live model list (5 min cache)
@@ -116,6 +118,7 @@ positional args must be complete; no prompts.
       "harness": "claude",
       "provider": "ollama",
       "model": "qwen3-coder",
+      "cwd": "…",
       "usedAt": "…",
     },
   ],
@@ -211,6 +214,16 @@ resolve at launch time without eh storing anything.
 default, sends nothing). Vercel AI Gateway also exposes the OpenAI
 `reasoning.effort` pass-through, so effort works end-to-end for Vercel AI
 Gateway–backed codex/OpenAI models.
+
+**Resume** (`-r`): rebuild the plan for the resolved combo and append the
+harness's resume args — claude `--resume`, codex `resume` (a subcommand; the
+global `-c` overrides precede it), grok `--resume`. With no args, the combo is
+the most recent one launched in the cwd (recents carry a `cwd` stamp), falling
+back to the global most recent; positionals/flags override any part of it.
+claude/codex open their cwd-filtered session picker; grok resumes its most
+recent session (its picker lives inside the TUI). Resuming onto different wiring
+than the session started on is supported — the env/`-c` overrides apply to the
+resumed session.
 
 ## Stack
 
