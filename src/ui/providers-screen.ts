@@ -8,7 +8,17 @@ import { deleteApiKey, resolveApiKey, storeApiKey } from '../keys.js'
 import { keyStoredText, log, note } from './output.js'
 import { askApiKeyOptional } from './prompts.js'
 
+type ProviderRowState = 'key-missing' | 'key-set' | 'no-key'
+
 const BACK = '__back__'
+
+// Providers with a key set first, then no-key-needed, then keyless. Stable
+// sort keeps config order within each group.
+const ROW_ORDER: Record<ProviderRowState, number> = {
+  'key-missing': 2,
+  'key-set': 0,
+  'no-key': 1,
+}
 
 function keyHint(key: ResolvedKey | undefined) {
   return key && key.source !== 'none' ? `key from ${key.source}` : '⚠ no key'
@@ -19,15 +29,32 @@ function keyHint(key: ResolvedKey | undefined) {
 export async function providersScreen(config: Config) {
   for (;;) {
     const providers = allProviders(config)
-    const options = await Promise.all(
-      providers.map(async (p) => ({
-        hint: p.envKey
-          ? `${p.type} · ${keyHint(await resolveApiKey(p.envKey, p.name))}`
-          : `${p.type} · no key needed`,
-        label: providerLabel(p.name),
-        value: p.name,
-      })),
+    const rows = await Promise.all(
+      providers.map(async (p) => {
+        const key = p.envKey ? await resolveApiKey(p.envKey, p.name) : undefined
+        const state: ProviderRowState =
+          key === undefined
+            ? 'no-key'
+            : key.source === 'none'
+              ? 'key-missing'
+              : 'key-set'
+        return {
+          option: {
+            hint: p.envKey
+              ? `${p.type} · ${keyHint(key)}`
+              : `${p.type} · no key needed`,
+            label:
+              state === 'key-missing'
+                ? `⚠ ${providerLabel(p.name)}`
+                : providerLabel(p.name),
+            value: p.name,
+          },
+          state,
+        }
+      }),
     )
+    rows.sort((a, b) => ROW_ORDER[a.state] - ROW_ORDER[b.state])
+    const options = rows.map((r) => r.option)
     options.push({ hint: 'home', label: '← back', value: BACK })
     const value = await select({ message: 'providers', options })
     if (isCancel(value) || value === BACK) return
