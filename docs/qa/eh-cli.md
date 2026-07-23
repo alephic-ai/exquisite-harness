@@ -42,6 +42,10 @@ Each prints env/args and exits 0 without launching.
 6. `eh --print-env claude vercel-ai-gateway x` with `AI_GATEWAY_API_KEY` unset
    and no stored key → error "no API key for \"vercel-ai-gateway\"", non-zero
    exit.
+7. `eh -r --print-env claude ollama qwen3-coder` → args end with `--resume`.
+8. `eh -r --print-env codex ollama qwen3-coder` → args end with `resume` (after
+   the `-c` overrides).
+9. `eh -r --print-env grok ollama qwen3-coder` → args end with `--resume`.
 
 ## C. Config / error paths
 
@@ -54,6 +58,21 @@ Each prints env/args and exits 0 without launching.
    grok)", non-zero exit.
 4. `eh claude ollama` with stdout not a TTY → "incomplete arguments and stdout
    is not a TTY", non-zero exit.
+5. `eh -r` with an empty config dir → "no recent launch to resume", non-zero
+   exit.
+6. Config with two recents — one's `cwd` matching the current directory, one
+   older with a different `cwd` — then `eh -r --print-env` → uses the
+   cwd-matching combo. Delete the `cwd` fields → falls back to the most recent.
+7. Launch the same combo in two directories (fake harness binary), then again in
+   the first → recents keep one entry per directory; the second launch in a
+   directory replaces only that directory's entry.
+8. `eh -r codex --print-env` with a codex recent for this directory → inherits
+   provider/model, no prompts. `-p` naming the recent's provider still inherits
+   the model; `-p` naming a different provider → "incomplete arguments" non-TTY.
+   A non-codex recent → no inheritance (prompts, or non-TTY error).
+9. cd into a directory, delete it from another shell, then any `eh` command →
+   the runtime refuses before eh's code runs ("The current working directory was
+   deleted…"), non-zero exit — no raw `uv_cwd` stack trace.
 
 ## D. Interactive flows (PTY harness)
 

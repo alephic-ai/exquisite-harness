@@ -20,7 +20,11 @@ const selectionSchema = z.object({
   provider: z.string(),
 })
 
-const recentEntrySchema = selectionSchema.extend({ usedAt: z.string() })
+// cwd is optional so recents written before `eh -r` existed still parse.
+const recentEntrySchema = selectionSchema.extend({
+  cwd: z.string().optional(),
+  usedAt: z.string(),
+})
 
 const configSchema = z.object({
   profiles: z.record(z.string(), selectionSchema).default({}),
@@ -184,13 +188,21 @@ export function loadConfig() {
 }
 
 export function pushRecent(config: Config, selection: Selection) {
-  const entry: RecentEntry = { ...selection, usedAt: new Date().toISOString() }
+  const entry: RecentEntry = {
+    ...selection,
+    cwd: process.cwd(),
+    usedAt: new Date().toISOString(),
+  }
+  // Identity includes cwd: a launch in one directory must not evict another
+  // directory's last combo — `eh -r` matches recents on cwd. Pre-cwd recents
+  // (undefined) are always replaced; their directory is unknown anyway.
   const rest = config.recent.filter(
     (r) =>
       !(
         r.harness === selection.harness &&
         r.provider === selection.provider &&
-        r.model === selection.model
+        r.model === selection.model &&
+        (r.cwd === undefined || r.cwd === process.cwd())
       ),
   )
   return { ...config, recent: [entry, ...rest].slice(0, MAX_RECENT) }

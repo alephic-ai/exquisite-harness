@@ -3,6 +3,7 @@ import type { EffortLevel, Protocol, Selection } from './types.js'
 
 import {
   allProviders,
+  canonicalProviderName,
   configExists,
   getProvider,
   loadConfig,
@@ -33,6 +34,7 @@ const isTTY = process.stdout.isTTY
 export interface LaunchOptions {
   effort?: EffortLevel
   printEnvOnly: boolean
+  resume?: boolean
   saveAs?: string
 }
 
@@ -64,6 +66,39 @@ export async function launchFlow(
         model: modelArg,
         provider: providerArg,
       }
+  // `-r`: seed the selection from the combo last launched in this directory
+  // (harness session stores are cwd-scoped), falling back to the global most
+  // recent. Explicit fields win; unspecified ones inherit. Inherit only from
+  // a same-harness recent — a foreign harness's provider may not serve its
+  // protocol — and inherit the model only when the provider stays, since
+  // model ids are provider-scoped.
+  if (options.resume) {
+    const recent =
+      config.recent.find((r) => r.cwd === process.cwd()) ?? config.recent.at(0)
+    if (!recent) {
+      if (selection.harness === undefined) {
+        throw new Error('no recent launch to resume')
+      }
+    } else if (
+      selection.harness === undefined ||
+      selection.harness === recent.harness
+    ) {
+      const provider = selection.provider ?? recent.provider
+      // Aliases (e.g. "gateway") resolve everywhere else in eh — canonicalize
+      // here too, or the model is dropped for the same provider under
+      // another name.
+      const sameProvider =
+        canonicalProviderName(provider) ===
+        canonicalProviderName(recent.provider)
+      selection = {
+        ...selectionFromRecent(recent),
+        effort: selection.effort ?? recent.effort,
+        model: selection.model ?? (sameProvider ? recent.model : undefined),
+        provider,
+      }
+    }
+  }
+
   // Effort: explicit flag wins, then a saved profile's, else interactive/default.
   if (options.effort) selection.effort = options.effort
 
@@ -92,7 +127,10 @@ export async function launchFlow(
       saveConfig(config)
     }
 
-    if (!harnessArg && !profile) {
+    // Resume never routes to home — the resume block above already resolved
+    // the recent, and home's recent-picker would silently discard explicit
+    // overrides (-p/-m).
+    if (!harnessArg && !profile && !options.resume) {
       for (;;) {
         const choice = await home(config)
         if (choice.kind === 'doctor') {
@@ -127,7 +165,10 @@ export async function launchFlow(
     provider: provider.name,
   }
 
-  const plan = await buildLaunchPlan(harness, provider, model, complete.effort)
+  const plan = await buildLaunchPlan(harness, provider, model, {
+    effort: complete.effort,
+    resume: options.resume,
+  })
 
   if (options.printEnvOnly) {
     printEnv(plan)
