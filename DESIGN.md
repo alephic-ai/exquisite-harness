@@ -221,7 +221,8 @@ Gateway–backed codex/OpenAI models.
 three harnesses, then resume the pick by session id — claude `--resume <id>`,
 codex `resume <id>` (a subcommand; the global `-c` overrides precede it), grok
 `--resume <id>`. Sessions come from the harnesses' own stores, read best-effort
-(`src/sessions.ts`): claude
+(`src/sessions.ts`; roots honor `$CLAUDE_CONFIG_DIR` / `$CODEX_HOME` when set):
+claude
 `~/.claude/projects/<cwd with every non-alphanumeric char → - >/<id>.jsonl`
 (title from the first real user record, model from the first assistant record,
 mtime for recency — the encoding is lossy, so colliding cwds share sessions, and
