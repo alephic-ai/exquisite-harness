@@ -58,8 +58,9 @@ Each prints env/args and exits 0 without launching.
    grok)", non-zero exit.
 4. `eh claude ollama` with stdout not a TTY → "incomplete arguments and stdout
    is not a TTY", non-zero exit.
-5. `eh -r` with an empty config dir → "no recent launch to resume", non-zero
-   exit.
+5. `eh -r` without a TTY → "eh -r opens a session picker — needs an interactive
+   terminal", non-zero exit. In a directory with no sessions in any harness
+   store (PTY) → "no sessions for this directory", non-zero exit.
 6. Config with two recents — one's `cwd` matching the current directory, one
    older with a different `cwd` — then `eh -r --print-env` → uses the
    cwd-matching combo. Delete the `cwd` fields → falls back to the most recent.
@@ -98,6 +99,17 @@ Drive each with the PTY; assert on screen text.
 7. **`eh provider add`**: run it → name/type/baseURL/envKey prompts; for a
    non-ollama type, "store an API key now?" → masked password prompt (input not
    echoed) → stored in Keychain (macOS) or 0600 file.
+8. **Resume picker**: with claude + codex sessions for the current directory on
+   disk, run `eh -r` → one filterable list, newest first, hints read
+   `harness · model · <age>`; sessions show up whether or not eh launched them.
+   Type to filter. Pick one → resumes that session by id (fake harness asserts
+   the `--resume <id>` / `resume <id>` arg). Esc → "bye", exit 0.
+9. **Resume filter**: `eh -r codex` → only codex sessions listed. A session
+   whose harness bin is not on PATH → "not installed" hint; selecting it warns
+   and re-prompts.
+10. **Resume wiring**: with a recent for (claude, model X) in this directory,
+    pick a claude session whose model is X → resumes on that recent's provider
+    with no further prompts. `-p`/`-m` override.
 
 ## E. Key storage
 
@@ -153,5 +165,5 @@ Drive each with the PTY; assert on screen text.
 ## Automated coverage
 
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
-- No unit test suite yet — candidates: TOML escaping, time-ago, cache TTL,
-  `canServeAny` matrix, key-source precedence.
+- `bun test` — `src/statusline.test.ts` (transcript usage) and
+  `src/sessions.test.ts` (resume session-store parsers).

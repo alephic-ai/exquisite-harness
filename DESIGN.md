@@ -58,8 +58,8 @@ eh claude                           # interactive: provider + model pickers
 eh claude ollama                    # interactive: model picker only
 eh claude ollama qwen3-coder        # no UI, just launches
 eh cheap-local                      # launch saved profile
-eh -r                               # resume with the last combo for this dir (picker; grok: most recent)
-eh -r codex -p ollama               # resume, overriding harness/provider/model
+eh -r                               # pick from this dir's sessions (all harnesses) and resume
+eh -r codex -p ollama               # only codex sessions; -p/-m/-e override the wiring
 eh --print-env claude ollama …      # print the export lines, don't launch
 eh doctor                           # harnesses installed? providers reachable? keys set?
 eh models ollama                    # live model list (5 min cache)
@@ -217,18 +217,34 @@ default, sends nothing). Vercel AI Gateway also exposes the OpenAI
 `reasoning.effort` pass-through, so effort works end-to-end for Vercel AI
 Gateway–backed codex/OpenAI models.
 
-**Resume** (`-r`): rebuild the plan for the resolved combo and append the
-harness's resume args — claude `--resume`, codex `resume` (a subcommand; the
-global `-c` overrides precede it), grok `--resume`. The combo starts from the
-most recent one launched in the cwd (recents carry a `cwd` stamp, and dedup is
-per combo+cwd so one directory never evicts another's), falling back to the
-global most recent. Explicit positionals/flags override it; unspecified fields
-inherit when the recent has the same harness (a foreign harness's provider may
-not serve its protocol), and the model only when the provider stays (aliases
-canonicalized) — model ids are provider-scoped. claude/codex open their
-cwd-filtered session picker; grok resumes its most recent session (its picker
-lives inside the TUI). Resuming onto different wiring than the session started
-on is supported — the env/`-c` overrides apply to the resumed session.
+**Resume** (`-r`): an eh-owned picker over this directory's sessions across all
+three harnesses, then resume the pick by session id — claude `--resume <id>`,
+codex `resume <id>` (a subcommand; the global `-c` overrides precede it), grok
+`--resume <id>`. Sessions come from the harnesses' own stores, read best-effort
+(`src/sessions.ts`): claude
+`~/.claude/projects/<cwd with every non-alphanumeric char → - >/<id>.jsonl`
+(title from the first real user record, model from the first assistant record,
+mtime for recency — the encoding is lossy, so colliding cwds share sessions, and
+claude truncates + hash-suffixes names over 200 chars, which eh doesn't
+replicate: sessions in very deep paths don't list), codex
+`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` (line 1 `session_meta` gives
+id+cwd — files are date-organized, so the scan is bounded to 300 files / 25
+matches; title from the first `user_message` event, model from the first
+`turn_context`), grok
+`~/.grok/sessions/<encodeURIComponent(cwd)>/<id>/summary.json` (ready-made
+title/model/timestamps). Subagent sessions are filtered (grok `session_kind`,
+codex `thread_source`). The list shows sessions whether or not eh launched them,
+each with harness, model, and age — never provider, which transcripts don't
+record.
+
+Wiring: explicit positionals/flags win. Otherwise the recents supply it,
+preferring the combo that last ran that harness+model (a provider is only known
+to serve the models it actually launched; recents carry a `cwd` stamp, cwd
+matches first), then the latest combo for the harness, then the pickers.
+Resuming onto different wiring than the session started on is supported — the
+env/`-c` overrides apply to the resumed session. The picker needs an interactive
+terminal; `eh -r --print-env` skips enumeration entirely and prints the bare
+resume args (harness picker / most recent), which is the scripting escape hatch.
 
 ## Stack
 
@@ -248,6 +264,7 @@ src/providers.ts  provider types: protocols, model listing, status checks
 src/pricing.ts    provider list rates ($/1M) for statusline session cost
 src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
+src/sessions.ts   cross-harness session enumeration for -r (read-only store scans)
 src/launch.ts     spawn / print-env
 src/doctor.ts     doctor report
 src/update.ts     self-update: gh-auth release lookup → staged download → atomic swap
@@ -260,6 +277,7 @@ src/types.ts      shared types
 src/ui/home.ts    home screen
 src/ui/output.ts  single re-export site for clack output helpers (+ bail, keyStoredText)
 src/ui/prompts.ts pickers + confirm
+src/ui/sessions.ts  resume session picker (autocomplete)
 src/ui/providers-screen.ts  home → providers: key status + set/delete actions
 src/ui/wizard.ts  first-run wizard + provider add
 ```

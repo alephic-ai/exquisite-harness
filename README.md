@@ -58,8 +58,8 @@ eh --harness codex -p ollama -m qwen3-coder
                                       # same, with flags (flags win over positionals)
 eh cheap-local                        # launch a saved profile
 eh claude -p ollama -s cheap-local    # save combo as a profile, then launch
-eh -r                                 # resume a session with the last combo's wiring
-eh -r codex -p ollama                 # resume, overriding harness/provider/model
+eh -r                                 # pick from this dir's sessions (all harnesses)
+eh -r codex -p ollama                 # only codex sessions; -p/-m/-e override the wiring
 eh --print-env claude ollama qwen3-coder
                                       # print the export lines, don't launch
 ```
@@ -76,12 +76,19 @@ non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map 
 
 ### Resume
 
-`eh -r` rebuilds the wiring from the combo you last launched in the current
-directory (falling back to the global most recent) and drops you into the
-harness's own resume: claude and codex open their session picker (filtered to
-the directory), grok resumes its most recent session. Add positionals or flags
-to resume onto different wiring — start local, resume on a gateway model;
-anything you don't specify inherits from that combo.
+`eh -r` shows a filterable list of the current directory's sessions across all
+harnesses — claude, codex, and grok — newest first, each with its model and age,
+and resumes your pick by session id. Sessions show up whether or not eh launched
+them; the list comes from the harnesses' own session stores.
+
+The wiring comes from your recents: the provider that last ran that
+harness+model wins, falling back to the latest combo for the harness, then to
+the pickers. Add positionals or flags to override — start local, resume on a
+gateway model. `eh -r codex` lists only codex sessions.
+
+Resume needs an interactive terminal. For scripts, `eh -r --print-env …` keeps
+the old behavior: no picker, prints the env lines plus the harness's bare resume
+args (its own picker / most recent).
 
 ### Keys
 
