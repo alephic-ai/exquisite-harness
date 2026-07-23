@@ -19,9 +19,10 @@ export interface HarnessDef {
     effort?: string,
   ) => Promise<LaunchPlan>
   protocols: Protocol[]
-  // Appended to the plan's args for `eh -r`. claude/codex open their
-  // cwd-filtered session picker; grok resumes its most recent session.
-  resumeArgs: string[]
+  // Appended to the plan's args for `eh -r`. With a session id, resumes that
+  // exact session; without one (the --print-env path), falls back to the
+  // harness's own picker / most recent.
+  resumeArgs: (sessionId?: string) => string[]
 }
 
 // Ollama ignores the token value but requires one to be present.
@@ -163,7 +164,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
     label: 'Claude Code',
     plan: planClaude,
     protocols: ['anthropic'],
-    resumeArgs: ['--resume'],
+    resumeArgs: (id) => (id ? ['--resume', id] : ['--resume']),
   },
   codex: {
     bin: 'codex',
@@ -172,14 +173,14 @@ export const HARNESSES: Record<string, HarnessDef> = {
     protocols: ['openai-chat', 'openai-responses'],
     // `resume` is a subcommand; clap still accepts the global `-c` overrides
     // that precede it.
-    resumeArgs: ['resume'],
+    resumeArgs: (id) => (id ? ['resume', id] : ['resume']),
   },
   grok: {
     bin: 'grok',
     label: 'Grok CLI',
     plan: planGrok,
     protocols: ['openai-chat'],
-    resumeArgs: ['--resume'],
+    resumeArgs: (id) => (id ? ['--resume', id] : ['--resume']),
   },
 }
 
@@ -188,12 +189,12 @@ export async function buildLaunchPlan(
   harness: string,
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; resume?: boolean } = {},
+  options: { effort?: string; resume?: boolean; resumeSessionId?: string } = {},
 ) {
   const def = getHarness(harness)
   if (!def) throw new Error(`unknown harness "${harness}"`)
   const plan = await def.plan(provider, model, options.effort)
-  if (options.resume) plan.args.push(...def.resumeArgs)
+  if (options.resume) plan.args.push(...def.resumeArgs(options.resumeSessionId))
   return plan
 }
 
