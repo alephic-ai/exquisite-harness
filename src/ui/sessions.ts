@@ -1,8 +1,8 @@
-import { autocomplete, isCancel } from '@clack/prompts'
+import { autocomplete, isCancel, select } from '@clack/prompts'
 
 import type { SessionInfo } from '../sessions.js'
 
-import { getHarness } from '../harnesses.js'
+import { getHarness, harnessNames } from '../harnesses.js'
 import { timeAgo } from '../time-ago.js'
 import { findBin } from '../which.js'
 import { bail, log } from './output.js'
@@ -10,14 +10,10 @@ import { bail, log } from './output.js'
 // Filterable picker over the cross-harness session list. Rows are indexed by
 // position, not session id — ids could collide across harness stores.
 export async function pickSession(sessions: SessionInfo[]) {
-  // findBin walks PATH synchronously — once per harness, not once per row.
+  // installedBin walks PATH synchronously — once per harness, not per row.
   const installedByHarness = new Map<string, boolean>()
   for (const harness of new Set(sessions.map((s) => s.harness))) {
-    const bin = getHarness(harness)?.bin
-    installedByHarness.set(
-      harness,
-      bin !== undefined && findBin(bin) !== undefined,
-    )
+    installedByHarness.set(harness, installedBin(harness) !== undefined)
   }
   const rows = sessions.map((session, i) => {
     const installed = installedByHarness.get(session.harness) ?? false
@@ -55,9 +51,42 @@ export async function pickSession(sessions: SessionInfo[]) {
       continue
     }
     if (row.installed) return row.session
-    const bin = getHarness(row.session.harness)?.bin
-    log.warn(
-      `"${bin ?? row.session.harness}" is not on PATH — install it or pick another session`,
-    )
+    warnNotInstalled(row.session.harness)
   }
+}
+
+// Which harness should the picked session continue in — its own (native
+// resume by id, preselected so Enter keeps today's flow) or another (context
+// handoff into a fresh session).
+export async function pickTargetHarness(source: string) {
+  const ordered = [source, ...harnessNames().filter((n) => n !== source)]
+  for (;;) {
+    const value = await select({
+      initialValue: source,
+      message: 'resume on:',
+      options: ordered.map((name) => ({
+        hint:
+          name === source
+            ? 'native — resume by session id'
+            : 'hand off — continue the conversation in a fresh session',
+        label: name,
+        value: name,
+      })),
+    })
+    if (isCancel(value)) bail()
+    if (installedBin(value) !== undefined) return value
+    warnNotInstalled(value)
+  }
+}
+
+// The harness's bin when it's on PATH, undefined otherwise.
+function installedBin(harness: string) {
+  const bin = getHarness(harness)?.bin
+  return bin !== undefined && findBin(bin) !== undefined ? bin : undefined
+}
+
+function warnNotInstalled(harness: string) {
+  log.warn(
+    `"${getHarness(harness)?.bin ?? harness}" is not on PATH — install it or pick another session`,
+  )
 }

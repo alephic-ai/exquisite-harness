@@ -18,6 +18,10 @@ export interface SessionInfo {
   // codex `resume <id>`).
   id: string
   model?: string
+  // Where the raw transcript lives: the .jsonl file (claude/codex), the
+  // session dir (grok — chat_history.jsonl inside). codex date-dir paths
+  // aren't derivable from the id, so enumeration must carry it.
+  source: string
   // One line, whitespace-collapsed; '' when nothing usable parsed.
   title: string
   updatedAt: string
@@ -40,6 +44,27 @@ const CODEX_MAX_MATCHES = 25
 // Lines scanned per file while hunting for a title/model — the interesting
 // records sit at the top of a transcript.
 const META_SCAN_LINES = 200
+
+export interface ConversationTurn {
+  role: 'assistant' | 'user'
+  text: string
+}
+
+// Full-transcript read for context handoff (continuing a session in a
+// different harness). Same never-throw contract as enumeration: an
+// unreadable store yields whatever parsed, possibly no turns at all.
+export async function extractConversation(session: SessionInfo) {
+  switch (session.harness) {
+    case 'claude':
+      return claudeConversation(session.source)
+    case 'codex':
+      return codexConversation(session.source)
+    case 'grok':
+      return grokConversation(session.source)
+    default:
+      return []
+  }
+}
 
 // Read-only enumeration of the harness session stores (the formats are
 // undocumented and shift between harness releases, so every parse is
@@ -93,6 +118,28 @@ export async function listSessionsForCwd(
 
 // --- claude ---
 
+async function claudeConversation(file: string) {
+  const turns: ConversationTurn[] = []
+  try {
+    for await (const line of readLines(file)) {
+      const row = parseRow(line)
+      if (!row) continue
+      // Stock claude inlines subagent records in the main transcript.
+      if (row.isSidechain === true) continue
+      if (row.type === 'user') {
+        const text = claudeUserTurnText(row)
+        if (text !== undefined) turns.push({ role: 'user', text })
+      } else if (row.type === 'assistant') {
+        const text = textParts(obj(row.message)?.content).trim()
+        if (text) turns.push({ role: 'assistant', text })
+      }
+    }
+  } catch {
+    // Unreadable mid-scan — keep whatever parsed.
+  }
+  return turns
+}
+
 async function claudeMeta(file: string) {
   let title = ''
   let model: string | undefined
@@ -145,6 +192,7 @@ async function claudeSessions(cwd: string, root: string) {
       harness: 'claude',
       id: path.basename(file, '.jsonl'),
       model,
+      source: file,
       title,
       updatedAt: mtime.toISOString(),
     })
@@ -169,7 +217,56 @@ function claudeUserText(row: Record<string, unknown>) {
   return undefined
 }
 
+// A real human turn: not a meta/sidechain record, not a wrapper-only string
+// (harness UI markers like slash-command and bash-mode I/O), not a
+// tool_result-only record; harness reminders appended to real prompts go.
+function claudeUserTurnText(row: Record<string, unknown>) {
+  if (row.isMeta === true || row.isSidechain === true) return undefined
+  const content = obj(row.message)?.content
+  const text = (
+    typeof content === 'string' ? content : textParts(content)
+  ).trim()
+  if (text === '') return undefined
+  if (CLAUDE_USER_WRAPPERS.some((w) => text.startsWith(w))) return undefined
+  const clean = text
+    .replace(/(\s*<system-reminder>[\s\S]*?<\/system-reminder>)+\s*$/, '')
+    .trim()
+  return clean === '' ? undefined : clean
+}
+
+// Wrapper-only user strings are harness UI markers, not conversation.
+const CLAUDE_USER_WRAPPERS = [
+  '<bash-input>',
+  '<bash-stdout>',
+  '<command-message>',
+  '<command-name>',
+  '<local-command-stdout>',
+]
+
 // --- codex ---
+
+async function codexConversation(file: string) {
+  const turns: ConversationTurn[] = []
+  try {
+    for await (const line of readLines(file)) {
+      const row = parseRow(line)
+      const payload = obj(row?.payload)
+      // The event_msg stream is the clean conversation; response_item
+      // duplicates it and also carries the injected instructions blob.
+      if (!row || !payload || row.type !== 'event_msg') continue
+      const text = str(payload.message)?.trim()
+      if (!text) continue
+      if (payload.type === 'user_message') {
+        turns.push({ role: 'user', text })
+      } else if (payload.type === 'agent_message') {
+        turns.push({ role: 'assistant', text })
+      }
+    }
+  } catch {
+    // Unreadable mid-scan — keep whatever parsed.
+  }
+  return turns
+}
 
 // Codex rollouts live under YYYY/MM/DD — nothing about the path says which
 // cwd a session ran in, so line 1 (session_meta) of each candidate is read
@@ -261,6 +358,7 @@ async function codexSessions(
       harness: 'codex',
       id: meta.id,
       model,
+      source: file,
       title,
       updatedAt: stat.mtime.toISOString(),
     })
@@ -269,6 +367,41 @@ async function codexSessions(
 }
 
 // --- grok ---
+
+async function grokConversation(dir: string) {
+  const turns: ConversationTurn[] = []
+  try {
+    for await (const line of readLines(path.join(dir, 'chat_history.jsonl'))) {
+      const row = parseRow(line)
+      if (!row) continue
+      if (row.type === 'user') {
+        // synthetic_reason marks injected reminders/project instructions.
+        if (
+          row.synthetic_reason !== null &&
+          row.synthetic_reason !== undefined
+        ) {
+          continue
+        }
+        const text = textParts(row.content).trim()
+        // Every session opens with an injected environment blob that carries
+        // no synthetic_reason (verified against real stores).
+        if (text.startsWith('<user_info>')) continue
+        const clean = text
+          .replace(/^<user_query>\s*/, '')
+          .replace(/\s*<\/user_query>$/, '')
+          .trim()
+        if (clean) turns.push({ role: 'user', text: clean })
+      } else if (row.type === 'assistant') {
+        // Tool-call-only turns have empty content; the calls aren't prose.
+        const text = str(row.content)?.trim() ?? ''
+        if (text) turns.push({ role: 'assistant', text })
+      }
+    }
+  } catch {
+    // Unreadable mid-scan — keep whatever parsed.
+  }
+  return turns
+}
 
 // Grok sessions are directories named by uuid under the encodeURIComponent'd
 // cwd, each holding a pre-generated summary.json — the cheapest metadata of
@@ -301,6 +434,7 @@ function grokSummary(file: string, dirId: string, mtime: Date) {
     harness: 'grok',
     id: infoId ?? dirId,
     model: str(data.current_model_id),
+    source: path.dirname(file),
     title: oneLine(title ?? ''),
     updatedAt: isoOrFallback(
       str(data.updated_at) ?? str(data.last_active_at),
@@ -383,4 +517,17 @@ function statFile(file: string) {
 
 function str(value: unknown) {
   return typeof value === 'string' ? value : undefined
+}
+
+// Join the text of every `type:"text"` part in a content array (skips
+// thinking/tool_use/tool_result parts).
+function textParts(content: unknown) {
+  if (!Array.isArray(content)) return ''
+  return content
+    .map((part) => {
+      const p = obj(part)
+      return p?.type === 'text' && typeof p.text === 'string' ? p.text : ''
+    })
+    .filter((t) => t !== '')
+    .join('\n')
 }

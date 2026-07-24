@@ -82,6 +82,7 @@ Common workflows:
   eh claude -p ollama -s cheap-local
       save the combo as profile "cheap-local", then launch
   eh -r                               pick a session from this directory (all harnesses)
+      then the harness to continue it in — Enter resumes on its own
   eh -r codex -p ollama               only codex sessions; -p/-m/-e override the wiring
   eh -r --print-env claude ollama qwen3-coder
       scripted resume: no picker, prints env + bare resume args

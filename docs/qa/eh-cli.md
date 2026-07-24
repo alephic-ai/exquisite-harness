@@ -110,6 +110,24 @@ Drive each with the PTY; assert on screen text.
 10. **Resume wiring**: with a recent for (claude, model X) in this directory,
     pick a claude session whose model is X → resumes on that recent's provider
     with no further prompts. `-p`/`-m` override.
+11. **Resume target picker**: after picking a session, a `resume on:` select
+    lists the session's own harness first (hint
+    `native — resume by session id`), preselected. Enter → native resume (fake
+    harness asserts `--resume <id>`); assert NO doc was written under
+    `$XDG_CONFIG_HOME/eh/handoffs`.
+12. **Cross-harness handoff**: fake `codex` script (records argv) first on PATH;
+    fixture claude session for the cwd; `eh -r` → pick it → select `codex` →
+    assert: codex argv ends with a single positional starting
+    `Continuing a claude session` and contains NO `resume`; `-c` overrides
+    intact; the referenced doc under `handoffs/` exists and contains the
+    fixture's turns; eh exits 0; the codex combo lands in recents. Matrix
+    spot-checks: codex→grok (assert `--verbatim` immediately precedes the
+    prompt), grok→claude. Handing off a session whose transcript yields no turns
+    → `couldn't extract any conversation` error, non-zero exit. A handoff whose
+    model the target never ran (no matching recent) launches on the target's own
+    last model — foreign model ids are NOT carried.
+13. **Handoff target not installed**: pick a target whose bin is off PATH →
+    warn + re-prompt.
 
 ## E. Key storage
 
@@ -165,5 +183,6 @@ Drive each with the PTY; assert on screen text.
 ## Automated coverage
 
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
-- `bun test` — `src/statusline.test.ts` (transcript usage) and
-  `src/sessions.test.ts` (resume session-store parsers).
+- `bun test` — `src/statusline.test.ts` (transcript usage),
+  `src/sessions.test.ts` (session-store parsers), and `src/handoff.test.ts`
+  (conversation extraction, handoff doc build/truncate/prune, seed args).

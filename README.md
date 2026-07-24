@@ -81,6 +81,13 @@ harnesses — claude, codex, and grok — newest first, each with its model and 
 and resumes your pick by session id. Sessions show up whether or not eh launched
 them; the list comes from the harnesses' own session stores.
 
+After you pick a session, a `resume on:` prompt offers the session's own harness
+(Enter — native resume) or a different one. Switching harnesses is a context
+handoff: the conversation is extracted to a markdown doc in
+`~/.config/eh/handoffs/` and the target harness starts fresh with a pointer to
+it, so it picks up where the session left off. The source session is untouched,
+and the new session shows up in `eh -r` like any other.
+
 The wiring comes from your recents: the provider that last ran that
 harness+model wins, falling back to the latest combo for the harness, then to
 the pickers. Add positionals or flags to override — start local, resume on a

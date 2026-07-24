@@ -23,6 +23,10 @@ export interface HarnessDef {
   // exact session; without one (the --print-env path), falls back to the
   // harness's own picker / most recent.
   resumeArgs: (sessionId?: string) => string[]
+  // Appended for a context handoff: the positional prompt that seeds a fresh
+  // session's first user message (grok sends it verbatim so @/slash content
+  // in the doc path isn't reinterpreted).
+  seedArgs: (prompt: string) => string[]
 }
 
 // Ollama ignores the token value but requires one to be present.
@@ -165,6 +169,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
     plan: planClaude,
     protocols: ['anthropic'],
     resumeArgs: (id) => (id ? ['--resume', id] : ['--resume']),
+    seedArgs: (prompt) => [prompt],
   },
   codex: {
     bin: 'codex',
@@ -174,6 +179,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
     // `resume` is a subcommand; clap still accepts the global `-c` overrides
     // that precede it.
     resumeArgs: (id) => (id ? ['resume', id] : ['resume']),
+    seedArgs: (prompt) => [prompt],
   },
   grok: {
     bin: 'grok',
@@ -181,6 +187,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
     plan: planGrok,
     protocols: ['openai-chat'],
     resumeArgs: (id) => (id ? ['--resume', id] : ['--resume']),
+    seedArgs: (prompt) => ['--verbatim', prompt],
   },
 }
 
@@ -189,12 +196,23 @@ export async function buildLaunchPlan(
   harness: string,
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; resume?: boolean; resumeSessionId?: string } = {},
+  options: {
+    effort?: string
+    resume?: boolean
+    resumeSessionId?: string
+    seedPrompt?: string
+  } = {},
 ) {
   const def = getHarness(harness)
   if (!def) throw new Error(`unknown harness "${harness}"`)
+  if (options.resume && options.seedPrompt !== undefined) {
+    throw new Error('internal: resume and seedPrompt are mutually exclusive')
+  }
   const plan = await def.plan(provider, model, options.effort)
   if (options.resume) plan.args.push(...def.resumeArgs(options.resumeSessionId))
+  if (options.seedPrompt !== undefined) {
+    plan.args.push(...def.seedArgs(options.seedPrompt))
+  }
   return plan
 }
 

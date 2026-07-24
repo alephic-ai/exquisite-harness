@@ -128,6 +128,11 @@ describe('claude sessions', () => {
       harness: 'claude',
       id: 'session-1',
       model: 'moonshotai/kimi-k3',
+      source: path.join(
+        roots.claude,
+        CWD.replaceAll(/[^a-zA-Z0-9]/g, '-'),
+        'session-1.jsonl',
+      ),
       title: 'fix the auth bug',
       updatedAt: T2.toISOString(),
     })
@@ -282,6 +287,13 @@ describe('codex sessions', () => {
         harness: 'codex',
         id: 'codex-id-1',
         model: 'gpt-5.1',
+        source: path.join(
+          roots.codex,
+          '2026',
+          '07',
+          '20',
+          'rollout-2026-07-20T10-00-00-uuid-1.jsonl',
+        ),
         title: 'checkout main and pull',
         updatedAt: T2.toISOString(),
       },
@@ -348,6 +360,7 @@ describe('grok sessions', () => {
         harness: 'grok',
         id: 'real-id-1',
         model: 'grok-4.5',
+        source: path.join(roots.grok, encodeURIComponent(CWD), 'uuid-1'),
         title: 'Guillaumeify Batch 1',
         // Nanoseconds normalize to canonical ms ISO.
         updatedAt: '2026-07-19T00:00:59.123Z',

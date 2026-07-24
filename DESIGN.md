@@ -247,6 +247,26 @@ env/`-c` overrides apply to the resumed session. The picker needs an interactive
 terminal; `eh -r --print-env` skips enumeration entirely and prints the bare
 resume args (harness picker / most recent), which is the scripting escape hatch.
 
+**Switching harnesses**: after the session pick, a `resume on:` select offers
+the session's own harness (preselected — native resume by id, today's behavior)
+and the other two. Picking a different harness is a **context handoff**, not a
+store conversion: `src/handoff.ts` extracts the conversation from the source
+transcript (`extractConversation` in `src/sessions.ts` — user and assistant text
+turns only, skipping tool noise, injected blobs, and sidechains), writes a
+markdown doc to `~/.config/eh/handoffs/` (128 KB cap: over-cap docs keep the
+first user turn plus the newest turns with an omission marker; pruned to the
+newest 20), and launches the target harness FRESH with a short positional
+pointer prompt as its first user message (grok adds `--verbatim`; seed args via
+`HarnessDef.seedArgs`, mutually exclusive with `resumeArgs`). The source session
+is untouched; the new session is fully native and lists in `eh -r` normally —
+its title is the pointer's first line, which leads with
+`Continuing a <harness> session — "<original title>"`. Wiring resolves
+identically, keyed on the target harness — with one carve-out: the session's
+model only carries cross-harness when a recent proves the target provider serves
+it (a foreign id would just 404 at launch), otherwise the target's own last
+model or the pickers supply it. Handoff is interactive-only; `--print-env` is
+unaffected (native bare resume args).
+
 ## Stack
 
 TypeScript (strict, tools/main shared configs), `@clack/prompts` (UI),
@@ -265,7 +285,8 @@ src/providers.ts  provider types: protocols, model listing, status checks
 src/pricing.ts    provider list rates ($/1M) for statusline session cost
 src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
-src/sessions.ts   cross-harness session enumeration for -r (read-only store scans)
+src/sessions.ts   cross-harness session enumeration + transcript extraction for -r (read-only store scans)
+src/handoff.ts    context handoff: transcript → markdown doc + pointer prompt
 src/launch.ts     spawn / print-env
 src/doctor.ts     doctor report
 src/update.ts     self-update: gh-auth release lookup → staged download → atomic swap
