@@ -228,9 +228,7 @@ function claudeUserTurnText(row: Record<string, unknown>) {
   ).trim()
   if (text === '') return undefined
   if (CLAUDE_USER_WRAPPERS.some((w) => text.startsWith(w))) return undefined
-  const clean = text
-    .replace(/(\s*<system-reminder>[\s\S]*?<\/system-reminder>)+\s*$/, '')
-    .trim()
+  const clean = stripTrailingSystemReminders(text)
   return clean === '' ? undefined : clean
 }
 
@@ -241,6 +239,7 @@ const CLAUDE_USER_WRAPPERS = [
   '<command-message>',
   '<command-name>',
   '<local-command-stdout>',
+  '<task-notification>',
 ]
 
 // --- codex ---
@@ -386,11 +385,8 @@ async function grokConversation(dir: string) {
         // Every session opens with an injected environment blob that carries
         // no synthetic_reason (verified against real stores).
         if (text.startsWith('<user_info>')) continue
-        const clean = text
-          .replace(/^<user_query>\s*/, '')
-          .replace(/\s*<\/user_query>$/, '')
-          .trim()
-        if (clean) turns.push({ role: 'user', text: clean })
+        const clean = grokUserTurnText(text)
+        if (clean !== undefined) turns.push({ role: 'user', text: clean })
       } else if (row.type === 'assistant') {
         // Tool-call-only turns have empty content; the calls aren't prose.
         const text = str(row.content)?.trim() ?? ''
@@ -444,6 +440,21 @@ function grokSummary(file: string, dirId: string, mtime: Date) {
 }
 
 // --- shared helpers ---
+
+function grokUserTurnText(text: string) {
+  const open = '<user_query>'
+  const start = text.indexOf(open)
+  if (start !== -1) {
+    const from = start + open.length
+    const close = text.indexOf('</user_query>', from)
+    const query = stripTrailingSystemReminders(
+      text.slice(from, close === -1 ? undefined : close),
+    )
+    return query === '' ? undefined : query
+  }
+  const clean = stripTrailingSystemReminders(text)
+  return clean === '' ? undefined : clean
+}
 
 function oneLine(text: string) {
   const flat = text.replaceAll(/\s+/g, ' ').trim()
@@ -517,6 +528,29 @@ function statFile(file: string) {
 
 function str(value: unknown) {
   return typeof value === 'string' ? value : undefined
+}
+
+// Remove a suffix made only of complete reminder blocks and whitespace. The
+// cursor advances monotonically, avoiding the backtracking regex this replaces.
+function stripTrailingSystemReminders(text: string) {
+  const open = '<system-reminder>'
+  const close = '</system-reminder>'
+  let cursor = 0
+  let suffixStart: number | undefined
+  for (;;) {
+    const start = text.indexOf(open, cursor)
+    if (start === -1) {
+      return suffixStart !== undefined && text.slice(cursor).trim() === ''
+        ? text.slice(0, suffixStart).trim()
+        : text.trim()
+    }
+    if (suffixStart === undefined || text.slice(cursor, start).trim() !== '') {
+      suffixStart = start
+    }
+    const end = text.indexOf(close, start + open.length)
+    if (end === -1) return text.trim()
+    cursor = end + close.length
+  }
 }
 
 // Join the text of every `type:"text"` part in a content array (skips

@@ -18,6 +18,7 @@ import { writeHandoff } from './handoff.js'
 import { buildLaunchPlan, getHarness, harnessNames } from './harnesses.js'
 import { exec, printEnv } from './launch.js'
 import { canServeAny } from './providers.js'
+import { resolveResumeWiring } from './resume-wiring.js'
 import { listSessionsForCwd } from './sessions.js'
 import { home, selectionFromRecent } from './ui/home.js'
 import { intro, log, outro } from './ui/output.js'
@@ -302,64 +303,4 @@ function planSummary(selection: Selection, env: Record<string, string>) {
     ),
   ]
   return lines.join('\n')
-}
-
-// Wiring for a picked session. Explicit fields win; the rest comes from
-// recents, preferring the combo that last ran this harness+model — a
-// provider is only known to serve the models it actually launched — over the
-// latest combo for the harness generally (cwd-matching first). No recent for
-// the harness at all → incomplete selection; the pickers fill it. The pool
-// keys off the LAUNCH harness: the session's own for a native resume, the
-// handoff target otherwise (flow always sets selection.harness first).
-function resolveResumeWiring(args: {
-  config: Config
-  selection: Partial<Selection>
-  session: SessionInfo
-}) {
-  const { config, selection, session } = args
-  const pool = config.recent.filter(
-    (r) => r.harness === (selection.harness ?? session.harness),
-  )
-  const cwdFirst = [
-    ...pool.filter((r) => r.cwd === process.cwd()),
-    ...pool.filter((r) => r.cwd !== process.cwd()),
-  ]
-  const wantedModel = selection.model ?? session.model
-  const modelMatch =
-    wantedModel === undefined
-      ? undefined
-      : cwdFirst.find((r) => r.model === wantedModel)
-  const recent = modelMatch ?? cwdFirst.at(0)
-  // A handoff launches on a different harness than the session ran on, so
-  // its model id is foreign there — unless a recent proves the target
-  // provider serves it (a rule-a match). Without that proof the foreign id
-  // would just 404 at launch, so fall back to the target's own model (or
-  // the pickers) instead.
-  const foreignModel =
-    (selection.harness ?? session.harness) !== session.harness &&
-    modelMatch === undefined
-  // No recent for the harness at all: keep the session's model so the
-  // pickers only ask for a provider (they'd otherwise re-ask what we know).
-  if (!recent) {
-    return {
-      ...selection,
-      model: selection.model ?? (foreignModel ? undefined : session.model),
-    }
-  }
-  const provider = selection.provider ?? canonicalProviderName(recent.provider)
-  // recent.model is only meaningful on its own provider — model ids are
-  // provider-scoped. The session's own model carries over when it's servable
-  // (native resume, or a proven rule-a match): resuming onto different
-  // wiring than the session started on is supported.
-  const sameProvider =
-    canonicalProviderName(provider) === canonicalProviderName(recent.provider)
-  return {
-    ...selection,
-    effort: selection.effort ?? recent.effort,
-    model:
-      selection.model ??
-      (foreignModel ? undefined : session.model) ??
-      (sameProvider ? recent.model : undefined),
-    provider,
-  }
 }

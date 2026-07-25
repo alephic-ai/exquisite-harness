@@ -258,8 +258,9 @@ first user turn plus the newest turns with an omission marker; pruned to the
 newest 20), and launches the target harness FRESH with a short positional
 pointer prompt as its first user message (grok adds `--verbatim`; seed args via
 `HarnessDef.seedArgs`, mutually exclusive with `resumeArgs`). The source session
-is untouched; the new session is fully native and lists in `eh -r` normally —
-its title is the pointer's first line, which leads with
+is untouched and its harness need not be installed for a handoff; the new
+session is fully native and lists in `eh -r` normally — its title is the
+pointer's first line, which leads with
 `Continuing a <harness> session — "<original title>"`. Wiring resolves
 identically, keyed on the target harness — with one carve-out: the session's
 model only carries cross-harness when a recent proves the target provider serves
@@ -287,6 +288,7 @@ src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
 src/sessions.ts   cross-harness session enumeration + transcript extraction for -r (read-only store scans)
 src/handoff.ts    context handoff: transcript → markdown doc + pointer prompt
+src/resume-wiring.ts  native resume / handoff provider-model resolution
 src/launch.ts     spawn / print-env
 src/doctor.ts     doctor report
 src/update.ts     self-update: gh-auth release lookup → staged download → atomic swap

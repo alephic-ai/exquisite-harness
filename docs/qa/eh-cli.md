@@ -128,6 +128,10 @@ Drive each with the PTY; assert on screen text.
     last model — foreign model ids are NOT carried.
 13. **Handoff target not installed**: pick a target whose bin is off PATH →
     warn + re-prompt.
+14. **Handoff source not installed**: leave a source transcript on disk with its
+    bin off PATH → the session remains selectable; choosing an installed target
+    hands it off, while choosing the source for native resume warns +
+    re-prompts.
 
 ## E. Key storage
 
@@ -184,5 +188,6 @@ Drive each with the PTY; assert on screen text.
 
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
 - `bun test` — `src/statusline.test.ts` (transcript usage),
-  `src/sessions.test.ts` (session-store parsers), and `src/handoff.test.ts`
-  (conversation extraction, handoff doc build/truncate/prune, seed args).
+  `src/sessions.test.ts` (session-store parsers), `src/handoff.test.ts`
+  (conversation extraction, handoff doc build/truncate/prune, private writes,
+  seed args), and `src/resume-wiring.test.ts` (resume wiring).

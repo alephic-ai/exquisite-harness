@@ -1,10 +1,19 @@
-import { afterAll, describe, expect, test } from 'bun:test'
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  spyOn,
+  test,
+} from 'bun:test'
 import {
   mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
   utimesSync,
   writeFileSync,
 } from 'node:fs'
@@ -13,6 +22,7 @@ import path from 'node:path'
 
 import type { SessionInfo } from './sessions.js'
 
+import * as config from './config.js'
 import {
   buildHandoffDoc,
   HANDOFF_DOC_CAP,
@@ -171,6 +181,7 @@ describe('extractConversation', () => {
     '<command-message>review</command-message>',
     '<command-name>/review</command-name>',
     '<local-command-stdout>done</local-command-stdout>',
+    '<task-notification><task-id>42</task-id><result>subagent output</result><usage>1000 tokens</usage></task-notification>',
   ])('claude: skips wrapper-only user record %s', async (wrapper) => {
     const roots = fakeHome()
     const file = writeClaude(roots.claude, CWD, 'sess-2', [
@@ -286,6 +297,30 @@ describe('extractConversation', () => {
     ])
   })
 
+  test('grok: extracts image prompts without attachment metadata or reminders', async () => {
+    const roots = fakeHome()
+    const dir = writeGrokHistory(roots.grok, CWD, 'uuid-image', [
+      {
+        content: [
+          {
+            text: [
+              '<image_files>/tmp/screenshot.png</image_files>',
+              '<user_query>review this image</user_query>',
+              '<system-reminder><image_compression_notice>compressed</image_compression_notice></system-reminder>',
+            ].join('\n'),
+            type: 'text',
+          },
+        ],
+        type: 'user',
+      },
+    ])
+
+    const turns = await extractConversation(
+      session({ harness: 'grok', source: dir }),
+    )
+    expect(turns).toEqual([{ role: 'user', text: 'review this image' }])
+  })
+
   test('missing transcript yields no turns', async () => {
     const turns = await extractConversation(
       session({ harness: 'claude', source: '/nonexistent/nope.jsonl' }),
@@ -359,7 +394,7 @@ describe('buildHandoffDoc', () => {
     expect(Buffer.byteLength(doc, 'utf8')).toBeLessThanOrEqual(HANDOFF_DOC_CAP)
   })
 
-  test('a goal turn bigger than the cap is truncated', () => {
+  test('a goal turn bigger than the cap keeps the newest turn', () => {
     const { doc, omitted } = buildHandoffDoc({
       ...base,
       session: session({}),
@@ -370,9 +405,38 @@ describe('buildHandoffDoc', () => {
     })
     expect(Buffer.byteLength(doc, 'utf8')).toBeLessThanOrEqual(HANDOFF_DOC_CAP)
     expect(doc).toContain('turn truncated to fit 128 KB')
-    // The tiny second turn either fits in the margin or is counted omitted —
-    // byte-edge luck, but it must be accounted for exactly one way.
-    expect(doc.includes('answer')).toBe(omitted === 0)
+    expect(doc).toContain('answer')
+    expect(omitted).toBe(0)
+  })
+
+  test('a near-cap goal leaves room for the omission marker', () => {
+    const { doc } = buildHandoffDoc({
+      ...base,
+      session: session({}),
+      turns: [
+        { role: 'user', text: 'y'.repeat(130_700) },
+        { role: 'assistant', text: 'z'.repeat(500) },
+      ],
+    })
+    expect(Buffer.byteLength(doc, 'utf8')).toBeLessThanOrEqual(HANDOFF_DOC_CAP)
+  })
+
+  test('an oversized newest turn is truncated instead of discarded', () => {
+    const { doc, omitted } = buildHandoffDoc({
+      ...base,
+      session: session({}),
+      turns: [
+        { role: 'user', text: 'goal' },
+        {
+          role: 'assistant',
+          text: `NEWEST_SENTINEL ${'z'.repeat(HANDOFF_DOC_CAP * 2)}`,
+        },
+      ],
+    })
+    expect(Buffer.byteLength(doc, 'utf8')).toBeLessThanOrEqual(HANDOFF_DOC_CAP)
+    expect(doc).toContain('NEWEST_SENTINEL')
+    expect(doc).toContain('turn truncated to fit 128 KB')
+    expect(omitted).toBe(0)
   })
 
   test('omitted counts leading turns when the goal is not first', () => {
@@ -419,6 +483,17 @@ describe('pointerPrompt', () => {
 })
 
 describe('writeHandoff', () => {
+  let out: string
+  let restoreConfigDir: () => void
+
+  beforeEach(() => {
+    out = path.join(tempDir(), 'eh')
+    const configDirSpy = spyOn(config, 'configDir').mockReturnValue(out)
+    restoreConfigDir = () => configDirSpy.mockRestore()
+  })
+
+  afterEach(() => restoreConfigDir())
+
   test('extracts, writes, and returns the pointer', async () => {
     const roots = fakeHome()
     const source = writeGrokHistory(roots.grok, CWD, 'uuid-9', [
@@ -431,11 +506,8 @@ describe('writeHandoff', () => {
       },
       { content: 'hi there', type: 'assistant' },
     ])
-    const out = tempDir()
-
     const result = await writeHandoff({
       cwd: CWD,
-      dir: out,
       session: session({ harness: 'grok', source }),
       target: 'claude',
     })
@@ -445,6 +517,8 @@ describe('writeHandoff', () => {
     expect(doc).toContain('hello grok')
     expect(doc).toContain('hi there')
     expect(result.prompt).toContain(result.docPath)
+    expect(path.dirname(result.docPath)).toBe(path.join(out, 'handoffs'))
+    expect(statSync(result.docPath).mode & 0o777).toBe(0o600)
   })
 
   test('throws when the transcript yields no turns', async () => {
@@ -452,7 +526,6 @@ describe('writeHandoff', () => {
     const source = writeGrokHistory(roots.grok, CWD, 'uuid-8', [])
     const error: unknown = await writeHandoff({
       cwd: CWD,
-      dir: tempDir(),
       session: session({ harness: 'grok', source }),
       target: 'claude',
     }).catch((e: unknown) => e)
@@ -462,7 +535,7 @@ describe('writeHandoff', () => {
     expect(error.message).toContain("couldn't extract any conversation")
   })
 
-  test('prunes old docs beyond the cap', async () => {
+  test('prunes the oldest docs beyond the cap', async () => {
     const roots = fakeHome()
     const source = writeGrokHistory(roots.grok, CWD, 'uuid-7', [
       {
@@ -471,21 +544,23 @@ describe('writeHandoff', () => {
         type: 'user',
       },
     ])
-    const out = tempDir()
-    for (let i = 0; i < 25; i++) {
-      await writeHandoff({
-        cwd: CWD,
-        dir: out,
-        // Distinct id8s → distinct filenames even within the same millisecond.
-        session: session({
-          harness: 'grok',
-          id: String(i).padStart(8, '0'),
-          source,
-        }),
-        target: 'claude',
-      })
+    const handoffs = path.join(out, 'handoffs')
+    mkdirSync(handoffs, { recursive: true })
+    for (let i = 0; i < 20; i++) {
+      const file = path.join(handoffs, `old-${String(i).padStart(2, '0')}.md`)
+      writeFileSync(file, 'old')
+      const mtime = new Date(T1.getTime() + i * 1000)
+      utimesSync(file, mtime, mtime)
     }
-    expect(readdirSync(out).filter((f) => f.endsWith('.md'))).toHaveLength(20)
+    const result = await writeHandoff({
+      cwd: CWD,
+      session: session({ harness: 'grok', source }),
+      target: 'claude',
+    })
+    const retained = readdirSync(handoffs).filter((f) => f.endsWith('.md'))
+    expect(retained).toHaveLength(20)
+    expect(retained).not.toContain('old-00.md')
+    expect(retained).toContain(path.basename(result.docPath))
   })
 })
 

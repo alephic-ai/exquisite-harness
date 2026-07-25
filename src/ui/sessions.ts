@@ -24,7 +24,6 @@ export async function pickSession(sessions: SessionInfo[]) {
       ...(installed ? [] : ['not installed']),
     ].join(' · ')
     return {
-      installed,
       option: {
         hint,
         label: session.title || `(untitled · ${session.id.slice(0, 8)})`,
@@ -50,8 +49,7 @@ export async function pickSession(sessions: SessionInfo[]) {
       log.warn('no session selected — clear the filter or pick one')
       continue
     }
-    if (row.installed) return row.session
-    warnNotInstalled(row.session.harness)
+    return row.session
   }
 }
 
@@ -87,6 +85,6 @@ function installedBin(harness: string) {
 
 function warnNotInstalled(harness: string) {
   log.warn(
-    `"${getHarness(harness)?.bin ?? harness}" is not on PATH — install it or pick another session`,
+    `"${getHarness(harness)?.bin ?? harness}" is not on PATH — install it or pick another harness`,
   )
 }

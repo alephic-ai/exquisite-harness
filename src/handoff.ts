@@ -1,4 +1,5 @@
 import {
+  chmodSync,
   mkdirSync,
   readdirSync,
   rmSync,
@@ -19,6 +20,8 @@ export const HANDOFF_DOC_CAP = 128 * 1024
 
 // Handoff docs are disposable context, not an archive.
 const MAX_HANDOFF_DOCS = 20
+const GAP_MARKER_RESERVE = 128
+const TURN_TRUNCATION_MARKER = '\n\n*… turn truncated to fit 128 KB …*\n'
 
 // Pure builder (clock and version are parameters) so tests can pin output.
 export function buildHandoffDoc(args: {
@@ -43,22 +46,42 @@ export function buildHandoffDoc(args: {
     0,
     args.turns.findIndex((t) => t.role === 'user'),
   )
-  const goalBlock = fitBlock(blocks[first] ?? '', headerBytes)
-  // Reserve marker room; the exact count lands after the suffix is known.
-  const budget = HANDOFF_DOC_CAP - headerBytes - bytes(goalBlock) - 128
+  const available = HANDOFF_DOC_CAP - headerBytes - GAP_MARKER_RESERVE
+  const newest = blocks.at(-1) ?? ''
+  const hasLaterTurn = blocks.length - 1 > first
+  // When both ends are oversized, each gets half. If either is small, the
+  // other can use the space it leaves behind.
+  const newestReserve = hasLaterTurn
+    ? Math.min(bytes(newest) + 1, Math.floor(available / 2))
+    : 0
+  const goalBlock = fitBlock(
+    blocks[first] ?? '',
+    Math.max(0, available - newestReserve),
+  )
   const suffix: string[] = []
-  let used = 0
-  for (let i = blocks.length - 1; i > first && used < budget; i--) {
+  let remaining = available - bytes(goalBlock)
+  for (let i = blocks.length - 1; i > first && remaining > 1; i--) {
     const size = bytes(blocks[i]) + 1
-    if (used + size > budget) break
-    suffix.unshift(blocks[i])
-    used += size
+    if (size <= remaining) {
+      suffix.unshift(blocks[i])
+      remaining -= size
+      continue
+    }
+    // The newest turn is part of the handoff contract even when it cannot fit
+    // whole. Older turns are all-or-nothing so the retained suffix is coherent.
+    if (suffix.length === 0) {
+      suffix.unshift(fitBlock(blocks[i], remaining - 1))
+    }
+    break
   }
   // Everything except the goal block and the kept suffix is omitted —
   // including any leading turns before the goal (assistant-first transcripts).
   const omitted = blocks.length - 1 - suffix.length
-  const marker = `\n*… ${String(omitted)} earlier turn${omitted === 1 ? '' : 's'} omitted to fit 128 KB …*\n`
-  return { doc: header + goalBlock + marker + suffix.join('\n'), omitted }
+  const marker = `*… ${String(omitted)} earlier turn${omitted === 1 ? '' : 's'} omitted to fit 128 KB …*`
+  const body = [goalBlock, ...(omitted > 0 ? [marker] : []), ...suffix].join(
+    '\n',
+  )
+  return { doc: header + body, omitted }
 }
 
 export function handoffsDir() {
@@ -74,11 +97,9 @@ export function pointerPrompt(args: { docPath: string; session: SessionInfo }) {
 
 // Extract → build → write → prune. Throws when the source store yields no
 // conversation (a corrupted or gutted transcript), so the user can fall back
-// to a native resume instead of seeding an empty session. `dir` overrides
-// the handoffs dir (tests; production uses handoffsDir()).
+// to a native resume instead of seeding an empty session.
 export async function writeHandoff(args: {
   cwd: string
-  dir?: string
   session: SessionInfo
   target: string
 }) {
@@ -88,21 +109,23 @@ export async function writeHandoff(args: {
       `couldn't extract any conversation from ${args.session.harness} — resume it natively instead`,
     )
   }
-  const { dir, ...docArgs } = args
   const { doc, omitted } = buildHandoffDoc({
-    ...docArgs,
+    ...args,
     exportedAt: new Date().toISOString(),
     turns,
     version: pkg.version,
   })
-  const outDir = dir ?? handoffsDir()
+  const outDir = handoffsDir()
   mkdirSync(outDir, { recursive: true })
   const stamp = new Date().toISOString().replaceAll(/[:.]/g, '-')
   const docPath = path.join(
     outDir,
     `${stamp}-${args.session.harness}-to-${args.target}-${args.session.id.slice(0, 8)}.md`,
   )
-  writeFileSync(docPath, doc)
+  writeFileSync(docPath, doc, { mode: 0o600 })
+  // `mode` only applies when a file is created. A same-millisecond rewrite of
+  // an existing path must become private too.
+  chmodSync(docPath, 0o600)
   pruneHandoffs(outDir)
   return {
     docPath,
@@ -140,15 +163,13 @@ function docHeader(args: {
   ].join('\n')
 }
 
-// The goal turn alone can blow the cap on a monster first prompt — hard-cut
-// its bytes. The reserve covers this block's own ellipsis marker AND the
-// omission marker the caller appends, so the final doc stays under the cap.
-// A replacement char at the cut point is acceptable here.
-function fitBlock(block: string, headerBytes: number) {
-  if (headerBytes + bytes(block) <= HANDOFF_DOC_CAP) return block
-  const budget = Math.max(0, HANDOFF_DOC_CAP - headerBytes - 192)
-  const cut = Buffer.from(block, 'utf8').subarray(0, budget)
-  return `${cut.toString('utf8')}\n\n*… turn truncated to fit 128 KB …*\n`
+function fitBlock(block: string, maxBytes: number) {
+  if (bytes(block) <= maxBytes) return block
+  const markerBytes = bytes(TURN_TRUNCATION_MARKER)
+  if (maxBytes <= markerBytes) {
+    return truncateUtf8(TURN_TRUNCATION_MARKER, maxBytes)
+  }
+  return `${truncateUtf8(block, maxBytes - markerBytes)}${TURN_TRUNCATION_MARKER}`
 }
 
 function pruneHandoffs(dir: string) {
@@ -174,6 +195,15 @@ function pruneHandoffs(dir: string) {
       // A vanishing file is not an error.
     }
   }
+}
+
+function truncateUtf8(text: string, maxBytes: number) {
+  const buffer = Buffer.from(text, 'utf8')
+  if (buffer.length <= maxBytes) return text
+  let end = Math.max(0, maxBytes)
+  // Do not decode a partial multi-byte code point at the cut boundary.
+  while (end > 0 && (buffer[end] & 0xc0) === 0x80) end -= 1
+  return buffer.subarray(0, end).toString('utf8')
 }
 
 function turnBlock(turn: ConversationTurn) {
