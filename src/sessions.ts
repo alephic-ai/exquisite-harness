@@ -219,7 +219,8 @@ function claudeUserText(row: Record<string, unknown>) {
 
 // A real human turn: not a meta/sidechain record, not a wrapper-only string
 // (harness UI markers like slash-command and bash-mode I/O), not a
-// tool_result-only record; harness reminders appended to real prompts go.
+// tool_result-only record; harness reminders around real prompts go —
+// CLAUDE.md and hook blobs lead, notices trail.
 function claudeUserTurnText(row: Record<string, unknown>) {
   if (row.isMeta === true || row.isSidechain === true) return undefined
   const content = obj(row.message)?.content
@@ -228,7 +229,7 @@ function claudeUserTurnText(row: Record<string, unknown>) {
   ).trim()
   if (text === '') return undefined
   if (CLAUDE_USER_WRAPPERS.some((w) => text.startsWith(w))) return undefined
-  const clean = stripTrailingSystemReminders(text)
+  const clean = stripEdgeSystemReminders(text)
   return clean === '' ? undefined : clean
 }
 
@@ -439,22 +440,22 @@ function grokSummary(file: string, dirId: string, mtime: Date) {
   }
 }
 
-// --- shared helpers ---
-
 function grokUserTurnText(text: string) {
   const open = '<user_query>'
   const start = text.indexOf(open)
   if (start !== -1) {
     const from = start + open.length
     const close = text.indexOf('</user_query>', from)
-    const query = stripTrailingSystemReminders(
+    const query = stripEdgeSystemReminders(
       text.slice(from, close === -1 ? undefined : close),
     )
     return query === '' ? undefined : query
   }
-  const clean = stripTrailingSystemReminders(text)
+  const clean = stripEdgeSystemReminders(text)
   return clean === '' ? undefined : clean
 }
+
+// --- shared helpers ---
 
 function oneLine(text: string) {
   const flat = text.replaceAll(/\s+/g, ' ').trim()
@@ -530,25 +531,35 @@ function str(value: unknown) {
   return typeof value === 'string' ? value : undefined
 }
 
-// Remove a suffix made only of complete reminder blocks and whitespace. The
-// cursor advances monotonically, avoiding the backtracking regex this replaces.
-function stripTrailingSystemReminders(text: string) {
+// Remove complete reminder blocks (plus whitespace) from both ends of a turn.
+// Harnesses inject reminders around real prompts — CLAUDE.md and hook blobs
+// lead, notices trail — while mid-prompt blocks are user-quoted text and stay.
+// The cursor advances monotonically, avoiding a backtracking regex.
+function stripEdgeSystemReminders(text: string) {
   const open = '<system-reminder>'
   const close = '</system-reminder>'
-  let cursor = 0
+  let head = 0
+  for (;;) {
+    const start = text.indexOf(open, head)
+    if (start === -1 || text.slice(head, start).trim() !== '') break
+    const end = text.indexOf(close, start + open.length)
+    if (end === -1) break
+    head = end + close.length
+  }
+  let cursor = head
   let suffixStart: number | undefined
   for (;;) {
     const start = text.indexOf(open, cursor)
     if (start === -1) {
       return suffixStart !== undefined && text.slice(cursor).trim() === ''
-        ? text.slice(0, suffixStart).trim()
-        : text.trim()
+        ? text.slice(head, suffixStart).trim()
+        : text.slice(head).trim()
     }
     if (suffixStart === undefined || text.slice(cursor, start).trim() !== '') {
       suffixStart = start
     }
     const end = text.indexOf(close, start + open.length)
-    if (end === -1) return text.trim()
+    if (end === -1) return text.slice(head).trim()
     cursor = end + close.length
   }
 }

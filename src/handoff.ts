@@ -95,10 +95,11 @@ export function pointerPrompt(args: { docPath: string; session: SessionInfo }) {
   return `Continuing a ${args.session.harness} session — "${what}". The full conversation is in ${args.docPath} — read it, then pick up where it left off.`
 }
 
-// Extract → build → write → prune. Throws when the source store yields no
-// conversation (a corrupted or gutted transcript), so the user can fall back
-// to a native resume instead of seeding an empty session.
-export async function writeHandoff(args: {
+// Extract → build → name, without touching disk, so the flow can fail fast on
+// a corrupted or gutted transcript (falling back to a native resume) before
+// the wiring pickers run, and defer the write until the launch is confirmed.
+// Throws when the source store yields no conversation.
+export async function prepareHandoff(args: {
   cwd: string
   session: SessionInfo
   target: string
@@ -115,24 +116,29 @@ export async function writeHandoff(args: {
     turns,
     version: pkg.version,
   })
-  const outDir = handoffsDir()
-  mkdirSync(outDir, { recursive: true })
   const stamp = new Date().toISOString().replaceAll(/[:.]/g, '-')
   const docPath = path.join(
-    outDir,
+    handoffsDir(),
     `${stamp}-${args.session.harness}-to-${args.target}-${args.session.id.slice(0, 8)}.md`,
   )
-  writeFileSync(docPath, doc, { mode: 0o600 })
-  // `mode` only applies when a file is created. A same-millisecond rewrite of
-  // an existing path must become private too.
-  chmodSync(docPath, 0o600)
-  pruneHandoffs(outDir)
   return {
+    doc,
     docPath,
     omitted,
     prompt: pointerPrompt({ docPath, session: args.session }),
     turns: turns.length,
   }
+}
+
+// The effectful half of a handoff: write the prepared doc and prune old ones.
+export function commitHandoff(prepared: { doc: string; docPath: string }) {
+  const outDir = path.dirname(prepared.docPath)
+  mkdirSync(outDir, { recursive: true })
+  writeFileSync(prepared.docPath, prepared.doc, { mode: 0o600 })
+  // `mode` only applies when a file is created. A same-millisecond rewrite of
+  // an existing path must become private too.
+  chmodSync(prepared.docPath, 0o600)
+  pruneHandoffs(outDir)
 }
 
 function bytes(s: string) {

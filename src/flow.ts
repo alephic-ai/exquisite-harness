@@ -1,5 +1,4 @@
 import type { Config } from './config.js'
-import type { SessionInfo } from './sessions.js'
 import type { EffortLevel, Protocol, Selection } from './types.js'
 
 import {
@@ -14,7 +13,7 @@ import {
   saveConfig,
 } from './config.js'
 import { doctor } from './doctor.js'
-import { writeHandoff } from './handoff.js'
+import { commitHandoff, prepareHandoff } from './handoff.js'
 import { buildLaunchPlan, getHarness, harnessNames } from './harnesses.js'
 import { exec, printEnv } from './launch.js'
 import { canServeAny } from './providers.js'
@@ -86,7 +85,7 @@ export async function launchFlow(
   }
 
   let didIntro = false
-  let handoff: undefined | { session: SessionInfo; target: string }
+  let handoff: Awaited<ReturnType<typeof prepareHandoff>> | undefined
   let resumeSessionId: string | undefined
   if (options.resume && options.printEnvOnly) {
     // --print-env keeps the scripted behavior: seed the selection from the
@@ -145,7 +144,13 @@ export async function launchFlow(
     if (target === picked.harness) {
       resumeSessionId = picked.id
     } else {
-      handoff = { session: picked, target }
+      // Fails fast on a gutted transcript, before the wiring pickers run; the
+      // doc itself is only written once the launch is confirmed.
+      handoff = await prepareHandoff({
+        cwd: process.cwd(),
+        session: picked,
+        target,
+      })
     }
     selection = resolveResumeWiring({
       config,
@@ -208,27 +213,13 @@ export async function launchFlow(
     provider: provider.name,
   }
 
-  // Handoff: write the doc before the plan needs its pointer prompt. The
-  // target launches fresh (no resume args) with the doc as seeded context.
-  let seedPrompt: string | undefined
-  if (handoff) {
-    const written = await writeHandoff({
-      cwd: process.cwd(),
-      session: handoff.session,
-      target: handoff.target,
-    })
-    seedPrompt = written.prompt
-    log.success(
-      `handoff doc → ${written.docPath} (${String(written.turns)} turns${
-        written.omitted > 0 ? `, ${String(written.omitted)} omitted` : ''
-      })`,
-    )
-  }
+  // Handoff: the target launches fresh (no resume args) with the prepared
+  // doc's pointer prompt as seeded context.
   const plan = await buildLaunchPlan(harness, provider, model, {
     effort: complete.effort,
     resume: options.resume && handoff === undefined,
     resumeSessionId,
-    seedPrompt,
+    seedPrompt: handoff?.prompt,
   })
 
   if (options.printEnvOnly) {
@@ -246,6 +237,16 @@ export async function launchFlow(
       config = { ...config, profiles: { ...config.profiles, [name]: complete } }
       log.success(`profile "${name}" saved`)
     }
+  }
+
+  // The launch is committed — now write the doc the seed prompt points at.
+  if (handoff) {
+    commitHandoff(handoff)
+    log.success(
+      `handoff doc → ${handoff.docPath} (${String(handoff.turns)} turns${
+        handoff.omitted > 0 ? `, ${String(handoff.omitted)} omitted` : ''
+      })`,
+    )
   }
 
   // Explicit --save: persist the combo without any prompt.

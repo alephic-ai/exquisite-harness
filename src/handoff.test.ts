@@ -25,9 +25,10 @@ import type { SessionInfo } from './sessions.js'
 import * as config from './config.js'
 import {
   buildHandoffDoc,
+  commitHandoff,
   HANDOFF_DOC_CAP,
   pointerPrompt,
-  writeHandoff,
+  prepareHandoff,
 } from './handoff.js'
 import { buildLaunchPlan, HARNESSES } from './harnesses.js'
 import { extractConversation } from './sessions.js'
@@ -172,6 +173,64 @@ describe('extractConversation', () => {
       { role: 'assistant', text: 'first answer' },
       { role: 'user', text: 'array prompt\nsecond part' },
       { role: 'assistant', text: 'second answer' },
+    ])
+  })
+
+  test('claude: strips injected reminder blocks at both ends of a prompt', async () => {
+    const roots = fakeHome()
+    const file = writeClaude(roots.claude, CWD, 'sess-reminders', [
+      {
+        message: {
+          content:
+            '<system-reminder>\nCLAUDE.md contents\n</system-reminder>\nfix the login bug',
+          role: 'user',
+        },
+        type: 'user',
+      },
+      {
+        message: { content: [{ text: 'on it', type: 'text' }] },
+        type: 'assistant',
+      },
+      {
+        message: {
+          content: [
+            {
+              text: '<system-reminder>hook output</system-reminder>',
+              type: 'text',
+            },
+            { text: 'and the signup page', type: 'text' },
+          ],
+          role: 'user',
+        },
+        type: 'user',
+      },
+      {
+        message: {
+          content: '<system-reminder>reminder-only record</system-reminder>',
+          role: 'user',
+        },
+        type: 'user',
+      },
+      {
+        message: {
+          content: 'what does <system-reminder>x</system-reminder> mean?',
+          role: 'user',
+        },
+        type: 'user',
+      },
+    ])
+
+    const turns = await extractConversation(
+      session({ harness: 'claude', source: file }),
+    )
+    expect(turns).toEqual([
+      { role: 'user', text: 'fix the login bug' },
+      { role: 'assistant', text: 'on it' },
+      { role: 'user', text: 'and the signup page' },
+      {
+        role: 'user',
+        text: 'what does <system-reminder>x</system-reminder> mean?',
+      },
     ])
   })
 
@@ -482,7 +541,7 @@ describe('pointerPrompt', () => {
   })
 })
 
-describe('writeHandoff', () => {
+describe('prepareHandoff + commitHandoff', () => {
   let out: string
   let restoreConfigDir: () => void
 
@@ -494,7 +553,7 @@ describe('writeHandoff', () => {
 
   afterEach(() => restoreConfigDir())
 
-  test('extracts, writes, and returns the pointer', async () => {
+  test('prepare touches no disk; commit writes the prepared doc', async () => {
     const roots = fakeHome()
     const source = writeGrokHistory(roots.grok, CWD, 'uuid-9', [
       {
@@ -506,31 +565,35 @@ describe('writeHandoff', () => {
       },
       { content: 'hi there', type: 'assistant' },
     ])
-    const result = await writeHandoff({
+    const prepared = await prepareHandoff({
       cwd: CWD,
       session: session({ harness: 'grok', source }),
       target: 'claude',
     })
-    expect(result.turns).toBe(2)
-    expect(result.omitted).toBe(0)
-    const doc = readFileSync(result.docPath, 'utf8')
+    expect(prepared.turns).toBe(2)
+    expect(prepared.omitted).toBe(0)
+    expect(prepared.prompt).toContain(prepared.docPath)
+    expect(path.dirname(prepared.docPath)).toBe(path.join(out, 'handoffs'))
+    // Backing out at the confirm must leave no doc behind — prepare is pure.
+    expect(() => statSync(prepared.docPath)).toThrow()
+
+    commitHandoff(prepared)
+    const doc = readFileSync(prepared.docPath, 'utf8')
     expect(doc).toContain('hello grok')
     expect(doc).toContain('hi there')
-    expect(result.prompt).toContain(result.docPath)
-    expect(path.dirname(result.docPath)).toBe(path.join(out, 'handoffs'))
-    expect(statSync(result.docPath).mode & 0o777).toBe(0o600)
+    expect(statSync(prepared.docPath).mode & 0o777).toBe(0o600)
   })
 
   test('throws when the transcript yields no turns', async () => {
     const roots = fakeHome()
     const source = writeGrokHistory(roots.grok, CWD, 'uuid-8', [])
-    const error: unknown = await writeHandoff({
+    const error: unknown = await prepareHandoff({
       cwd: CWD,
       session: session({ harness: 'grok', source }),
       target: 'claude',
     }).catch((e: unknown) => e)
     if (!(error instanceof Error)) {
-      throw new Error('expected writeHandoff to throw')
+      throw new Error('expected prepareHandoff to throw')
     }
     expect(error.message).toContain("couldn't extract any conversation")
   })
@@ -552,15 +615,16 @@ describe('writeHandoff', () => {
       const mtime = new Date(T1.getTime() + i * 1000)
       utimesSync(file, mtime, mtime)
     }
-    const result = await writeHandoff({
+    const prepared = await prepareHandoff({
       cwd: CWD,
       session: session({ harness: 'grok', source }),
       target: 'claude',
     })
+    commitHandoff(prepared)
     const retained = readdirSync(handoffs).filter((f) => f.endsWith('.md'))
     expect(retained).toHaveLength(20)
     expect(retained).not.toContain('old-00.md')
-    expect(retained).toContain(path.basename(result.docPath))
+    expect(retained).toContain(path.basename(prepared.docPath))
   })
 })
 

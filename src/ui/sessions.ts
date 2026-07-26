@@ -58,22 +58,28 @@ export async function pickSession(sessions: SessionInfo[]) {
 // handoff into a fresh session).
 export async function pickTargetHarness(source: string) {
   const ordered = [source, ...harnessNames().filter((n) => n !== source)]
+  const options = ordered.map((name) => {
+    const mode =
+      name === source
+        ? 'native — resume by session id'
+        : 'hand off — continue the conversation in a fresh session'
+    return {
+      hint: installedBin(name) === undefined ? `${mode} · not installed` : mode,
+      label: name,
+      value: name,
+    }
+  })
   for (;;) {
     const value = await select({
       initialValue: source,
       message: 'resume on:',
-      options: ordered.map((name) => ({
-        hint:
-          name === source
-            ? 'native — resume by session id'
-            : 'hand off — continue the conversation in a fresh session',
-        label: name,
-        value: name,
-      })),
+      options,
     })
     if (isCancel(value)) bail()
     if (installedBin(value) !== undefined) return value
-    warnNotInstalled(value)
+    log.warn(
+      `"${getHarness(value)?.bin ?? value}" is not on PATH — install it or pick another harness`,
+    )
   }
 }
 
@@ -81,10 +87,4 @@ export async function pickTargetHarness(source: string) {
 function installedBin(harness: string) {
   const bin = getHarness(harness)?.bin
   return bin !== undefined && findBin(bin) !== undefined ? bin : undefined
-}
-
-function warnNotInstalled(harness: string) {
-  log.warn(
-    `"${getHarness(harness)?.bin ?? harness}" is not on PATH — install it or pick another harness`,
-  )
 }
