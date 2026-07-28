@@ -1,6 +1,12 @@
 import type { ResolvedProvider } from './config.js'
 import type { LaunchPlan, Protocol } from './types.js'
 
+import { opencodeConfigContent, opencodeProviderId } from './opencode.js'
+import {
+  PI_MODELS_JSON_HINT,
+  piProviderCompat,
+  resolvePiProvider,
+} from './pi.js'
 import { fetchModelMeta } from './pricing.js'
 import {
   anthropicBaseURLFor,
@@ -12,6 +18,8 @@ import { statuslineEnv, writeClaudeStatuslineSettings } from './statusline.js'
 
 export interface HarnessDef {
   bin: string
+  // false = no effort knob; the picker skips the question (grok, opencode).
+  effort?: false
   label: string
   plan: (
     provider: ResolvedProvider,
@@ -19,6 +27,12 @@ export interface HarnessDef {
     effort?: string,
   ) => Promise<LaunchPlan>
   protocols: Protocol[]
+  // Instance-level gate beyond protocol intersection (pi: the provider must
+  // exist in pi's catalog or the user's models.json). A block always carries
+  // its reason — it renders on the picker row and in launch-time errors.
+  providerCompat?: (
+    provider: ResolvedProvider,
+  ) => { hint: string; ok: false } | { ok: true }
   // Appended to the plan's args for `eh -r`. With a session id, resumes that
   // exact session; without one (the --print-env path), falls back to the
   // harness's own picker / most recent.
@@ -156,6 +170,61 @@ function tomlString(value: string) {
   return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`
 }
 
+// pi speaks OpenAI chat through its own provider catalog: the eh provider must
+// exist there natively or in ~/.pi/agent/models.json (providerCompat gates the
+// picker; this throw is the flag-driven path's version). Model ids pass
+// through — pi warns and uses generic limits for models it doesn't know.
+async function planPi(
+  provider: ResolvedProvider,
+  model: string,
+  effort?: string,
+) {
+  const match = resolvePiProvider(provider)
+  if (!match) {
+    throw new Error(
+      `pi can't serve provider "${provider.name}" — ${PI_MODELS_JSON_HINT}`,
+    )
+  }
+  const env: Record<string, string> = {}
+  if (match.keyEnvVar && !process.env[match.keyEnvVar]) {
+    // Same injection pattern as codex: the key lives in our store, pi reads
+    // the var from its own environment. Never --api-key (argv exposure).
+    env[match.keyEnvVar] = await authTokenFor(provider)
+  }
+  const args = ['--provider', match.piName, '--model', model]
+  // pi's thinking levels are eh's effort levels (auto = send nothing).
+  if (effort && effort !== 'auto') args.push('--thinking', effort)
+  return { args, bin: 'pi', env, notes: [] }
+}
+
+// opencode speaks OpenAI chat to anything via @ai-sdk/openai-compatible. The
+// provider definition rides as inline JSON in OPENCODE_CONFIG_CONTENT, which
+// merges over the user's own config — nothing written to disk.
+async function planOpencode(
+  provider: ResolvedProvider,
+  model: string,
+  effort?: string,
+) {
+  const notes: string[] = []
+  if (effort && effort !== 'auto') {
+    notes.push('opencode has no CLI effort knob — ignoring')
+  }
+  const env: Record<string, string> = {
+    OPENCODE_CONFIG_CONTENT: opencodeConfigContent(provider, model),
+  }
+  if (provider.envKey && !process.env[provider.envKey]) {
+    // Same injection pattern as codex: the key lives in our store, opencode
+    // reads the var from its own environment via the {env:VAR} indirection.
+    env[provider.envKey] = await authTokenFor(provider)
+  }
+  return {
+    args: ['-m', `${opencodeProviderId(provider)}/${model}`],
+    bin: 'opencode',
+    env,
+    notes,
+  }
+}
+
 // Exported for iteration (picker options). For lookups use getHarness —
 // Record index access would claim every key exists.
 export const HARNESSES: Record<string, HarnessDef> = {
@@ -177,10 +246,27 @@ export const HARNESSES: Record<string, HarnessDef> = {
   },
   grok: {
     bin: 'grok',
+    effort: false,
     label: 'Grok CLI',
     plan: planGrok,
     protocols: ['openai-chat'],
     resumeArgs: (id) => (id ? ['--resume', id] : ['--resume']),
+  },
+  opencode: {
+    bin: 'opencode',
+    effort: false,
+    label: 'opencode',
+    plan: planOpencode,
+    protocols: ['openai-chat'],
+    resumeArgs: (id) => (id ? ['--session', id] : ['--continue']),
+  },
+  pi: {
+    bin: 'pi',
+    label: 'pi',
+    plan: planPi,
+    protocols: ['openai-chat'],
+    providerCompat: piProviderCompat,
+    resumeArgs: (id) => (id ? ['--session', id] : ['--continue']),
   },
 }
 

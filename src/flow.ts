@@ -1,6 +1,7 @@
 import type { Config } from './config.js'
+import type { HarnessDef } from './harnesses.js'
 import type { SessionInfo } from './sessions.js'
-import type { EffortLevel, Protocol, Selection } from './types.js'
+import type { EffortLevel, Selection } from './types.js'
 
 import {
   allProviders,
@@ -247,22 +248,29 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
   const def = getHarness(harness)
   if (!def) throw new Error(`unknown harness "${harness}"`)
   const provider = partial.provider
-    ? mustGetProvider(config, partial.provider, def.protocols)
-    : await pickProvider(def.protocols, allProviders(config))
+    ? mustGetProvider(config, partial.provider, def)
+    : await pickProvider(def, allProviders(config))
   const model = partial.model ?? (await pickModel(provider))
-  // Only ask when the user is picking interactively and hasn't chosen one.
+  // Only ask when the user is picking interactively and hasn't chosen one;
+  // harnesses with effort: false (grok, opencode) skip the question.
   const effort =
-    partial.effort ?? (harness === 'grok' ? 'auto' : await pickEffort())
+    partial.effort ?? (def.effort === false ? 'auto' : await pickEffort())
   return { effort, harness, model, provider: provider.name }
 }
 
-function mustGetProvider(config: Config, name: string, protocols: Protocol[]) {
+function mustGetProvider(config: Config, name: string, def: HarnessDef) {
   const provider = getProvider(config, name)
   if (!provider) throw new Error(`unknown provider "${name}"`)
-  if (!canServeAny(provider.type, protocols)) {
+  if (!canServeAny(provider.type, def.protocols)) {
     throw new Error(
-      `provider "${name}" cannot serve ${protocols.join(' or ')} (needs the eh router, phase 2)`,
+      `provider "${name}" cannot serve ${def.protocols.join(' or ')} (needs the eh router, phase 2)`,
     )
+  }
+  // Instance-level gate (pi: catalog/models.json membership) on top of the
+  // protocol check.
+  const compat = def.providerCompat?.(provider)
+  if (compat && !compat.ok) {
+    throw new Error(`provider "${name}" ${compat.hint}`)
   }
   return provider
 }

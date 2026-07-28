@@ -1,12 +1,17 @@
+import { execFile } from 'node:child_process'
 import { createReadStream, readdirSync, readFileSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
+import { z } from 'zod'
+
+import { findBin } from './which.js'
 
 export interface ListSessionsOptions {
   codexMaxFiles?: number
   codexMaxMatches?: number
   harness?: string
+  opencodeRunner?: OpencodeListRunner
   roots?: SessionRoots
 }
 
@@ -27,7 +32,12 @@ export interface SessionRoots {
   claude?: string
   codex?: string
   grok?: string
+  pi?: string
 }
+
+// Boundary seam for opencode enumeration (parallels roots): production spawns
+// `opencode session list`; tests inject a fake — no binary needed in CI.
+export type OpencodeListRunner = () => Promise<unknown>
 
 // Per-store caps bound the metadata scans; the merged cap keeps the picker
 // focused on what anyone would actually resume.
@@ -52,7 +62,7 @@ export async function listSessionsForCwd(
   const home = os.homedir()
   // claude/codex move their whole config dir via env (CLAUDE_CONFIG_DIR /
   // CODEX_HOME, both verified against the installed binaries); grok has no
-  // such knob.
+  // such knob; pi has one: an agent-dir override.
   const roots = {
     claude:
       options.roots?.claude ??
@@ -67,6 +77,7 @@ export async function listSessionsForCwd(
         'sessions',
       ),
     grok: options.roots?.grok ?? path.join(home, '.grok', 'sessions'),
+    pi: options.roots?.pi ?? piSessionsRoot(home),
   }
   const wanted = options.harness
   const jobs: Promise<SessionInfo[]>[] = []
@@ -83,6 +94,14 @@ export async function listSessionsForCwd(
   }
   if (wanted === undefined || wanted === 'grok') {
     jobs.push(Promise.resolve(grokSessions(cwd, roots.grok)))
+  }
+  if (wanted === undefined || wanted === 'opencode') {
+    jobs.push(
+      opencodeSessions(cwd, options.opencodeRunner ?? opencodeSessionList),
+    )
+  }
+  if (wanted === undefined || wanted === 'pi') {
+    jobs.push(piSessions(cwd, roots.pi))
   }
   const groups = await Promise.all(jobs)
   return groups
@@ -309,6 +328,167 @@ function grokSummary(file: string, dirId: string, mtime: Date) {
   }
 }
 
+// --- opencode ---
+
+// opencode 1.x keeps sessions in a sqlite db; rather than link a driver, ask
+// the CLI itself — `session list --format json` prints root sessions
+// (subagents pre-filtered) across all projects, newest first, and eh filters
+// by cwd. Best-effort like every store: no binary / bad output → no rows.
+const OPENCODE_LIST_LIMIT = 400
+const OPENCODE_LIST_TIMEOUT_MS = 5000
+
+const opencodeSessionRowSchema = z.looseObject({
+  directory: z.string().optional(),
+  id: z.string(),
+  title: z.string().optional(),
+  // Required + bounded: a missing value marks the row malformed, and an
+  // out-of-range one would make toISOString throw past 8.64e15.
+  updated: z.number().max(8640000000000000),
+})
+
+async function opencodeSessions(cwd: string, run: OpencodeListRunner) {
+  const sessions: SessionInfo[] = []
+  for (const row of await opencodeListRows(run)) {
+    if (row.directory !== cwd) continue
+    sessions.push({
+      harness: 'opencode',
+      id: row.id,
+      title: oneLine(row.title ?? ''),
+      updatedAt: new Date(row.updated).toISOString(),
+    })
+    if (sessions.length >= MAX_PER_STORE) break
+  }
+  return sessions
+}
+
+// Rows validated one at a time — a malformed row drops only itself, never
+// the store. A runner failure (spawn, JSON, non-array) still means no rows.
+async function opencodeListRows(run: OpencodeListRunner) {
+  try {
+    return z
+      .array(z.unknown())
+      .parse(await run())
+      .flatMap((item) => {
+        const parsed = opencodeSessionRowSchema.safeParse(item)
+        return parsed.success ? [parsed.data] : []
+      })
+  } catch {
+    return []
+  }
+}
+
+async function opencodeSessionList() {
+  const bin = findBin('opencode')
+  if (!bin) return []
+  return new Promise((resolve) => {
+    execFile(
+      bin,
+      [
+        'session',
+        'list',
+        '--format',
+        'json',
+        '-n',
+        String(OPENCODE_LIST_LIMIT),
+      ],
+      { timeout: OPENCODE_LIST_TIMEOUT_MS },
+      (error, stdout) => {
+        if (error) {
+          resolve([])
+          return
+        }
+        try {
+          resolve(JSON.parse(stdout) as unknown)
+        } catch {
+          resolve([])
+        }
+      },
+    )
+  })
+}
+
+// --- pi ---
+
+// pi flattens the cwd as `--<cwd, leading slash stripped, then / \ : → ->--`
+// (verified against dist/core/session-manager.js — underscores and dots
+// survive). Each transcript opens with a header record carrying the id; the
+// first model_change record has the model, the first user message the title.
+// Transcript filenames are <timestamp>_<uuid>; the resume arg is the uuid
+// (pi rejects the whole basename — verified).
+function piFileId(file: string) {
+  const base = path.basename(file, '.jsonl')
+  return base.split('_').at(-1) ?? base
+}
+
+async function piMeta(file: string) {
+  let id: string | undefined
+  let model: string | undefined
+  let title = ''
+  let scanned = 0
+  try {
+    for await (const line of readLines(file)) {
+      if ((id && model && title) || ++scanned > META_SCAN_LINES) break
+      const row = parseRow(line)
+      if (!row) continue
+      if (!id && row.type === 'session') {
+        id = str(row.id)
+      } else if (!model && row.type === 'model_change') {
+        model = str(row.modelId)
+      } else if (!title && row.type === 'message') {
+        const text = piUserText(row)
+        if (text !== undefined) title = oneLine(text)
+      }
+    }
+  } catch {
+    // Unreadable mid-scan — keep whatever parsed.
+  }
+  return { id, model, title }
+}
+
+async function piSessions(cwd: string, root: string) {
+  const dir = path.join(
+    root,
+    `--${cwd.replace(/^[/\\]/, '').replace(/[/\\:]/g, '-')}--`,
+  )
+  const files: { file: string; mtime: Date }[] = []
+  for (const entry of readdirOrEmpty(dir)) {
+    if (!entry.endsWith('.jsonl')) continue
+    const file = path.join(dir, entry)
+    const stat = statFile(file)
+    if (stat) files.push({ file, mtime: stat.mtime })
+  }
+  files.sort((a, b) => b.mtime.getTime() - a.mtime.getTime())
+  const sessions: SessionInfo[] = []
+  for (const { file, mtime } of files.slice(0, MAX_PER_STORE)) {
+    const meta = await piMeta(file)
+    sessions.push({
+      harness: 'pi',
+      id: meta.id ?? piFileId(file),
+      model: meta.model,
+      title: meta.title,
+      updatedAt: mtime.toISOString(),
+    })
+  }
+  return sessions
+}
+
+// The first text part of a user message (assistant/tool records carry none).
+function piUserText(row: Record<string, unknown>) {
+  const message = obj(row.message)
+  if (message?.role !== 'user') return undefined
+  const content = message.content
+  if (typeof content === 'string') return content
+  if (Array.isArray(content)) {
+    for (const part of content) {
+      const p = obj(part)
+      if (p?.type === 'text' && typeof p.text === 'string' && p.text.trim()) {
+        return p.text
+      }
+    }
+  }
+  return undefined
+}
+
 // --- shared helpers ---
 
 function oneLine(text: string) {
@@ -379,6 +559,16 @@ function statFile(file: string) {
   } catch {
     return undefined
   }
+}
+
+// pi honors an agent-dir override (its sessions/ subdirectory), then the
+// default ~/.pi/agent/sessions. PI_CODING_AGENT_SESSION_DIR is deliberately
+// not honored: pi treats an explicit session dir as one flat directory (no
+// per-cwd subdirs), which this encoding can't express.
+function piSessionsRoot(home: string) {
+  const agentDir =
+    process.env.PI_CODING_AGENT_DIR ?? path.join(home, '.pi', 'agent')
+  return path.join(agentDir, 'sessions')
 }
 
 function str(value: unknown) {

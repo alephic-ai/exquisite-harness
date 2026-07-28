@@ -34,7 +34,7 @@ program
   .argument('[harness-or-profile]', 'harness name or saved profile')
   .argument('[provider]', 'provider name')
   .argument('[model]', 'model id')
-  .option('--harness <name>', 'harness: claude, codex, grok')
+  .option('--harness <name>', 'harness: claude, codex, grok, opencode, pi')
   .option(
     '-p, --provider <name>',
     'provider: ollama, openrouter, vercel-ai-gateway, …',

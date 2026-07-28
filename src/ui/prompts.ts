@@ -1,7 +1,7 @@
 import { autocomplete, isCancel, password, select, text } from '@clack/prompts'
 
 import type { ResolvedProvider } from '../config.js'
-import type { Protocol } from '../types.js'
+import type { HarnessDef } from '../harnesses.js'
 
 import { freshModels } from '../cache.js'
 import { providerLabel, reservedProfileNameMessage } from '../config.js'
@@ -23,7 +23,7 @@ export async function pickEffort() {
         level === 'auto'
           ? 'model default (recommended)'
           : level === 'xhigh' || level === 'max'
-            ? 'claude only; codex maps to high'
+            ? 'claude + pi; codex maps to high'
             : undefined,
       label: level,
       value: level,
@@ -59,19 +59,20 @@ const ROW_ORDER: Record<ProviderRowState, number> = {
 }
 
 export async function pickProvider(
-  protocols: Protocol[],
+  def: HarnessDef,
   providers: ResolvedProvider[],
 ) {
   for (;;) {
     // Status hints per DESIGN.md: ✓ key set / ✗ KEY not set (incompatible rows
-    // get `needs router`). Reachability probing stays in doctor/providers —
-    // network checks don't belong in a picker.
+    // get `needs router` or a harness-specific reason). Reachability probing
+    // stays in doctor/providers — network checks don't belong in a picker.
     const rows = await Promise.all(
       providers.map(async (p) => {
         const label = providerLabel(p.name)
-        if (!canServeAny(p.type, protocols)) {
+        const block = providerBlockReason(def, p)
+        if (block) {
           return {
-            option: { hint: `${p.type} · needs router`, label, value: p.name },
+            option: { hint: block.rowHint, label, value: p.name },
             state: 'incompatible' as const,
           }
         }
@@ -104,15 +105,34 @@ export async function pickProvider(
     if (isCancel(value)) bail()
     const provider = providers.find((p) => p.name === value)
     if (!provider) throw new Error(`unknown provider "${value}"`)
-    if (!canServeAny(provider.type, protocols)) {
-      log.warn(
-        `"${provider.name}" can't serve ${protocols.join(' or ')} — that needs the phase-2 router`,
-      )
+    const block = providerBlockReason(def, provider)
+    if (block) {
+      log.warn(block.warn)
       continue
     }
     if (await ensureKey(provider)) return provider
     // key entry cancelled → back to the provider list
   }
+}
+
+// Why a provider can't serve this harness: protocol-level (needs the phase-2
+// router) or instance-level (HarnessDef.providerCompat — e.g. pi needs the
+// provider in its catalog or models.json). Undefined = compatible.
+function providerBlockReason(def: HarnessDef, provider: ResolvedProvider) {
+  if (!canServeAny(provider.type, def.protocols)) {
+    return {
+      rowHint: `${provider.type} · needs router`,
+      warn: `"${provider.name}" can't serve ${def.protocols.join(' or ')} — that needs the phase-2 router`,
+    }
+  }
+  const compat = def.providerCompat?.(provider)
+  if (compat && !compat.ok) {
+    return {
+      rowHint: `${provider.type} · ${compat.hint}`,
+      warn: `"${provider.name}" ${compat.hint}`,
+    }
+  }
+  return undefined
 }
 
 // A provider with an envKey needs a key from somewhere. If none resolves

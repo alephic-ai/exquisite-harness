@@ -10,9 +10,12 @@ directly; interactive clack flows run under a PTY harness.
 - `pnpm install` done; `pnpm dev` runs `tsx src/main.ts`.
 - Ollama running locally (`ollama serve`) with ≥1 model pulled — steps that hit
   `localhost:11434` depend on it. If it's down, mark those steps BLOCKED.
-- Harness binaries (`claude`, `codex`, `grok`) only need to exist for doctor and
-  spawn steps; the launch step uses a **fake harness binary** so no real agent
-  session starts.
+- Harness binaries (`claude`, `codex`, `grok`, `opencode`, `pi`) only need to
+  exist for doctor and spawn steps; the launch step uses a **fake harness
+  binary** so no real agent session starts. Two exceptions: opencode session
+  enumeration shells out to the real binary (`opencode session list`) — a fake
+  first on PATH silently suppresses opencode rows in `-r` (expected, not a bug);
+  and pi launch steps need a real `~/.pi/agent/models.json` for ollama.
 - No real API keys needed: OpenRouter/Vercel AI Gateway steps use `--print-env`
   and a fake `secret-tool`/Keychain probe; steps needing a live key are marked
   conditional.
@@ -46,6 +49,21 @@ Each prints env/args and exits 0 without launching.
 8. `eh -r --print-env codex ollama qwen3-coder` → args end with `resume` (after
    the `-c` overrides).
 9. `eh -r --print-env grok ollama qwen3-coder` → args end with `--resume`.
+10. `eh --print-env pi ollama qwen3-coder` with a models.json entry
+    `{"providers":{"ollama":{"baseUrl":"http://127.0.0.1:11434/v1"}}}` in
+    `~/.pi/agent/models.json` → args `--provider ollama --model qwen3-coder`, no
+    env (the provider name is the entry's key; a literal/absent apiKey means no
+    env). With `apiKey: "$OLLAMA_TEST_KEY"` and that var unset → env exports
+    `OLLAMA_TEST_KEY='ollama'`. Without any entry → error "needs an entry in
+    ~/.pi/agent/models.json".
+11. `eh --print-env pi ollama qwen3-coder -e high` → args end with
+    `--thinking high`.
+12. `eh --print-env opencode ollama qwen3-coder` → `OPENCODE_CONFIG_CONTENT`
+    inline JSON (provider `eh-ollama`, npm `@ai-sdk/openai-compatible`,
+    placeholder `apiKey`, baseURL `…/v1`), args `-m eh-ollama/qwen3-coder`.
+13. `eh -r --print-env pi ollama qwen3-coder` / `… opencode …` → args end with
+    `--continue` (the --print-env path resolves no session id; `--session <id>`
+    appears only via the interactive picker).
 
 ## C. Config / error paths
 
@@ -55,7 +73,7 @@ Each prints env/args and exits 0 without launching.
 2. Write a syntactically valid but schema-wrong config (e.g. `"version": 2`). →
    "invalid config at <path> — version: Invalid literal…".
 3. `eh bogus` → "unknown harness or profile \"bogus\" (known: claude, codex,
-   grok)", non-zero exit.
+   grok, opencode, pi)", non-zero exit.
 4. `eh claude ollama` with stdout not a TTY → "incomplete arguments and stdout
    is not a TTY", non-zero exit.
 5. `eh -r` without a TTY → "eh -r opens a session picker — needs an interactive
@@ -88,9 +106,13 @@ Drive each with the PTY; assert on screen text.
    (`ANTHROPIC_AUTH_TOKEN=•••`), and go/save/back options.
 3. **Pickers**: run `eh claude` → provider picker lists ollama (compatible) and,
    if configured, openrouter. Arrow down to focus openrouter → its hint reads
-   "needs router (phase 2)" (clack only shows the focused row's hint). Pick
-   ollama → model picker lists live Ollama models with size hints, plus
-   "other…". Select a model → confirm screen.
+   "openai-chat · needs router" (clack only shows the focused row's hint);
+   picking it warns "…needs the phase-2 router" and re-prompts. Pick ollama →
+   model picker lists live Ollama models with size hints, plus "other…". Select
+   a model → confirm screen. 3b. **providerCompat gate**: with
+   `PI_CODING_AGENT_DIR` pointed at an empty dir (no models.json), run `eh pi` →
+   provider picker lists ollama last with hint "ollama · needs an entry in
+   ~/.pi/agent/models.json"; picking it warns and re-prompts.
 4. **Manual model entry**: in the model picker choose "other…" → text prompt
    appears; type a model id → accepted and shown in the confirm note.
 5. **Cancel**: at any picker, press Ctrl+C → "bye" and exit 0 (no stack).
@@ -155,8 +177,9 @@ Drive each with the PTY; assert on screen text.
 
 - Interactive steps are driven by a PTY harness, not a human; rendering quirks
   of clack in a real terminal emulator are not fully covered.
-- No real `claude`/`codex`/`grok` sessions are started (a fake harness covers
-  the spawn contract; live-agent behavior is out of scope).
+- No real harness sessions are started (`claude`/`codex`/`grok`/`opencode`/`pi`
+  — a fake harness covers the spawn contract; live-agent behavior is out of
+  scope).
 - OpenRouter/Vercel AI Gateway live model-list fetches need real keys and are
   SKIPPED unless keys are present.
 - Linux Secret Service is verified against a simulated `secret-tool`; a real
@@ -165,5 +188,7 @@ Drive each with the PTY; assert on screen text.
 ## Automated coverage
 
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
-- `bun test` — `src/statusline.test.ts` (transcript usage) and
-  `src/sessions.test.ts` (resume session-store parsers).
+- `bun test` — `src/statusline.test.ts` (transcript usage),
+  `src/sessions.test.ts` (resume session-store parsers), `src/pi.test.ts` (pi
+  provider matching / baseURL normalization), and `src/opencode.test.ts` (inline
+  config payload).
