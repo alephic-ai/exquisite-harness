@@ -78,9 +78,10 @@ knob and ignore it. Profiles and recents remember it.
 ### Resume
 
 `eh -r` shows a filterable list of the current directory's sessions across all
-harnesses — claude, codex, grok, opencode, and pi — newest first, each with its
-model and age, and resumes your pick by session id. Sessions show up whether or
-not eh launched them; the list comes from the harnesses' own session stores.
+harnesses — claude, codex, grok, opencode, and pi — newest first, and resumes
+your pick by session id. Each row shows its harness, age, and model when the
+store exposes one. Sessions show up whether or not eh launched them; the list
+comes from the harnesses' own session stores.
 
 The wiring comes from your recents: the provider that last ran that
 harness+model wins, falling back to the latest combo for the harness, then to

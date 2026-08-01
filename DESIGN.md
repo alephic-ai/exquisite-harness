@@ -274,8 +274,8 @@ first `model_change` the model, first user message the title; roots honor
 list is global but root-sessions-only, matched to cwd by `directory`). Subagent
 sessions are filtered (grok `session_kind`, codex `thread_source`; opencode's
 list excludes them itself). The list shows sessions whether or not eh launched
-them, each with harness, model, and age — never provider, which transcripts
-don't record.
+them, each with harness, age, and model when the store exposes one — never
+provider, which transcripts don't record.
 
 Wiring: explicit positionals/flags win. Otherwise the recents supply it,
 preferring the combo that last ran that harness+model (a provider is only known

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { ResolvedProvider } from './config.js'
 
+import { parsePiModelsJson } from './pi-models-json.js'
 import { matchPiProvider } from './pi.js'
 
 const ollama: ResolvedProvider = {
@@ -95,20 +96,47 @@ describe('matchPiProvider', () => {
     ).toEqual({ keyEnvVar: undefined, piName: 'x' })
   })
 
-  test('extracts the env var name from a $VAR apiKey', () => {
-    const modelsJson = {
-      providers: {
-        custom: {
-          apiKey: '$CUSTOM_AI_KEY',
-          baseUrl: 'http://127.0.0.1:11434/v1',
-        },
-      },
-    }
-    expect(matchPiProvider(modelsJson, ollama)).toEqual({
-      keyEnvVar: 'CUSTOM_AI_KEY',
-      piName: 'custom',
+  test('parses comments in models.json before matching providers', () => {
+    const modelsJson = parsePiModelsJson(`{
+      // Pi accepts comments in this file.
+      "providers": {
+        "ollama": {
+          "baseUrl": "http://127.0.0.1:11434/v1"
+        }
+      }
+    }`)
+
+    expect(modelsJson).toBeDefined()
+    expect(matchPiProvider(modelsJson ?? noCustom, ollama)).toEqual({
+      keyEnvVar: undefined,
+      piName: 'ollama',
     })
   })
+
+  test.each([
+    ['$CUSTOM_AI_KEY', 'CUSTOM_AI_KEY'],
+    [`\${CUSTOM_AI_KEY}`, 'CUSTOM_AI_KEY'],
+    [`\${KEY_PREFIX}_\${KEY_SUFFIX}`, undefined],
+    ['$$literal-dollar-prefix', undefined],
+    ['literal-key', undefined],
+    ['!security find-generic-password', undefined],
+  ])(
+    'extracts an env var only from an exact reference: %s',
+    (apiKey, keyEnvVar) => {
+      const modelsJson = {
+        providers: {
+          custom: {
+            apiKey,
+            baseUrl: 'http://127.0.0.1:11434/v1',
+          },
+        },
+      }
+      expect(matchPiProvider(modelsJson, ollama)).toEqual({
+        keyEnvVar,
+        piName: 'custom',
+      })
+    },
+  )
 
   test('returns undefined when nothing matches', () => {
     expect(matchPiProvider(noCustom, ollama)).toBeUndefined()

@@ -341,9 +341,9 @@ const opencodeSessionRowSchema = z.looseObject({
   directory: z.string().optional(),
   id: z.string(),
   title: z.string().optional(),
-  // Required + bounded: a missing value marks the row malformed, and an
-  // out-of-range one would make toISOString throw past 8.64e15.
-  updated: z.number().max(8640000000000000),
+  // Required + bounded: a missing or out-of-range value marks the row malformed
+  // before toISOString can throw outside JavaScript's supported Date range.
+  updated: z.number().min(-8640000000000000).max(8640000000000000),
 })
 
 async function opencodeSessions(cwd: string, run: OpencodeListRunner) {

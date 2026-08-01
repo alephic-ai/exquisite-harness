@@ -698,6 +698,8 @@ describe('opencode sessions', () => {
           { noId: true },
           // Past the Date ceiling — must not throw through the whole store.
           { directory: CWD, id: 'ses_2', title: 'bad clock', updated: 9e18 },
+          // Before the Date floor — the negative boundary must be isolated too.
+          { directory: CWD, id: 'ses_4', title: 'bad clock', updated: -9e18 },
           {
             directory: CWD,
             id: 'ses_3',

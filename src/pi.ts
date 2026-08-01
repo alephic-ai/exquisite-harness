@@ -1,26 +1,15 @@
 import { readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { z } from 'zod'
 
 import type { ResolvedProvider } from './config.js'
+import type { PiModelsJson } from './pi-models-json.js'
+
+import { parsePiModelsJson } from './pi-models-json.js'
 
 // Where picker rows and launch-time errors send the user when pi can't serve
 // a provider.
 export const PI_MODELS_JSON_HINT = 'needs an entry in ~/.pi/agent/models.json'
-
-const piModelsJsonSchema = z.object({
-  providers: z
-    .record(
-      z.string(),
-      z.looseObject({
-        apiKey: z.string().optional(),
-        baseUrl: z.string().optional(),
-      }),
-    )
-    .default({}),
-})
-export type PiModelsJson = z.infer<typeof piModelsJsonSchema>
 
 // pi can only talk to providers it knows: natively (openrouter,
 // vercel-ai-gateway) or declared in the user's models.json, matched by
@@ -33,10 +22,7 @@ export function matchPiProvider(
   modelsJson: PiModelsJson,
   provider: ResolvedProvider,
 ) {
-  // Object.hasOwn guard — Record index access would claim every key exists.
-  const native = Object.hasOwn(NATIVE_PI_PROVIDERS, provider.name)
-    ? NATIVE_PI_PROVIDERS[provider.name]
-    : undefined
+  const native = NATIVE_PI_PROVIDERS.get(provider.name)
   if (native && samePiBaseURL(native.baseURL, provider.baseURL)) {
     return { keyEnvVar: native.envVar, piName: native.piName }
   }
@@ -77,38 +63,43 @@ function samePiBaseURL(a: string, b: string) {
 // pi's native catalog (models.dev-derived) knows these providers under fixed
 // ids, upstreams, and key env vars. Applies only when eh's baseURL matches the
 // native upstream — a repointed baseURL (proxy) falls through to models.json.
-const NATIVE_PI_PROVIDERS: Record<
+const NATIVE_PI_PROVIDERS = new Map<
   string,
   { baseURL: string; envVar: string; piName: string }
-> = {
-  'openrouter': {
-    baseURL: 'https://openrouter.ai/api/v1',
-    envVar: 'OPENROUTER_API_KEY',
-    piName: 'openrouter',
-  },
-  'vercel-ai-gateway': {
-    baseURL: 'https://ai-gateway.vercel.sh/v1',
-    envVar: 'AI_GATEWAY_API_KEY',
-    piName: 'vercel-ai-gateway',
-  },
-}
+>([
+  [
+    'openrouter',
+    {
+      baseURL: 'https://openrouter.ai/api/v1',
+      envVar: 'OPENROUTER_API_KEY',
+      piName: 'openrouter',
+    },
+  ],
+  [
+    'vercel-ai-gateway',
+    {
+      baseURL: 'https://ai-gateway.vercel.sh/v1',
+      envVar: 'AI_GATEWAY_API_KEY',
+      piName: 'vercel-ai-gateway',
+    },
+  ],
+])
 
 let cachedModelsJson: PiModelsJson | undefined
 
-// "$VAR" / "${VAR}" — pi interpolates env refs inside larger literals too; eh
-// only needs the var name to inject. ("!cmd" and literals yield nothing.)
+// Only an exact "$VAR" / "${VAR}" names a single value eh can inject. Pi owns
+// compound templates, escaped dollars, commands, and literals.
 function envVarRef(apiKey: string) {
-  return /\$\{?([A-Za-z_]\w*)\}?/.exec(apiKey)?.at(1)
+  const match = /^(?:\$([A-Za-z_]\w*)|\$\{([A-Za-z_]\w*)\})$/.exec(apiKey)
+  return match?.at(1) ?? match?.at(2)
 }
 
 function loadPiModelsJson() {
   if (cachedModelsJson) return cachedModelsJson
   cachedModelsJson = { providers: {} }
   try {
-    const parsed = piModelsJsonSchema.safeParse(
-      JSON.parse(readFileSync(piModelsJsonPath(), 'utf8')),
-    )
-    if (parsed.success) cachedModelsJson = parsed.data
+    const parsed = parsePiModelsJson(readFileSync(piModelsJsonPath(), 'utf8'))
+    if (parsed) cachedModelsJson = parsed
   } catch {
     // Missing or malformed — treated as no custom providers.
   }
