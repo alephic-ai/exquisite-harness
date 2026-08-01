@@ -16,7 +16,7 @@ export interface HarnessDef {
   plan: (
     provider: ResolvedProvider,
     model: string,
-    effort?: string,
+    options: { effort?: string; statusline?: boolean },
   ) => Promise<LaunchPlan>
   protocols: Protocol[]
   // Appended to the plan's args for `eh -r`. With a session id, resumes that
@@ -41,8 +41,9 @@ async function authTokenFor(provider: ResolvedProvider) {
 async function planClaude(
   provider: ResolvedProvider,
   model: string,
-  effort?: string,
+  options: { effort?: string; statusline?: boolean },
 ) {
+  const { effort, statusline = true } = options
   const baseURL = anthropicBaseURLFor(provider)
   if (!baseURL) {
     throw new Error(
@@ -52,28 +53,35 @@ async function planClaude(
   // Meta fetch and key resolve are independent — run together so launch
   // doesn't pay two sequential round-trips.
   const [meta, authToken] = await Promise.all([
-    fetchModelMeta(provider, model),
+    statusline
+      ? fetchModelMeta(provider, model)
+      : Promise.resolve({
+          contextWindow: undefined,
+          rateLabel: undefined,
+          rates: undefined,
+        }),
     authTokenFor(provider),
   ])
-  const settingsPath = writeClaudeStatuslineSettings()
   const env: Record<string, string> = {
     ANTHROPIC_API_KEY: '',
     ANTHROPIC_AUTH_TOKEN: authToken,
     ANTHROPIC_BASE_URL: baseURL,
     ANTHROPIC_MODEL: model,
     ANTHROPIC_SMALL_FAST_MODEL: model,
-    ...statuslineEnv({
-      contextWindow: meta.contextWindow,
-      effort,
-      model,
-      provider: provider.name,
-      rateLabel: meta.rateLabel,
-      rates: meta.rates,
-    }),
+    ...(statusline
+      ? statuslineEnv({
+          contextWindow: meta.contextWindow,
+          effort,
+          model,
+          provider: provider.name,
+          rateLabel: meta.rateLabel,
+          rates: meta.rates,
+        })
+      : {}),
   }
-  const notes: string[] = [
-    'statusline: eh (provider rates, context window, session cost)',
-  ]
+  const notes: string[] = statusline
+    ? ['statusline: eh (provider rates, context window, session cost)']
+    : []
   if (effort && effort !== 'auto') {
     env.CLAUDE_CODE_EFFORT_LEVEL = effort
     // Through a non-Anthropic provider the model ID is not effort-recognized,
@@ -86,10 +94,10 @@ async function planClaude(
     notes.push('context window unknown — falling back to Claude context size')
   }
   return {
-    args: ['--settings', settingsPath],
+    args: statusline ? ['--settings', writeClaudeStatuslineSettings()] : [],
     bin: 'claude',
     env,
-    ...(isVercelGatewayURL(baseURL)
+    ...(statusline && isVercelGatewayURL(baseURL)
       ? {
           gatewayCostCapture: {
             resumed: false,
@@ -107,8 +115,9 @@ async function planClaude(
 async function planCodex(
   provider: ResolvedProvider,
   model: string,
-  effort?: string,
+  options: { effort?: string },
 ) {
+  const { effort } = options
   const env: Record<string, string> = {}
   if (provider.envKey && !process.env[provider.envKey]) {
     // Throws an actionable error when no key resolves anywhere — codex would
@@ -144,20 +153,21 @@ async function planCodex(
 async function planGrok(
   provider: ResolvedProvider,
   model: string,
-  effort?: string,
+  options: { effort?: string },
 ) {
-  const notes: string[] = []
+  const { effort } = options
+  const args = ['--model', model]
   if (effort && effort !== 'auto') {
-    notes.push('grok-cli has no effort knob — ignoring')
+    args.push('--reasoning-effort', effort)
   }
   return {
-    args: ['--model', model],
+    args,
     bin: 'grok',
     env: {
       GROK_API_KEY: await authTokenFor(provider),
       GROK_BASE_URL: openAIBaseURLFor(provider),
     },
-    notes,
+    notes: [],
   }
 }
 
@@ -198,11 +208,19 @@ export async function buildLaunchPlan(
   harness: string,
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; resume?: boolean; resumeSessionId?: string } = {},
+  options: {
+    effort?: string
+    resume?: boolean
+    resumeSessionId?: string
+    statusline?: boolean
+  } = {},
 ) {
   const def = getHarness(harness)
   if (!def) throw new Error(`unknown harness "${harness}"`)
-  const plan = await def.plan(provider, model, options.effort)
+  const plan = await def.plan(provider, model, {
+    effort: options.effort,
+    statusline: options.statusline,
+  })
   return {
     ...plan,
     args: options.resume
