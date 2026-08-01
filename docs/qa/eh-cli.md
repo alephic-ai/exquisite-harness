@@ -103,8 +103,10 @@ Each prints env/args and exits 0 without launching.
 Drive each with the PTY; assert on screen text.
 
 1. **First-run wizard**: empty config dir, run `eh`. → intro banner, a
-   "detected" note listing harnesses + ollama status, then a "write this
-   config?" prompt. Answer yes → config written to disk with expected keys.
+   "detected" note listing harnesses + ollama status, then the built-ins
+   "nothing to write" success line and Home. The default config is written to
+   disk without a redundant confirmation prompt: empty `profiles`, `providers`,
+   and `recent`, plus `version: 1`.
 2. **Home**: with one recent entry present, run `eh`. → home select lists the
    recent combo with a relative-time hint, plus "new session →", "providers",
    "doctor". Enter on the recent → launch-plan note with **redacted** secrets
@@ -176,8 +178,12 @@ Drive each with the PTY; assert on screen text.
    `cache.json`.
 2. Immediately rerun → served from cache (same output, no refetch — check
    `fetchedAt` unchanged).
-3. Stop Ollama, `eh` → model picker → spinner fails, falls back to stale cache,
-   list still shown. Restart Ollama after.
+3. Age the cached Ollama entry beyond its five-minute TTL (or wait for expiry),
+   then make the provider unreachable (stop Ollama, or use an isolated config
+   override pointed at a closed local port). Run `eh claude -p ollama` → a live
+   fetch is attempted, the spinner resolves to the cached model count, and the
+   stale list remains selectable without a stack trace. Restore the endpoint
+   after.
 
 ## H. Doctor / providers
 
