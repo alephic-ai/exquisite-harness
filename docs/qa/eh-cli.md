@@ -19,8 +19,9 @@ directly; interactive clack flows run under a PTY harness.
 - No real API keys needed: OpenRouter/Vercel AI Gateway steps use `--print-env`
   and a fake `secret-tool`/Keychain probe; steps needing a live key are marked
   conditional.
-- PTY harness: `scripts/pty-drive.mjs` (node-pty if available, else `script(1)`
-  on macOS / `python3 -c pty`) drives interactive flows.
+- PTY harness: use the runner's PTY facility (for example Codex terminal
+  execution with TTY enabled); interactive clack flows cannot be verified by
+  piping stdin through a non-TTY process.
 
 ## A. Static gates
 
@@ -37,7 +38,8 @@ Each prints env/args and exits 0 without launching.
    `# plus args: codex -c model="qwen3-coder" ... wire_api="responses"`; no
    `env_key` line.
 3. `eh --print-env grok ollama qwen3-coder` → `GROK_BASE_URL=.../v1`,
-   `GROK_API_KEY='ollama'`, `--model qwen3-coder`.
+   `GROK_API_KEY='ollama'`, `--model qwen3-coder`. Repeat with `-e high` → args
+   include `--reasoning-effort high`.
 4. `eh --print-env codex openrouter openai/gpt-5.1` (openrouter configured) →
    `wire_api="chat"`, `env_key="OPENROUTER_API_KEY"`.
 5. `eh --print-env claude openrouter x` → error "cannot serve the Anthropic
@@ -53,9 +55,12 @@ Each prints env/args and exits 0 without launching.
     `{"providers":{"ollama":{"baseUrl":"http://127.0.0.1:11434/v1"}}}` in
     `~/.pi/agent/models.json` → args `--provider ollama --model qwen3-coder`, no
     env (the provider name is the entry's key; a literal/absent apiKey means no
-    env). With `apiKey: "$OLLAMA_TEST_KEY"` and that var unset → env exports
-    `OLLAMA_TEST_KEY='ollama'`. Without any entry → error "needs an entry in
-    ~/.pi/agent/models.json".
+    env). A file containing `//` or block comments is accepted like Pi's own
+    loader. With `apiKey: "$OLLAMA_TEST_KEY"` and that var unset → env exports
+    `OLLAMA_TEST_KEY='ollama'`. With a compound template such as
+    `${KEY_PREFIX}_${KEY_SUFFIX}` or an escaped dollar such as `$$literal`, no
+    partial env var is exported; Pi owns interpretation of those values. Without
+    any entry → error "needs an entry in ~/.pi/agent/models.json".
 11. `eh --print-env pi ollama qwen3-coder -e high` → args end with
     `--thinking high`.
 12. `eh --print-env opencode ollama qwen3-coder` → `OPENCODE_CONFIG_CONTENT`
@@ -132,6 +137,13 @@ Drive each with the PTY; assert on screen text.
 10. **Resume wiring**: with a recent for (claude, model X) in this directory,
     pick a claude session whose model is X → resumes on that recent's provider
     with no further prompts. `-p`/`-m` override.
+11. **OpenCode row isolation**: put a fake `opencode` first on `PATH`; its
+    `session list --format json` response contains one valid current-directory
+    row without model metadata plus rows whose `updated` values are above and
+    below JavaScript's supported Date range. Run
+    `eh -r opencode -p ollama -m qwen3-coder` → only the valid row appears with
+    `unknown model`; selecting it launches with `--session <valid-id>` and the
+    malformed rows do not crash or suppress it.
 
 ## E. Key storage
 
@@ -190,5 +202,7 @@ Drive each with the PTY; assert on screen text.
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
 - `bun test` — `src/statusline.test.ts` (transcript usage),
   `src/sessions.test.ts` (resume session-store parsers), `src/pi.test.ts` (pi
-  provider matching / baseURL normalization), and `src/opencode.test.ts` (inline
-  config payload).
+  provider matching / baseURL normalization, commented JSON, exact env
+  references), and `src/opencode.test.ts` (inline config payload). OpenCode
+  session tests cover per-row isolation for both positive and negative
+  out-of-range timestamps.
