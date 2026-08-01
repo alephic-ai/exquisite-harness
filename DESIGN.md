@@ -35,6 +35,17 @@ Resulting compatibility (✅ = native, ⚠️ = needs protocol translation):
 env vars + CLI args → `spawn` the harness with inherited stdio. No server, no
 runtime dependency, no mutation of the harnesses' own config files.
 
+**Headless execution:** `eh run <harness> <provider> <model>` is the stable
+orchestrator boundary alongside the interactive launcher. It reads the prompt
+from stdin, selects each harness's native machine-output mode, preserves native
+events inside a versioned NDJSON envelope, and emits normalized session, text,
+usage, and completion events. It does not open UI, write recents, or install the
+Claude statusline. The caller owns cwd, scratch/config roots, process timeouts,
+and lifecycle policy; `eh` owns provider wiring and harness protocol parsing.
+Callers can preserve harness-specific policy with a validated JSON string array
+of native arguments, which `eh` prepends before its mandatory machine-mode
+arguments.
+
 **Phase 2 (later): local router.** An opt-in localhost proxy that receives
 Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
 (`createProviderRegistry` + `customProvider` aliases). Unlocks the ⚠️ cell
@@ -260,6 +271,7 @@ which keeps non-TTY use clean and a future Ink/miller-column UI swappable.
 ```text
 src/main.ts       entry: commander wiring
 src/flow.ts       positional/profile resolution → pickers → launch
+src/headless-run.ts  non-interactive harness execution + NDJSON normalization
 src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
 src/pricing.ts    provider list rates ($/1M) for statusline session cost

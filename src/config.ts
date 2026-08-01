@@ -151,6 +151,7 @@ const RESERVED_PROFILE_NAMES = [
   'profile',
   'provider',
   'providers',
+  'run',
   'setup',
   'statusline',
   'update',
