@@ -252,7 +252,8 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
     : await pickProvider(def, allProviders(config))
   const model = partial.model ?? (await pickModel(provider))
   // Only ask when the user is picking interactively and hasn't chosen one;
-  // harnesses with effort: false (grok, opencode) skip the question.
+  // Harnesses with effort: false (grok, opencode) skip the question; an
+  // explicit effort still reaches the harness plan.
   const effort =
     partial.effort ?? (def.effort === false ? 'auto' : await pickEffort())
   return { effort, harness, model, provider: provider.name }

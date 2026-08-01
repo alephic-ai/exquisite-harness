@@ -23,7 +23,7 @@ export async function pickEffort() {
         level === 'auto'
           ? 'model default (recommended)'
           : level === 'xhigh' || level === 'max'
-            ? 'claude + pi; codex maps to high'
+            ? 'claude + grok + pi; codex maps to high'
             : undefined,
       label: level,
       value: level,

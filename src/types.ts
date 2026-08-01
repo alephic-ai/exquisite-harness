@@ -27,8 +27,8 @@ export interface Selection {
 }
 
 // Reasoning/effort levels, normalized across harnesses. `auto` means the
-// model default (no override sent). claude and pi accept xhigh/max; codex maps
-// max→high; grok and opencode have no knob.
+// model default (no override sent). claude, grok, and pi accept xhigh/max;
+// codex maps max→high; opencode has no knob.
 export const EFFORT_LEVELS = [
   'auto',
   'low',
