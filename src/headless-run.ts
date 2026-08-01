@@ -83,6 +83,21 @@ function emit(event: Record<string, unknown>) {
   process.stdout.write(`${JSON.stringify({ ...event, v: PROTOCOL_VERSION })}\n`)
 }
 
+function emitGrokUsage(event: Record<string, unknown>, cumulative: boolean) {
+  const usage = asRecord(event.usage)
+  if (!usage) return
+  emitUsage({
+    cacheReadTokens: numberField(usage, 'cache_read_input_tokens'),
+    cacheWriteTokens: numberField(usage, 'cache_creation_input_tokens'),
+    costUsd:
+      optionalNumberField(event, 'total_cost_usd') ??
+      optionalNumberField(event, 'cost_usd'),
+    cumulative,
+    inputTokens: numberField(usage, 'input_tokens'),
+    outputTokens: numberField(usage, 'output_tokens'),
+  })
+}
+
 function emitRunError(event: Record<string, unknown>, fallback: string) {
   const nested = asRecord(event.error)
   const message =
@@ -127,38 +142,73 @@ async function executeHeadlessPlan(options: {
     env: { ...process.env, ...options.plan.env },
     stdio: ['pipe', 'pipe', 'pipe'],
   })
-  child.stderr.pipe(process.stderr)
-  child.stdin.on('error', () => undefined)
-  child.stdin.end(options.stdin)
-
-  const completion = new Promise<{
-    code: null | number
-    signal: keyof typeof os.constants.signals | null
-  }>((resolve, reject) => {
-    child.on('error', reject)
+  const lines = createInterface({ input: child.stdout })
+  const completion = new Promise<
+    | { code: null | number; signal: keyof typeof os.constants.signals | null }
+    | { error: Error }
+  >((resolve) => {
+    child.on('error', (error) => {
+      lines.close()
+      resolve({ error })
+    })
     child.on('close', (code, signal) => resolve({ code, signal }))
   })
+  const signalHandlers = (['SIGINT', 'SIGTERM'] as const).map((signal) => {
+    const handler = () => {
+      if (child.exitCode === null && child.signalCode === null) {
+        child.kill(signal)
+      }
+    }
+    process.on(signal, handler)
+    return { handler, signal }
+  })
 
-  let state: NormalizerState = { resultIsError: false }
-  const lines = createInterface({ input: child.stdout })
-  for await (const line of lines) {
-    state = normalizeHarnessLine({
-      harness: options.harness,
-      line,
-      state,
-    })
+  try {
+    child.stderr.pipe(process.stderr)
+    child.stdin.on('error', () => undefined)
+    child.stdin.end(options.stdin)
+
+    let state: NormalizerState = { resultIsError: false }
+    for await (const line of lines) {
+      state = normalizeHarnessLine({
+        harness: options.harness,
+        line,
+        state,
+      })
+    }
+
+    const completed = await completion
+    if ('error' in completed) {
+      emit({
+        message:
+          completed.error.message || `Failed to spawn "${options.plan.bin}"`,
+        type: 'run.error',
+      })
+      emit({ exitCode: 1, resultIsError: true, type: 'run.completed' })
+      return 1
+    }
+    const signalNumber = completed.signal
+      ? os.constants.signals[completed.signal]
+      : undefined
+    const childExitCode =
+      completed.code ?? (signalNumber ? 128 + signalNumber : 1)
+    if (!state.resultIsError && childExitCode !== 0) {
+      emit({
+        message: completed.signal
+          ? `${options.harness} exited with signal ${completed.signal}`
+          : `${options.harness} exited with code ${childExitCode}`,
+        type: 'run.error',
+      })
+    }
+    const resultIsError = state.resultIsError || childExitCode !== 0
+    const exitCode = resultIsError && childExitCode === 0 ? 1 : childExitCode
+    emit({ exitCode, resultIsError, type: 'run.completed' })
+    return exitCode
+  } finally {
+    for (const { handler, signal } of signalHandlers) {
+      process.off(signal, handler)
+    }
   }
-
-  const completed = await completion
-  const signalNumber = completed.signal
-    ? os.constants.signals[completed.signal]
-    : undefined
-  const childExitCode =
-    completed.code ?? (signalNumber ? 128 + signalNumber : 1)
-  const resultIsError = state.resultIsError || childExitCode !== 0
-  const exitCode = resultIsError && childExitCode === 0 ? 1 : childExitCode
-  emit({ exitCode, resultIsError, type: 'run.completed' })
-  return exitCode
 }
 
 function normalizeClaudeEvent(
@@ -243,7 +293,11 @@ function normalizeGrokEvent(
   if (event.type === 'text' && typeof event.data === 'string') {
     emit({ text: event.data, type: 'assistant.text' })
   }
-  if (event.type === 'end') emitSession(event.sessionId)
+  if (event.type === 'usage') emitGrokUsage(event, false)
+  if (event.type === 'end') {
+    emitSession(event.sessionId)
+    emitGrokUsage(event, true)
+  }
   if (event.type === 'error') {
     emitRunError(event, 'Grok reported an error')
     return { resultIsError: true }
@@ -324,7 +378,6 @@ async function prepareHeadlessPlan(options: {
           '--output-format',
           'stream-json',
           '--verbose',
-          '--dangerously-skip-permissions',
           ...(resumeSessionId ? ['--resume', resumeSessionId] : []),
         ],
       },
@@ -334,19 +387,13 @@ async function prepareHeadlessPlan(options: {
 
   if (harness === 'codex') {
     const command = resumeSessionId
-      ? ['exec', 'resume', resumeSessionId, '-']
-      : ['exec', '-']
+      ? ['exec', ...nativeArgs, 'resume', resumeSessionId, '-']
+      : ['exec', ...nativeArgs, '-']
     return {
       cleanup: async () => Promise.resolve(),
       plan: {
         ...options.plan,
-        args: [
-          ...options.plan.args,
-          ...nativeArgs,
-          ...command,
-          '--json',
-          '--dangerously-bypass-approvals-and-sandbox',
-        ],
+        args: [...options.plan.args, ...command, '--json'],
       },
       stdin: options.prompt,
     }
@@ -367,7 +414,6 @@ async function prepareHeadlessPlan(options: {
           promptPath,
           '--output-format',
           'streaming-json',
-          '--always-approve',
           '--no-auto-update',
           ...(resumeSessionId ? ['--resume', resumeSessionId] : []),
         ],
