@@ -193,6 +193,35 @@ describe('gateway cost capture', () => {
       await settleWithin(upstream.close(), 'abort-test upstream close')
     }
   })
+
+  test('rejects protocol-relative paths instead of changing the upstream origin', async () => {
+    let hostileOriginReached = false
+    const hostileOrigin = await startUpstream((_request, response) => {
+      hostileOriginReached = true
+      response.end('unexpected')
+    })
+    const intendedUpstream = await startUpstream('unused')
+    const costDir = makeTempDir()
+    const proxy = await startGatewayCostProxy({
+      costDir,
+      resumed: false,
+      targetBaseURL: intendedUpstream.baseURL,
+    })
+
+    try {
+      const hostileURL = new URL(hostileOrigin.baseURL)
+      const response = await fetch(
+        `${proxy.baseURL}//${hostileURL.host}/v1/messages`,
+        { method: 'POST' },
+      )
+      expect(response.status).toBe(502)
+      expect(hostileOriginReached).toBeFalse()
+    } finally {
+      await proxy.close()
+      await intendedUpstream.close()
+      await hostileOrigin.close()
+    }
+  })
 })
 
 function gatewayCostEvent(generationId: string, cost: string) {

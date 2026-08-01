@@ -106,10 +106,12 @@ export async function startGatewayCostProxy(props: {
   resumed: boolean
   targetBaseURL: string
 }) {
+  const targetBaseURL = validateGatewayTargetBaseURL(props.targetBaseURL)
+  const proxyProps = { ...props, targetBaseURL }
   if (typeof globalThis.Bun !== 'undefined') {
-    return startBunGatewayCostProxy(props)
+    return startBunGatewayCostProxy(proxyProps)
   }
-  return startNodeGatewayCostProxy(props)
+  return startNodeGatewayCostProxy(proxyProps)
 }
 
 function appendLedgerEntry(props: {
@@ -232,10 +234,10 @@ async function forwardRequest(
   signal: AbortSignal,
 ) {
   const body = await readRequestBody(props.request)
-  const upstreamURL = new URL(
-    props.request.url ?? '/',
-    withTrailingSlash(props.targetBaseURL),
-  )
+  const upstreamURL = gatewayUpstreamURL({
+    requestPath: props.request.url ?? '/',
+    targetBaseURL: props.targetBaseURL,
+  })
   const tracked = trackGatewayRequest({
     body,
     costDir: props.costDir,
@@ -284,6 +286,22 @@ async function forwardRequest(
   } finally {
     signal.removeEventListener('abort', cancelUpstream)
   }
+}
+
+function gatewayUpstreamURL(props: {
+  requestPath: string
+  targetBaseURL: string
+}) {
+  const pathname = props.requestPath.split('?')[0]
+  let allowedPath: '/v1/messages' | '/v1/messages/count_tokens'
+  if (pathname === '/v1/messages') {
+    allowedPath = '/v1/messages'
+  } else if (pathname === '/v1/messages/count_tokens') {
+    allowedPath = '/v1/messages/count_tokens'
+  } else {
+    throw new Error('gateway cost proxy received an unsupported path')
+  }
+  return new URL(allowedPath, `${props.targetBaseURL}/`)
 }
 
 function isHopByHopHeader(name: string) {
@@ -363,10 +381,10 @@ async function proxyWebRequest(props: {
   targetBaseURL: string
 }) {
   const incomingURL = new URL(props.request.url)
-  const upstreamURL = new URL(
-    `${incomingURL.pathname}${incomingURL.search}`,
-    withTrailingSlash(props.targetBaseURL),
-  )
+  const upstreamURL = gatewayUpstreamURL({
+    requestPath: incomingURL.pathname,
+    targetBaseURL: props.targetBaseURL,
+  })
   const body = new Uint8Array(await props.request.arrayBuffer())
   const tracked = trackGatewayRequest({
     body,
@@ -600,6 +618,18 @@ function trackGatewayRequest(props: {
   return { requestId, sessionId }
 }
 
-function withTrailingSlash(url: string) {
-  return url.endsWith('/') ? url : `${url}/`
+function validateGatewayTargetBaseURL(targetBaseURL: string) {
+  const target = new URL(targetBaseURL)
+  const isProductionGateway =
+    target.protocol === 'https:' &&
+    target.hostname === 'ai-gateway.vercel.sh' &&
+    target.port === ''
+  const isLoopbackFixture =
+    target.protocol === 'http:' &&
+    target.hostname === '127.0.0.1' &&
+    target.port !== ''
+  if (!isProductionGateway && !isLoopbackFixture) {
+    throw new Error('gateway cost proxy target is not allowed')
+  }
+  return target.origin
 }
