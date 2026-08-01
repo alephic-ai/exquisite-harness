@@ -112,12 +112,14 @@ failed native result makes both `run.completed.exitCode` and the `eh` process
 exit code non-zero, even when the child process exits zero.
 
 The fully specified command never opens UI, updates recents, or installs a
-statusline. Claude and Codex receive the prompt over stdin. Grok receives a
+statusline. Claude, Codex, pi, and opencode receive the prompt over stdin; pi
+runs with `--mode json`, and opencode uses `run --format json`. Grok receives a
 private temporary prompt file because its headless CLI exposes `--prompt-file`;
 `eh` removes that file after the child exits. Native session resume is available
-with `--resume-session <id>`. Orchestrators that must preserve harness-specific
-policy flags can pass a JSON string array with `--native-args-json`; those args
-are prepended before `eh`'s required machine-output flags.
+for all five harnesses with `--resume-session <id>`. Orchestrators that must
+preserve harness-specific policy flags can pass a JSON string array with
+`--native-args-json`; those args are prepended before `eh`'s required
+machine-output flags.
 
 ### Keys
 

@@ -191,13 +191,56 @@ Drive each with the PTY; assert on screen text.
    ollama shows "N models"; configured key providers show "key from
    env|keychain|file" or the "run eh provider key <name>" hint.
 
+## I. Headless runs
+
+1. Run `bun test src/headless-run.test.ts`. → all five harness adapters pass
+   their normalized NDJSON contract tests. The pi and opencode cases assert the
+   prompt stays off argv, native policy args precede mandatory machine-mode
+   args, `--resume-session` reaches the native CLI, session/text/usage/cost are
+   normalized, and a native semantic error makes both completion and process
+   exits non-zero even if the fake child exits 0. Preflight cases cover empty
+   stdin, malformed native args, invalid effort, unknown harness/provider, pi
+   provider incompatibility, and missing keys; each must emit only versioned
+   `run.error` + failed `run.completed` records on stdout and exit non-zero.
+2. With Ollama running and a pulled model declared for the `ollama` provider in
+   pi's `models.json`, run a short real pi request (replace `<model>`):
+
+   ```bash
+   printf 'Reply with exactly EH_PI_OK' |
+     eh run pi ollama <model> \
+       --native-args-json '["--no-tools","--no-extensions","--no-skills","--no-context-files","--no-session"]'
+   ```
+
+   → every stdout line parses as JSON with `v: 1`; the stream contains
+   `run.started`, `session.started`, `assistant.text` containing `EH_PI_OK`,
+   `usage`, and a successful `run.completed`. Native pi events remain available
+   as `harness.event`; stderr contains no TUI.
+
+3. With the same local provider/model, run a short real opencode request:
+
+   ```bash
+   printf 'Reply with exactly EH_OPENCODE_OK' |
+     eh run opencode ollama <model> --native-args-json '["--pure"]'
+   ```
+
+   → every stdout line parses as JSON with `v: 1`; the stream contains
+   `run.started`, `session.started`, `assistant.text` containing
+   `EH_OPENCODE_OK`, `usage`, and a successful `run.completed`. Native opencode
+   events remain available as `harness.event`; stderr contains no TUI.
+
+4. Repeat the pi and opencode fake-binary cases with a nonexistent child binary
+   and with the real native error event shape. → each emits one `run.error`, a
+   failed `run.completed`, and a non-zero `eh` exit while preserving native
+   stderr separately.
+
 ## Known limitations
 
 - Interactive steps are driven by a PTY harness, not a human; rendering quirks
   of clack in a real terminal emulator are not fully covered.
-- No real harness sessions are started (`claude`/`codex`/`grok`/`opencode`/`pi`
-  — a fake harness covers the spawn contract; live-agent behavior is out of
-  scope).
+- Interactive launch/resume steps do not start real harness sessions; fake
+  binaries cover that spawn contract. Headless steps I.2-I.3 deliberately run
+  short real pi/opencode sessions against local Ollama; cloud-harness live runs
+  remain conditional on credentials.
 - OpenRouter/Vercel AI Gateway live model-list fetches need real keys and are
   SKIPPED unless keys are present.
 - Linux Secret Service is verified against a simulated `secret-tool`; a real
@@ -207,6 +250,8 @@ Drive each with the PTY; assert on screen text.
 
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
 - `bun test` — `src/statusline.test.ts` (transcript usage),
+  `src/headless-run.test.ts` (all five native headless adapters, normalized
+  NDJSON, prompt transport, session resume, failure and signal semantics),
   `src/sessions.test.ts` (resume session-store parsers), `src/pi.test.ts` (pi
   provider matching / baseURL normalization, commented JSON, exact env
   references), and `src/opencode.test.ts` (inline config payload). OpenCode

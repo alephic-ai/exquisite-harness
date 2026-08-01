@@ -10,67 +10,95 @@ import type { EffortLevel, LaunchPlan } from './types.js'
 
 import { getProvider, loadConfig } from './config.js'
 import { buildLaunchPlan } from './harnesses.js'
+import { EFFORT_LEVELS } from './types.js'
 
 const PROTOCOL_VERSION = 1
 const recordSchema = z.record(z.string(), z.unknown())
 
 export interface HeadlessRunOptions {
-  effort: EffortLevel
+  effort: string
   harness: string
   model: string
-  nativeArgs?: string[]
+  nativeArgsJson?: string
   provider: string
   resumeSessionId?: string
 }
 
 interface NormalizerState {
   resultIsError: boolean
+  sessionId: string | undefined
 }
 
-export function parseNativeArgsJson(value: string) {
-  let decoded: unknown
-  try {
-    decoded = JSON.parse(value)
-  } catch {
-    throw new Error('--native-args-json must be a JSON array of strings')
-  }
-
-  const parsed = z.array(z.string()).safeParse(decoded)
-  if (!parsed.success) {
-    throw new Error('--native-args-json must be a JSON array of strings')
-  }
-  return parsed.data
+interface ResolvedHeadlessRunOptions {
+  effort: EffortLevel
+  harness: string
+  model: string
+  nativeArgs: string[]
+  provider: string
+  resumeSessionId: string | undefined
 }
 
 export async function runHeadless(options: HeadlessRunOptions) {
-  const prompt = readPrompt()
-  if (!prompt.trim()) throw new Error('eh run requires a prompt on stdin')
-
-  const provider = getProvider(loadConfig(), options.provider)
-  if (!provider) throw new Error(`unknown provider "${options.provider}"`)
-  const plan = await buildLaunchPlan(options.harness, provider, options.model, {
-    effort: options.effort,
-    statusline: false,
-  })
-  const prepared = await prepareHeadlessPlan({ options, plan, prompt })
-
-  emit({
-    effort: options.effort,
-    harness: options.harness,
-    model: options.model,
-    provider: provider.name,
-    type: 'run.started',
-  })
+  let cleanup = async () => Promise.resolve()
 
   try {
-    const exitCode = await executeHeadlessPlan({
+    const effort = EFFORT_LEVELS.find((level) => level === options.effort)
+    if (effort === undefined) {
+      throw new Error(
+        `unknown effort "${options.effort}" (known: ${EFFORT_LEVELS.join(', ')})`,
+      )
+    }
+    const resolved: ResolvedHeadlessRunOptions = {
+      effort,
       harness: options.harness,
+      model: options.model,
+      nativeArgs:
+        options.nativeArgsJson === undefined
+          ? []
+          : parseNativeArgsJson(options.nativeArgsJson),
+      provider: options.provider,
+      resumeSessionId: options.resumeSessionId,
+    }
+    const prompt = readPrompt()
+    if (!prompt.trim()) throw new Error('eh run requires a prompt on stdin')
+
+    const provider = getProvider(loadConfig(), resolved.provider)
+    if (!provider) throw new Error(`unknown provider "${resolved.provider}"`)
+    const plan = await buildLaunchPlan(
+      resolved.harness,
+      provider,
+      resolved.model,
+      {
+        effort: resolved.effort,
+        statusline: false,
+      },
+    )
+    const prepared = await prepareHeadlessPlan({
+      options: resolved,
+      plan,
+      prompt,
+    })
+    cleanup = prepared.cleanup
+
+    emit({
+      effort: resolved.effort,
+      harness: resolved.harness,
+      model: resolved.model,
+      provider: provider.name,
+      type: 'run.started',
+    })
+
+    return await executeHeadlessPlan({
+      harness: resolved.harness,
       plan: prepared.plan,
       stdin: prepared.stdin,
     })
-    return exitCode
+  } catch (error) {
+    emit({ message: errorMessage(error), type: 'run.error' })
+    emit({ exitCode: 1, resultIsError: true, type: 'run.completed' })
+    return 1
   } finally {
-    await prepared.cleanup()
+    await cleanup()
   }
 }
 
@@ -98,11 +126,20 @@ function emitGrokUsage(event: Record<string, unknown>, cumulative: boolean) {
   })
 }
 
+function emitNewSession(value: unknown, state: NormalizerState) {
+  if (typeof value !== 'string' || value === state.sessionId) return state
+  emitSession(value)
+  return { ...state, sessionId: value }
+}
+
 function emitRunError(event: Record<string, unknown>, fallback: string) {
   const nested = asRecord(event.error)
+  const data = nested ? asRecord(nested.data) : undefined
   const message =
     (typeof event.message === 'string' && event.message) ||
+    (typeof event.errorMessage === 'string' && event.errorMessage) ||
     (typeof nested?.message === 'string' && nested.message) ||
+    (typeof data?.message === 'string' && data.message) ||
     (typeof event.result === 'string' && event.result) ||
     fallback
   emit({ message, type: 'run.error' })
@@ -131,6 +168,10 @@ function emitUsage(usage: {
     outputTokens: usage.outputTokens,
     type: 'usage',
   })
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
 }
 
 async function executeHeadlessPlan(options: {
@@ -168,7 +209,10 @@ async function executeHeadlessPlan(options: {
     child.stdin.on('error', () => undefined)
     child.stdin.end(options.stdin)
 
-    let state: NormalizerState = { resultIsError: false }
+    let state: NormalizerState = {
+      resultIsError: false,
+      sessionId: undefined,
+    }
     for await (const line of lines) {
       state = normalizeHarnessLine({
         harness: options.harness,
@@ -246,7 +290,10 @@ function normalizeClaudeEvent(
     event.is_error === true ||
     (typeof event.subtype === 'string' && event.subtype !== 'success')
   if (resultIsError) emitRunError(event, 'Claude reported a failed result')
-  return { resultIsError: state.resultIsError || resultIsError }
+  return {
+    resultIsError: state.resultIsError || resultIsError,
+    sessionId: state.sessionId,
+  }
 }
 
 function normalizeCodexEvent(
@@ -280,7 +327,7 @@ function normalizeCodexEvent(
 
   if (event.type === 'turn.failed' || event.type === 'error') {
     emitRunError(event, 'Codex reported a failed turn')
-    return { resultIsError: true }
+    return { ...state, resultIsError: true }
   }
 
   return state
@@ -300,7 +347,7 @@ function normalizeGrokEvent(
   }
   if (event.type === 'error') {
     emitRunError(event, 'Grok reported an error')
-    return { resultIsError: true }
+    return { ...state, resultIsError: true }
   }
   return state
 }
@@ -334,8 +381,89 @@ function normalizeHarnessLine(options: {
       return normalizeCodexEvent(event, options.state)
     case 'grok':
       return normalizeGrokEvent(event, options.state)
+    case 'opencode':
+      return normalizeOpencodeEvent(event, options.state)
+    case 'pi':
+      return normalizePiEvent(event, options.state)
     default:
       return options.state
+  }
+}
+
+function normalizeOpencodeEvent(
+  event: Record<string, unknown>,
+  state: NormalizerState,
+) {
+  const nextState = emitNewSession(event.sessionID, state)
+  const part = asRecord(event.part)
+
+  if (
+    event.type === 'text' &&
+    part?.type === 'text' &&
+    typeof part.text === 'string'
+  ) {
+    emit({ text: part.text, type: 'assistant.text' })
+  }
+
+  if (event.type === 'step_finish' && part?.type === 'step-finish') {
+    const tokens = asRecord(part.tokens)
+    const cache = tokens ? asRecord(tokens.cache) : undefined
+    if (tokens) {
+      emitUsage({
+        cacheReadTokens: cache ? numberField(cache, 'read') : 0,
+        cacheWriteTokens: cache ? numberField(cache, 'write') : 0,
+        costUsd: optionalNumberField(part, 'cost'),
+        cumulative: false,
+        inputTokens: numberField(tokens, 'input'),
+        outputTokens: numberField(tokens, 'output'),
+      })
+    }
+  }
+
+  if (event.type === 'error') {
+    emitRunError(event, 'OpenCode reported an error')
+    return { ...nextState, resultIsError: true }
+  }
+  return nextState
+}
+
+function normalizePiEvent(
+  event: Record<string, unknown>,
+  state: NormalizerState,
+) {
+  const nextState = emitNewSession(event.id, state)
+  if (event.type !== 'message_end') return nextState
+
+  const message = asRecord(event.message)
+  if (message?.role !== 'assistant') return nextState
+  if (Array.isArray(message.content)) {
+    for (const rawBlock of message.content) {
+      const block = asRecord(rawBlock)
+      if (block?.type === 'text' && typeof block.text === 'string') {
+        emit({ text: block.text, type: 'assistant.text' })
+      }
+    }
+  }
+
+  const usage = asRecord(message.usage)
+  if (usage) {
+    const cost = asRecord(usage.cost)
+    emitUsage({
+      cacheReadTokens: numberField(usage, 'cacheRead'),
+      cacheWriteTokens: numberField(usage, 'cacheWrite'),
+      costUsd: cost ? optionalNumberField(cost, 'total') : undefined,
+      cumulative: false,
+      inputTokens: numberField(usage, 'input'),
+      outputTokens: numberField(usage, 'output'),
+    })
+  }
+
+  const resultIsError =
+    message.stopReason === 'error' || message.stopReason === 'aborted'
+  if (resultIsError) emitRunError(message, 'Pi reported a failed result')
+  return {
+    ...nextState,
+    resultIsError: nextState.resultIsError || resultIsError,
   }
 }
 
@@ -349,18 +477,28 @@ function optionalNumberField(value: Record<string, unknown>, key: string) {
   return Number.isFinite(numeric) && numeric >= 0 ? numeric : undefined
 }
 
+function parseNativeArgsJson(value: string) {
+  let decoded: unknown
+  try {
+    decoded = JSON.parse(value)
+  } catch {
+    throw new Error('--native-args-json must be a JSON array of strings')
+  }
+
+  const parsed = z.array(z.string()).safeParse(decoded)
+  if (!parsed.success) {
+    throw new Error('--native-args-json must be a JSON array of strings')
+  }
+  return parsed.data
+}
+
 async function prepareHeadlessPlan(options: {
-  options: HeadlessRunOptions
+  options: ResolvedHeadlessRunOptions
   plan: LaunchPlan
   prompt: string
 }) {
-  const {
-    effort,
-    harness,
-    model,
-    nativeArgs = [],
-    resumeSessionId,
-  } = options.options
+  const { effort, harness, model, nativeArgs, resumeSessionId } =
+    options.options
   const effortArgs = effort === 'auto' ? [] : ['--effort', effort]
 
   if (harness === 'claude') {
@@ -418,6 +556,41 @@ async function prepareHeadlessPlan(options: {
           ...(resumeSessionId ? ['--resume', resumeSessionId] : []),
         ],
       },
+    }
+  }
+
+  if (harness === 'pi') {
+    return {
+      cleanup: async () => Promise.resolve(),
+      plan: {
+        ...options.plan,
+        args: [
+          ...options.plan.args,
+          ...nativeArgs,
+          '--mode',
+          'json',
+          ...(resumeSessionId ? ['--session', resumeSessionId] : []),
+        ],
+      },
+      stdin: options.prompt,
+    }
+  }
+
+  if (harness === 'opencode') {
+    return {
+      cleanup: async () => Promise.resolve(),
+      plan: {
+        ...options.plan,
+        args: [
+          'run',
+          ...options.plan.args,
+          ...nativeArgs,
+          '--format',
+          'json',
+          ...(resumeSessionId ? ['--session', resumeSessionId] : []),
+        ],
+      },
+      stdin: options.prompt,
     }
   }
 

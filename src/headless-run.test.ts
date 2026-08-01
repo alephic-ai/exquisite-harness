@@ -178,6 +178,155 @@ describe('eh run', () => {
     })
   })
 
+  test.each([
+    [
+      'empty stdin',
+      'codex',
+      'ollama',
+      '',
+      [],
+      'none',
+      'eh run requires a prompt on stdin',
+    ],
+    [
+      'malformed native args',
+      'codex',
+      'ollama',
+      'run the task',
+      ['--native-args-json', 'not-json'],
+      'none',
+      '--native-args-json must be a JSON array of strings',
+    ],
+    [
+      'invalid effort',
+      'codex',
+      'ollama',
+      'run the task',
+      ['--reasoning-effort', 'extreme'],
+      'none',
+      'unknown effort "extreme"',
+    ],
+    [
+      'unknown harness',
+      'missing-harness',
+      'ollama',
+      'run the task',
+      [],
+      'none',
+      'unknown harness "missing-harness"',
+    ],
+    [
+      'unknown provider',
+      'codex',
+      'missing-provider',
+      'run the task',
+      [],
+      'none',
+      'unknown provider "missing-provider"',
+    ],
+    [
+      'Pi provider incompatibility',
+      'pi',
+      'ollama',
+      'run the task',
+      [],
+      'missing-pi-provider',
+      'pi can\'t serve provider "ollama"',
+    ],
+    [
+      'missing provider key',
+      'grok',
+      'missing-key',
+      'run the task',
+      [],
+      'missing-key',
+      'no API key for "missing-key"',
+    ],
+  ] as const)(
+    'normalizes the %s preflight failure',
+    async (
+      _name,
+      harness,
+      provider,
+      prompt,
+      extraArgs,
+      setup,
+      expectedMessage,
+    ) => {
+      const root = mkdtempSync(path.join(tmpdir(), 'eh-headless-test-'))
+      tempDirs.push(root)
+      const configDir = path.join(root, 'config')
+      const piDir = path.join(root, 'pi')
+      mkdirSync(configDir, { recursive: true })
+      mkdirSync(piDir, { recursive: true })
+      if (setup === 'missing-key') {
+        const ehConfigDir = path.join(configDir, 'eh')
+        mkdirSync(ehConfigDir, { recursive: true })
+        writeFileSync(
+          path.join(ehConfigDir, 'config.json'),
+          JSON.stringify({
+            profiles: {},
+            providers: {
+              'missing-key': {
+                baseURL: 'https://missing-key.invalid/v1',
+                envKey: 'EH_HEADLESS_MISSING_KEY',
+                type: 'openai-chat',
+              },
+            },
+            recent: [],
+            version: 1,
+          }),
+        )
+      }
+
+      const child = spawn(
+        process.execPath,
+        [
+          'run',
+          'src/main.ts',
+          'run',
+          harness,
+          provider,
+          'qwen3-coder',
+          ...extraArgs,
+        ],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            EH_HEADLESS_MISSING_KEY: '',
+            PI_CODING_AGENT_DIR:
+              setup === 'missing-pi-provider' ? piDir : undefined,
+            XDG_CONFIG_HOME: configDir,
+          },
+        },
+      )
+      child.stdin.end(prompt)
+
+      const [exitCode, stderr, stdout] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stderr),
+        readStream(child.stdout),
+      ])
+
+      expect(stderr).toBe('')
+      expect(exitCode).toBe(1)
+      expect(parseEvents(stdout)).toEqual([
+        {
+          message: expect.stringContaining(expectedMessage),
+          type: 'run.error',
+          v: 1,
+        },
+        {
+          exitCode: 1,
+          resultIsError: true,
+          type: 'run.completed',
+          v: 1,
+        },
+      ])
+    },
+  )
+
   test('normalizes Claude session, text, and usage events', async () => {
     const fixture = createFakeClaude()
     const child = spawn(
@@ -334,6 +483,223 @@ describe('eh run', () => {
       v: 1,
     })
   })
+
+  test('normalizes Pi session, text, and usage events', async () => {
+    const fixture = createFakePi()
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'pi',
+        'ollama',
+        'qwen3-coder',
+        '--reasoning-effort',
+        'high',
+        '--native-args-json',
+        '["--no-tools"]',
+        '--resume-session',
+        'pi-previous',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          PI_CODING_AGENT_DIR: fixture.configDir,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('inspect the parser')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    const events = parseEvents(stdout)
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    expect(events).toContainEqual({
+      sessionId: 'pi-session',
+      type: 'session.started',
+      v: 1,
+    })
+    expect(events).toContainEqual({
+      text: 'saw: inspect the parser',
+      type: 'assistant.text',
+      v: 1,
+    })
+    expect(events).toContainEqual({
+      cacheReadTokens: 2,
+      cacheWriteTokens: 1,
+      costUsd: 0.02,
+      cumulative: false,
+      inputTokens: 11,
+      outputTokens: 3,
+      type: 'usage',
+      v: 1,
+    })
+
+    const argsEvent = events
+      .map((event) =>
+        z
+          .object({
+            event: z.object({
+              args: z.array(z.string()),
+              type: z.literal('fake.args'),
+            }),
+            type: z.literal('harness.event'),
+          })
+          .safeParse(event),
+      )
+      .find((result) => result.success)
+    expect(argsEvent?.data.event.args).toEqual([
+      '--provider',
+      'ollama',
+      '--model',
+      'qwen3-coder',
+      '--thinking',
+      'high',
+      '--no-tools',
+      '--mode',
+      'json',
+      '--session',
+      'pi-previous',
+    ])
+    expect(argsEvent?.data.event.args).not.toContain('inspect the parser')
+  })
+
+  test('normalizes OpenCode session, text, and usage events', async () => {
+    const fixture = createFakeOpencode()
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'opencode',
+        'ollama',
+        'qwen3-coder',
+        '--native-args-json',
+        '["--pure"]',
+        '--resume-session',
+        'opencode-previous',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('review the adapter')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    const events = parseEvents(stdout)
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    expect(events).toContainEqual({
+      sessionId: 'opencode-session',
+      type: 'session.started',
+      v: 1,
+    })
+    expect(events).toContainEqual({
+      text: 'saw: review the adapter',
+      type: 'assistant.text',
+      v: 1,
+    })
+    expect(events).toContainEqual({
+      cacheReadTokens: 4,
+      cacheWriteTokens: 2,
+      costUsd: 0.03,
+      cumulative: false,
+      inputTokens: 12,
+      outputTokens: 5,
+      type: 'usage',
+      v: 1,
+    })
+
+    const argsEvent = events
+      .map((event) =>
+        z
+          .object({
+            event: z.object({
+              args: z.array(z.string()),
+              type: z.literal('fake.args'),
+            }),
+            type: z.literal('harness.event'),
+          })
+          .safeParse(event),
+      )
+      .find((result) => result.success)
+    expect(argsEvent?.data.event.args).toEqual([
+      'run',
+      '-m',
+      'eh-ollama/qwen3-coder',
+      '--pure',
+      '--format',
+      'json',
+      '--session',
+      'opencode-previous',
+    ])
+    expect(argsEvent?.data.event.args).not.toContain('review the adapter')
+  })
+
+  test.each([
+    ['pi', createFakePi],
+    ['opencode', createFakeOpencode],
+  ] as const)(
+    'converts a semantic %s failure into a non-zero wrapper exit',
+    async (harness, createFixture) => {
+      const fixture = createFixture()
+      const child = spawn(
+        process.execPath,
+        ['run', 'src/main.ts', 'run', harness, 'ollama', 'qwen3-coder'],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            EH_TEST_HEADLESS_FAIL: '1',
+            PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+            PI_CODING_AGENT_DIR: fixture.configDir,
+            XDG_CONFIG_HOME: fixture.configDir,
+          },
+        },
+      )
+      child.stdin.end('fail this run')
+
+      const [exitCode, stdout] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stdout),
+        readStream(child.stderr),
+      ])
+      const events = parseEvents(stdout)
+
+      expect(exitCode).toBe(1)
+      expect(events).toContainEqual({
+        message: `expected ${harness} failure`,
+        type: 'run.error',
+        v: 1,
+      })
+      expect(events).toContainEqual({
+        exitCode: 1,
+        resultIsError: true,
+        type: 'run.completed',
+        v: 1,
+      })
+    },
+  )
 
   test('converts a semantic Codex failure into a non-zero wrapper exit', async () => {
     const fixture = createFakeCodex()
@@ -619,6 +985,103 @@ ${body}
   )
   chmodSync(binary, 0o755)
   return { binDir, configDir }
+}
+
+function createFakeOpencode() {
+  return createFakeHarness(
+    'opencode',
+    `const chunks = []
+for await (const chunk of process.stdin) chunks.push(chunk)
+const prompt = Buffer.concat(chunks).toString('utf8')
+const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
+emit({ type: 'fake.args', args: process.argv.slice(2) })
+if (process.env.EH_TEST_HEADLESS_FAIL === '1') {
+  emit({
+    type: 'error',
+    sessionID: 'opencode-session',
+    error: { name: 'ProviderError', data: { message: 'expected opencode failure' } },
+  })
+  process.exit(0)
+}
+emit({
+  type: 'step_start',
+  sessionID: 'opencode-session',
+  part: { type: 'step-start' },
+})
+emit({
+  type: 'text',
+  sessionID: 'opencode-session',
+  part: { type: 'text', text: 'saw: ' + prompt },
+})
+emit({
+  type: 'step_finish',
+  sessionID: 'opencode-session',
+  part: {
+    type: 'step-finish',
+    cost: 0.03,
+    tokens: {
+      input: 12,
+      output: 5,
+      cache: { read: 4, write: 2 },
+    },
+  },
+})`,
+  )
+}
+
+function createFakePi() {
+  const fixture = createFakeHarness(
+    'pi',
+    `const chunks = []
+for await (const chunk of process.stdin) chunks.push(chunk)
+const prompt = Buffer.concat(chunks).toString('utf8')
+const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
+emit({ type: 'session', id: 'pi-session', version: 3 })
+emit({ type: 'fake.args', args: process.argv.slice(2) })
+if (process.env.EH_TEST_HEADLESS_FAIL === '1') {
+  emit({
+    type: 'message_end',
+    message: {
+      role: 'assistant',
+      content: [],
+      stopReason: 'error',
+      errorMessage: 'expected pi failure',
+      usage: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        cost: { total: 0 },
+      },
+    },
+  })
+  process.exit(0)
+}
+emit({
+  type: 'message_end',
+  message: {
+    role: 'assistant',
+    content: [{ type: 'text', text: 'saw: ' + prompt }],
+    stopReason: 'stop',
+    usage: {
+      input: 11,
+      output: 3,
+      cacheRead: 2,
+      cacheWrite: 1,
+      cost: { total: 0.02 },
+    },
+  },
+})`,
+  )
+  writeFileSync(
+    path.join(fixture.configDir, 'models.json'),
+    JSON.stringify({
+      providers: {
+        ollama: { baseUrl: 'http://127.0.0.1:11434/v1' },
+      },
+    }),
+  )
+  return fixture
 }
 
 function parseEvents(stdout: string) {

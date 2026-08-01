@@ -4,7 +4,7 @@ import pkg from '../package.json' with { type: 'json' }
 import { getProvider, loadConfig, saveConfig } from './config.js'
 import { doctor } from './doctor.js'
 import { launchFlow } from './flow.js'
-import { parseNativeArgsJson, runHeadless } from './headless-run.js'
+import { runHeadless } from './headless-run.js'
 import {
   modelsList,
   profileList,
@@ -110,20 +110,11 @@ program
   )
   .option('--resume-session <id>', 'resume an existing native session')
   .action(async (harness, provider, model, opts) => {
-    const effort = EFFORT_LEVELS.find((level) => level === opts.reasoningEffort)
-    if (effort === undefined) {
-      throw new Error(
-        `unknown effort "${opts.reasoningEffort}" (known: ${EFFORT_LEVELS.join(', ')})`,
-      )
-    }
     process.exitCode = await runHeadless({
-      effort,
+      effort: opts.reasoningEffort,
       harness,
       model,
-      nativeArgs:
-        opts.nativeArgsJson === undefined
-          ? undefined
-          : parseNativeArgsJson(opts.nativeArgsJson),
+      nativeArgsJson: opts.nativeArgsJson,
       provider,
       resumeSessionId: opts.resumeSession,
     })
