@@ -45,9 +45,13 @@ self-updates to the latest public release.
 ![Claude Code launched via eh, with a powerline statusline showing Vercel AI Gateway, model, list rates, session cost, and context usage](docs/images/eh-statusline.jpg)
 
 When you launch Claude through `eh`, it injects a session statusline: provider,
-model, list rates ($/1M), session cost from real tokens × those rates, and
-context % against the provider’s published window — not Claude’s default cost
-meter.
+model, the active provider rate range
+($/1M), session cost, and context %
+against the provider’s published window. Vercel AI Gateway sessions use the
+gateway's exact billed cost metadata. Other totals are token-based estimates and
+paid-provider fallbacks carry a `~`; providers with published zero rates show
+exact `$0`. Partial or unpriceable totals show `—`
+instead of guessing.
 
 ## Use it
 

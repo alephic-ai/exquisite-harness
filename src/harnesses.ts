@@ -37,7 +37,7 @@ async function authTokenFor(provider: ResolvedProvider) {
 
 // Claude Code speaks Anthropic Messages; everything it needs is env vars.
 // Session statusline: override Claude's (wrong for third-party models) cost
-// display with provider/model/effort/list rates + recomputed session $.
+// display with provider/model/effort/rates + an exact gateway session total.
 async function planClaude(
   provider: ResolvedProvider,
   model: string,
@@ -57,6 +57,7 @@ async function planClaude(
   ])
   const settingsPath = writeClaudeStatuslineSettings()
   const env: Record<string, string> = {
+    ANTHROPIC_API_KEY: '',
     ANTHROPIC_AUTH_TOKEN: authToken,
     ANTHROPIC_BASE_URL: baseURL,
     ANTHROPIC_MODEL: model,
@@ -66,6 +67,7 @@ async function planClaude(
       effort,
       model,
       provider: provider.name,
+      rateLabel: meta.rateLabel,
       rates: meta.rates,
     }),
   }
@@ -87,6 +89,13 @@ async function planClaude(
     args: ['--settings', settingsPath],
     bin: 'claude',
     env,
+    ...(isVercelGatewayURL(baseURL)
+      ? {
+          gatewayCostCapture: {
+            resumed: false,
+          },
+        }
+      : {}),
     notes,
   }
 }
@@ -194,8 +203,20 @@ export async function buildLaunchPlan(
   const def = getHarness(harness)
   if (!def) throw new Error(`unknown harness "${harness}"`)
   const plan = await def.plan(provider, model, options.effort)
-  if (options.resume) plan.args.push(...def.resumeArgs(options.resumeSessionId))
-  return plan
+  return {
+    ...plan,
+    args: options.resume
+      ? [...plan.args, ...def.resumeArgs(options.resumeSessionId)]
+      : plan.args,
+    ...(plan.gatewayCostCapture
+      ? {
+          gatewayCostCapture: {
+            ...plan.gatewayCostCapture,
+            resumed: options.resume ?? false,
+          },
+        }
+      : {}),
+  }
 }
 
 export function getHarness(name: string) {
@@ -204,4 +225,12 @@ export function getHarness(name: string) {
 
 export function harnessNames() {
   return Object.keys(HARNESSES)
+}
+
+function isVercelGatewayURL(baseURL: string) {
+  try {
+    return new URL(baseURL).hostname === 'ai-gateway.vercel.sh'
+  } catch {
+    return false
+  }
 }
