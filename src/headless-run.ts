@@ -48,7 +48,6 @@ export function parseNativeArgsJson(value: string) {
 
 export async function runHeadless(options: HeadlessRunOptions) {
   const prompt = readPrompt()
-  if (prompt === undefined) return 1
 
   const provider = getProvider(loadConfig(), options.provider)
   if (!provider) throw new Error(`unknown provider "${options.provider}"`)
@@ -470,14 +469,8 @@ async function prepareHeadlessPlan(options: {
 }
 
 function readPrompt() {
-  if (process.stdin.isTTY) {
-    console.error(PROMPT_STDIN_HELP)
-    return undefined
-  }
+  if (process.stdin.isTTY) throw new Error(PROMPT_STDIN_HELP)
   const prompt = readFileSync(0, 'utf8')
-  if (!prompt.trim()) {
-    console.error(PROMPT_STDIN_HELP)
-    return undefined
-  }
+  if (!prompt.trim()) throw new Error(PROMPT_STDIN_HELP)
   return prompt
 }
