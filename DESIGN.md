@@ -1,6 +1,6 @@
 # Exquisite Harness (`eh`) — Design
 
-A CLI that lets you choose a **harness** (Claude Code, Codex, Grok CLI) and
+A CLI that lets you choose a **harness** (Claude Code, Codex, Grok Build) and
 point it at a **provider** (Ollama, OpenRouter, Vercel AI Gateway), then
 launches it. Pick a cell in the matrix, `eh` wires it up.
 
@@ -13,7 +13,7 @@ them is the whole game, and the matrix is already mostly green natively:
 | ----------- | ----------------------- | -------------------------------------------------------------------- |
 | Claude Code | Anthropic Messages      | env: `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL` |
 | Codex CLI   | OpenAI Responses / Chat | `-c` overrides (TOML): `model_providers.*`                           |
-| Grok CLI    | OpenAI Chat Completions | env: `GROK_API_KEY`, `GROK_BASE_URL`, `--model`                      |
+| Grok Build  | OpenAI Chat Completions | env: `XAI_API_KEY`, `GROK_MODELS_BASE_URL`, `--model`                |
 
 | Provider          | Endpoints                                       |
 | ----------------- | ----------------------------------------------- |
@@ -215,7 +215,7 @@ vars. Design follows the doc-backed patterns of the harnesses themselves:
 | ----------- | ----------------------------------------------------------------------------------------------- |
 | Claude Code | macOS Keychain (darwin) / `~/.claude/.credentials.json` 0600 (linux); `apiKeyHelper` shell hook |
 | Codex CLI   | `cli_auth_credentials_store=auto`: OS credential store, else `~/.codex/auth.json`               |
-| Grok CLI    | plaintext `~/.grok/user-settings.json`                                                          |
+| Grok Build  | OAuth in `~/.grok/auth.json` 0600; `XAI_API_KEY` fallback                                       |
 | gh / stripe | plaintext files in `$HOME`, env var wins                                                        |
 
 Two standard patterns adopted here:
@@ -283,10 +283,9 @@ resolve at launch time without eh storing anything.
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
   `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
   down). No writes to `~/.codex/config.toml`.
-- **grok**: env `GROK_API_KEY`, `GROK_BASE_URL`, args `--model <id>`. grok-cli
-  has no effort knob; an explicit effort is noted and ignored. (Flag shape
-  follows grok-cli's README; verify against installed version — `eh doctor`
-  reports the binary path.)
+- **grok**: env `XAI_API_KEY`, `GROK_MODELS_BASE_URL`, args `--model <id>` and
+  optional `--reasoning-effort <level>`. These are Grok Build's documented
+  custom-model and CLI interfaces; `eh doctor` reports the installed binary.
 
 **Effort** is an optional part of a selection (`auto`, `low`, `medium`, `high`,
 `xhigh`, `max`), resolved flag → profile → interactive default (`auto` = model
@@ -309,11 +308,11 @@ replicate: sessions in very deep paths don't list), codex
 id+cwd — files are date-organized, so the scan is bounded to 300 files / 25
 matches; title from the first `user_message` event, model from the first
 `turn_context`), grok
-`~/.grok/sessions/<encodeURIComponent(cwd)>/<id>/summary.json` (ready-made
-title/model/timestamps). Subagent sessions are filtered (grok `session_kind`,
-codex `thread_source`). The list shows sessions whether or not eh launched them,
-each with harness, model, and age — never provider, which transcripts don't
-record.
+`${GROK_HOME:-~/.grok}/sessions/<encodeURIComponent(cwd)>/<id>/summary.json`
+(ready-made title/model/timestamps). Subagent sessions are filtered (grok
+`session_kind`, codex `thread_source`). The list shows sessions whether or not
+eh launched them, each with harness, model, and age — never provider, which
+transcripts don't record.
 
 Wiring: explicit positionals/flags win. Otherwise the recents supply it,
 preferring the combo that last ran that harness+model (a provider is only known

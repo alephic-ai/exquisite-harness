@@ -277,8 +277,7 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
     : await pickProvider(def.protocols, allProviders(config))
   const model = partial.model ?? (await pickModel(provider))
   // Only ask when the user is picking interactively and hasn't chosen one.
-  const effort =
-    partial.effort ?? (harness === 'grok' ? 'auto' : await pickEffort())
+  const effort = partial.effort ?? (await pickEffort())
   return {
     effort,
     harness,

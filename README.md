@@ -20,10 +20,10 @@
 
 **`eh` — pick a harness, pick a provider, go.**
 
-A small CLI that launches the agent harness you want (Claude Code, Codex, Grok
-CLI) pointed at the model provider you want (Ollama, OpenRouter, Vercel AI
-Gateway) — with the right env vars, args, effort level, and keys wired up for
-you. Interactive when you want it, flags when you don't.
+A small CLI that launches the agent harness you want (Claude Code, Codex,
+[Grok Build](https://x.ai/cli)) pointed at the model provider you want (Ollama,
+OpenRouter, Vercel AI Gateway) — with the right env vars, args, effort level,
+and keys wired up for you. Interactive when you want it, flags when you don't.
 
 ## Install
 
@@ -78,7 +78,7 @@ eh claude ollama qwen3-coder -e high  # low|medium|high|xhigh|max (default auto)
 
 claude → `CLAUDE_CODE_EFFORT_LEVEL` (+ `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT` for
 non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map to
-`high`); grok has no knob and ignores it. Profiles and recents remember it.
+`high`); grok → `--reasoning-effort`. Profiles and recents remember it.
 
 ### Resume
 
