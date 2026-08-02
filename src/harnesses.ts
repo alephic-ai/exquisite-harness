@@ -136,7 +136,7 @@ async function planCodex(
   return { args, bin: 'codex', env, notes }
 }
 
-// grok-cli is OpenAI-compatible: point GROK_BASE_URL at any /v1 endpoint.
+// Grok Build discovers custom OpenAI-compatible models from their /v1 endpoint.
 async function planGrok(
   provider: ResolvedProvider,
   model: string,
@@ -151,8 +151,8 @@ async function planGrok(
     args,
     bin: 'grok',
     env: {
-      GROK_API_KEY: await authTokenFor(provider),
-      GROK_BASE_URL: openAIBaseURLFor(provider),
+      GROK_MODELS_BASE_URL: openAIBaseURLFor(provider),
+      XAI_API_KEY: await authTokenFor(provider),
     },
     notes: [],
   }
@@ -183,7 +183,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
   },
   grok: {
     bin: 'grok',
-    label: 'Grok CLI',
+    label: 'Grok Build',
     plan: planGrok,
     protocols: ['openai-chat'],
     resumeArgs: (id) => (id ? ['--resume', id] : ['--resume']),
