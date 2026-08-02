@@ -5,10 +5,12 @@ import { text } from 'node:stream/consumers'
 import { z } from 'zod'
 
 import { configDir, providerLabel as configProviderLabel } from './config.js'
+import { gatewayCostsDir, readGatewaySessionCost } from './gateway-costs.js'
 import {
   contextUsedPercentage,
   contextWindowFromEnv,
   formatRatesPerMillion,
+  formatStatuslineCost,
   type ModelRates,
   ratesFromEnv,
   sessionCostUsd,
@@ -46,6 +48,23 @@ const statuslineInputSchema = z.looseObject({
       current_dir: z.string().optional(),
     })
     .optional(),
+})
+
+const transcriptRecordSchema = z.looseObject({
+  message: z
+    .looseObject({
+      id: z.string().optional(),
+      usage: z
+        .looseObject({
+          cache_creation_input_tokens: z.number().optional(),
+          cache_read_input_tokens: z.number().optional(),
+          input_tokens: z.number().optional(),
+          output_tokens: z.number().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  type: z.string().optional(),
 })
 
 // Powerline-style separators (same glyph family as @owloops/claude-powerline).
@@ -93,16 +112,29 @@ export async function runStatusline() {
     '?'
   const effort = process.env.EH_EFFORT ?? 'auto'
   const rates = ratesFromEnv()
-  const ratesLabel = formatRatesPerMillion(rates)
+  const ratesLabel = process.env.EH_RATE_LABEL ?? formatRatesPerMillion(rates)
   const priceSeg =
-    ratesLabel === 'free' || ratesLabel === '—/—'
+    ratesLabel === 'free' || ratesLabel === '—/—' || ratesLabel === 'varies'
       ? ratesLabel
       : `${ratesLabel}/M`
 
   const usage = input.data.transcript_path
     ? await sumTranscriptUsage(input.data.transcript_path)
     : { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 }
-  const costLabel = sessionCostUsd(rates, usage) ?? '—'
+  const capturedCost =
+    process.env.EH_GATEWAY_COST_CAPTURE === '1' && input.data.session_id
+      ? readGatewaySessionCost({
+          costDir: gatewayCostsDir(),
+          sessionId: input.data.session_id,
+        })
+      : undefined
+  const estimatedCost = sessionCostUsd(rates, usage)
+  const costLabel = formatStatuslineCost({
+    capturedCost,
+    captureExpected: process.env.EH_GATEWAY_COST_CAPTURE === '1',
+    estimatedCost,
+    rates,
+  })
   const ctxLabel = formatContextLabel(input.data.context_window)
 
   const dir = path.basename(input.data.workspace?.current_dir ?? process.cwd())
@@ -145,13 +177,14 @@ export function writeClaudeStatuslineSettings() {
   return settingsPath
 }
 
-// Env vars the statusline reads. Prices are list rates ($/1M); context window
-// is the provider's published size (not Claude's default 200k).
+// Env vars the statusline reads. Rates are provider-published ($/1M); context
+// window is the provider's published size (not Claude's default 200k).
 export function statuslineEnv(props: {
   contextWindow: number | undefined
   effort?: string
   model: string
   provider: string
+  rateLabel: string | undefined
   rates: ModelRates | undefined
 }) {
   const env: Record<string, string> = {
@@ -172,6 +205,9 @@ export function statuslineEnv(props: {
     if (props.rates.cacheWritePerMillion != null) {
       env.EH_PRICE_CACHE_WRITE = String(props.rates.cacheWritePerMillion)
     }
+  }
+  if (props.rateLabel != null) {
+    env.EH_RATE_LABEL = props.rateLabel
   }
   if (props.contextWindow != null) {
     env.EH_CONTEXT_WINDOW = String(props.contextWindow)
@@ -280,8 +316,16 @@ function shortModel(id: string) {
 // stamps the full usage object on each, so the same API response appears
 // several times. Dedupe by message id or cost is multiplied by block count.
 export async function sumTranscriptUsage(transcriptPath: string) {
-  const usage = { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 }
-  const seen = new Set<string>()
+  const messages = new Map<
+    string,
+    { cacheRead: number; cacheWrite: number; input: number; output: number }
+  >()
+  const idless: {
+    cacheRead: number
+    cacheWrite: number
+    input: number
+    output: number
+  }[] = []
   try {
     const rl = createInterface({
       crlfDelay: Infinity,
@@ -295,26 +339,44 @@ export async function sumTranscriptUsage(transcriptPath: string) {
       } catch {
         continue
       }
-      if (!row || typeof row !== 'object') continue
-      const rec = row as {
-        message?: { id?: string; usage?: Record<string, unknown> }
-        type?: string
-      }
-      if (rec.type !== 'assistant') continue
-      const u = rec.message?.usage
+      const record = transcriptRecordSchema.safeParse(row)
+      if (!record.success || record.data.type !== 'assistant') continue
+      const u = record.data.message?.usage
       if (!u) continue
-      const id = rec.message?.id
-      if (id) {
-        if (seen.has(id)) continue
-        seen.add(id)
+      const next = {
+        cacheRead: num(u.cache_read_input_tokens),
+        cacheWrite: num(u.cache_creation_input_tokens),
+        input: num(u.input_tokens),
+        output: num(u.output_tokens),
       }
-      usage.input += num(u.input_tokens)
-      usage.output += num(u.output_tokens)
-      usage.cacheRead += num(u.cache_read_input_tokens)
-      usage.cacheWrite += num(u.cache_creation_input_tokens)
+      const id = record.data.message?.id
+      if (id) {
+        const previous = messages.get(id)
+        messages.set(
+          id,
+          previous
+            ? {
+                cacheRead: Math.max(previous.cacheRead, next.cacheRead),
+                cacheWrite: Math.max(previous.cacheWrite, next.cacheWrite),
+                input: Math.max(previous.input, next.input),
+                output: Math.max(previous.output, next.output),
+              }
+            : next,
+        )
+      } else {
+        idless.push(next)
+      }
     }
   } catch {
     // Missing/unreadable transcript → zeros; bar still shows rates.
   }
-  return usage
+  return [...messages.values(), ...idless].reduce(
+    (total, usage) => ({
+      cacheRead: total.cacheRead + usage.cacheRead,
+      cacheWrite: total.cacheWrite + usage.cacheWrite,
+      input: total.input + usage.input,
+      output: total.output + usage.output,
+    }),
+    { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 },
+  )
 }

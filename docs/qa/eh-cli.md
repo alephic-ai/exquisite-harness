@@ -11,11 +11,11 @@ directly; interactive clack flows run under a PTY harness.
 - Ollama running locally (`ollama serve`) with ≥1 model pulled — steps that hit
   `localhost:11434` depend on it. If it's down, mark those steps BLOCKED.
 - Harness binaries (`claude`, `codex`, `grok`) only need to exist for doctor and
-  spawn steps; the launch step uses a **fake harness binary** so no real agent
-  session starts.
-- No real API keys needed: OpenRouter/Vercel AI Gateway steps use `--print-env`
-  and a fake `secret-tool`/Keychain probe; steps needing a live key are marked
-  conditional.
+  the conditional live step. Launch steps F.1–F.3 use a **fake harness binary**;
+  F.4 is the explicit real-Claude exception.
+- No real API keys are needed except for conditional step F.4. Other
+  OpenRouter/Vercel AI Gateway steps use `--print-env` and a fake
+  `secret-tool`/Keychain probe.
 - PTY harness: `scripts/pty-drive.mjs` (node-pty if available, else `script(1)`
   on macOS / `python3 -c pty`) drives interactive flows.
 
@@ -135,6 +135,15 @@ Drive each with the PTY; assert on screen text.
    exits 0 and the combo lands in `recent`.
 2. Fake harness exits 3 → eh exit code is 3.
 3. Fake harness killed by SIGTERM → eh exit code 143 (128+15).
+4. **Conditional live check:** in a terminal at least 140 columns wide, launch a
+   low-cost Vercel AI Gateway model through `eh`, send one short prompt, and
+   observe the statusline total → it has no `~`. Exit and use Claude's printed
+   session ID to open `~/.config/eh/gateway-costs/<session-id>.jsonl` → every
+   `pending` request has a matching `settled` entry, and the exact decimal sum
+   of unique generation costs equals the visible total. Resume a session that
+   predates its ledger → cost displays `—`, not a partial total. Raw SSE →
+   ledger equality is covered by `src/gateway-costs.test.ts`, which sends the
+   stream through the proxy and compares the unchanged response with the ledger.
 
 ## G. Models cache
 
@@ -155,8 +164,8 @@ Drive each with the PTY; assert on screen text.
 
 - Interactive steps are driven by a PTY harness, not a human; rendering quirks
   of clack in a real terminal emulator are not fully covered.
-- No real `claude`/`codex`/`grok` sessions are started (a fake harness covers
-  the spawn contract; live-agent behavior is out of scope).
+- Real `claude`/`codex`/`grok` sessions are conditional on installed binaries
+  and keys; fake harnesses cover the default spawn contract.
 - OpenRouter/Vercel AI Gateway live model-list fetches need real keys and are
   SKIPPED unless keys are present.
 - Linux Secret Service is verified against a simulated `secret-tool`; a real
@@ -165,5 +174,5 @@ Drive each with the PTY; assert on screen text.
 ## Automated coverage
 
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
-- `bun test` — `src/statusline.test.ts` (transcript usage) and
-  `src/sessions.test.ts` (resume session-store parsers).
+- `bun test` — exact gateway stream/cost capture, active-provider pricing
+  ranges, transcript usage/cost fallbacks, and resume session-store parsers.

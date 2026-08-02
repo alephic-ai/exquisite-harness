@@ -32,8 +32,11 @@ Resulting compatibility (✅ = native, ⚠️ = needs protocol translation):
 ## Architecture
 
 **Phase 1 (this build): thin launcher.** Resolve `(harness, provider, model)` →
-env vars + CLI args → `spawn` the harness with inherited stdio. No server, no
-runtime dependency, no mutation of the harnesses' own config files.
+env vars + CLI args → `spawn` the harness with inherited stdio. There is no
+protocol-routing server or runtime dependency. The one loopback exception is a
+transparent, process-scoped Vercel cost-capture proxy; it observes Anthropic SSE
+metadata without translating protocols. The launcher does not mutate the
+harnesses' own config files.
 
 **Headless execution:** `eh run <harness> <provider> <model>` is the stable
 orchestrator boundary alongside the interactive launcher. It reads the prompt
@@ -205,14 +208,21 @@ resolve at launch time without eh storing anything.
   **Statusline:** session override via
   `claude --settings ~/.config/eh/claude-statusline.json` pointing at
   `eh statusline`. Env `EH_PROVIDER` / `EH_MODEL` / `EH_EFFORT` / `EH_PRICE_IN`
-  / `EH_PRICE_OUT` / `EH_CONTEXT_WINDOW` (list rates
-  $/1M + real context size
-  from the provider models API at launch). Context % is recomputed as
+  / `EH_PRICE_OUT` / cache-price vars / `EH_RATE_LABEL` / `EH_CONTEXT_WINDOW`
+  (active provider rate range
+  $/1M + real context size from the provider APIs at
+  launch). Context % is recomputed as
   `(input + cache_write + cache_read) / provider_window` from live
-  `current_usage` — not Claude's default 200k-based `used_percentage`. Session
-  $
-  uses transcript tokens × list rates. Claude's `cost.total_cost_usd` is
-  ignored.
+  `current_usage` — not Claude's default 200k-based `used_percentage`. Vercel
+  Gateway launches pass through an eh-owned loopback proxy that relays the
+  Anthropic SSE event payloads without modification and records
+  `provider_metadata.gateway.{generationId,cost}` in a session ledger. Those
+  unprefixed totals are the gateway's exact billed costs, deduplicated by
+  generation. A resumed session is only exact when its ledger already covers the
+  session; otherwise it shows `—`. Non-gateway paid sessions fall back to
+  transcript tokens × explicitly published rates and prefix the result with
+  `~`; providers with published zero rates show exact `$0`. Missing cache rates make the estimate unavailable rather than inferred. Claude's `cost.total_cost_usd`
+  is ignored because it applies Anthropic rates.
 - **codex**: `-c` TOML overrides — `model`, `model_provider=eh`,
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
   `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
@@ -274,7 +284,8 @@ src/flow.ts       positional/profile resolution → pickers → launch
 src/headless-run.ts  non-interactive harness execution + NDJSON normalization
 src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
-src/pricing.ts    provider list rates ($/1M) for statusline session cost
+src/pricing.ts    provider rates/ranges ($/1M) and fallback cost estimates
+src/gateway-costs.ts transparent Vercel stream proxy + exact session ledger
 src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
 src/sessions.ts   cross-harness session enumeration for -r (read-only store scans)
