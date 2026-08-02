@@ -1005,6 +1005,84 @@ describe('search proxy', () => {
     expect(firecrawlRequests).toBe(1)
   })
 
+  test('chains search interception ahead of gateway cost capture', async () => {
+    let firecrawlRequests = 0
+    let upstreamRequests = 0
+    const firecrawlBaseURL = await listen((_request, response) => {
+      firecrawlRequests += 1
+      response.writeHead(200, { 'Content-Type': 'application/json' })
+      response.end(
+        JSON.stringify({
+          data: {
+            web: [
+              { title: 'Chained result', url: 'https://example.com/chained' },
+            ],
+          },
+          success: true,
+        }),
+      )
+    })
+    const upstreamBaseURL = await listen((_request, response) => {
+      upstreamRequests += 1
+      response.writeHead(200, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ content: [], type: 'message' }))
+    })
+    const childScript = `
+      if (process.env.EH_GATEWAY_COST_CAPTURE !== '1') process.exit(2)
+      if (!process.env.EH_SEARCH_PROXY_URL) process.exit(3)
+      if (process.env.FIRECRAWL_API_KEY) process.exit(4)
+      const ordinary = await fetch(process.env.ANTHROPIC_BASE_URL + '/v1/messages', {
+        body: JSON.stringify({
+          messages: [{ content: 'hello', role: 'user' }],
+          model: 'test-model',
+          stream: false,
+          tools: []
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST'
+      })
+      if (!ordinary.ok) process.exit(5)
+      const search = await fetch(process.env.ANTHROPIC_BASE_URL + '/v1/messages', {
+        body: JSON.stringify({
+          messages: [{
+            content: [{
+              text: 'Perform a web search for the query: chained proxies',
+              type: 'text'
+            }],
+            role: 'user'
+          }],
+          model: 'test-model',
+          stream: false,
+          tools: [{ type: 'web_search_20250305' }]
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST'
+      })
+      if (!search.ok || !(await search.text()).includes('Chained result')) {
+        process.exit(6)
+      }
+    `
+
+    const code = await launch({
+      args: ['-e', childScript],
+      bin: process.execPath,
+      env: { ANTHROPIC_BASE_URL: upstreamBaseURL },
+      gatewayCostCapture: { resumed: false },
+      notes: [],
+      searchProxy: {
+        apiKey: 'fc-test',
+        baseURL: firecrawlBaseURL,
+        envKey: 'FIRECRAWL_API_KEY',
+        type: 'firecrawl',
+        upstreamBaseURL: 'http://127.0.0.1:1',
+      },
+    })
+
+    expect(code).toBe(0)
+    expect(firecrawlRequests).toBe(1)
+    expect(upstreamRequests).toBe(1)
+  })
+
   test('isolates two concurrently launched search proxies', async () => {
     let firecrawlARequests = 0
     let firecrawlBRequests = 0
@@ -1105,9 +1183,12 @@ describe('search proxy', () => {
         process.exit(2)
       }
       if (process.env.EH_SEARCH_PROXY_URL) process.exit(3)
+      if (process.env.EH_GATEWAY_COST_CAPTURE) process.exit(4)
     `
     const previousProxyURL = process.env.EH_SEARCH_PROXY_URL
+    const previousCostCapture = process.env.EH_GATEWAY_COST_CAPTURE
     process.env.EH_SEARCH_PROXY_URL = 'http://127.0.0.1:9/hooks/web-fetch'
+    process.env.EH_GATEWAY_COST_CAPTURE = '1'
     let code: number | undefined
     try {
       code = await launch({
@@ -1118,6 +1199,7 @@ describe('search proxy', () => {
       })
     } finally {
       restoreEnv('EH_SEARCH_PROXY_URL', previousProxyURL)
+      restoreEnv('EH_GATEWAY_COST_CAPTURE', previousCostCapture)
     }
 
     expect(code).toBe(0)

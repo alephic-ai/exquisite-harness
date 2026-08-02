@@ -4,6 +4,7 @@ import pkg from '../package.json' with { type: 'json' }
 import { getProvider, loadConfig, saveConfig } from './config.js'
 import { doctor } from './doctor.js'
 import { launchFlow } from './flow.js'
+import { parseNativeArgsJson, runHeadless } from './headless-run.js'
 import {
   modelsList,
   profileList,
@@ -92,6 +93,8 @@ Common workflows:
       scripted resume: no picker, prints env + bare resume args
   eh --print-env claude ollama qwen3-coder
       print the export lines instead of launching
+  printf 'fix the parser' | eh run codex ollama qwen3-coder
+      headless run: versioned NDJSON on stdout, harness stderr preserved
   eh doctor                           harnesses installed? providers reachable? keys set?
   eh provider key vercel-ai-gateway   store an API key (masked prompt → OS credential store)
   eh search key firecrawl             store the Firecrawl search key the same way
@@ -100,6 +103,39 @@ Common workflows:
   eh update                           self-update to the latest release
 `,
   )
+
+program
+  .command('run <harness> <provider> <model>')
+  .description('run one harness headlessly (prompt on stdin, NDJSON on stdout)')
+  .option(
+    '--reasoning-effort <level>',
+    'reasoning effort: auto, low, medium, high, xhigh, max',
+    'auto',
+  )
+  .option(
+    '--native-args-json <json>',
+    'JSON string array of native harness args to prepend before machine-mode args',
+  )
+  .option('--resume-session <id>', 'resume an existing native session')
+  .action(async (harness, provider, model, opts) => {
+    const effort = EFFORT_LEVELS.find((level) => level === opts.reasoningEffort)
+    if (effort === undefined) {
+      throw new Error(
+        `unknown effort "${opts.reasoningEffort}" (known: ${EFFORT_LEVELS.join(', ')})`,
+      )
+    }
+    process.exitCode = await runHeadless({
+      effort,
+      harness,
+      model,
+      nativeArgs:
+        opts.nativeArgsJson === undefined
+          ? undefined
+          : parseNativeArgsJson(opts.nativeArgsJson),
+      provider,
+      resumeSessionId: opts.resumeSession,
+    })
+  })
 
 program
   .command('doctor')

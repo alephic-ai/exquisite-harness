@@ -31,12 +31,16 @@ Resulting compatibility (✅ = native, ⚠️ = needs protocol translation):
 
 ## Architecture
 
-**Phase 1 (this build): thin launcher plus an opt-in web shim.** Resolve
+**Phase 1 (this build): thin launcher plus process-scoped shims.** Resolve
 `(harness, provider, model)` → env vars + CLI args → `spawn` the harness with
 inherited stdio. Native web access remains server-free. Choosing Firecrawl for a
 Claude launch starts a process-scoped localhost proxy; there is still no daemon,
 separately installed runtime, or mutation of the harnesses' own config files.
 The official Firecrawl Node SDK is bundled into the standalone `eh` binary.
+Vercel Gateway launches use a second transparent process-scoped proxy to record
+exact billed cost from Anthropic SSE metadata without translating protocols.
+When both are active, ordinary model traffic flows through search interception,
+then cost capture, then the configured gateway.
 
 Claude Code exposes `WebSearch` to the main model as a normal custom tool, then
 fulfills it with a second, hidden Anthropic Messages request whose sole tool has
@@ -62,6 +66,17 @@ fetches receive it as recovery context. The built-in download still runs before
 the post-tool hook; this controls the content the model sees, not the original
 network request. The hook is inert without the proxy URL, so native sessions and
 concurrent launches retain their own behavior.
+
+**Headless execution:** `eh run <harness> <provider> <model>` is the stable
+orchestrator boundary alongside the interactive launcher. It reads the prompt
+from stdin, selects each harness's native machine-output mode, preserves native
+events inside a versioned NDJSON envelope, and emits normalized session, text,
+usage, and completion events. It does not open UI, write recents, or install the
+Claude statusline. The caller owns cwd, scratch/config roots, process timeouts,
+and lifecycle policy; `eh` owns provider wiring and harness protocol parsing.
+Callers can preserve harness-specific policy with a validated JSON string array
+of native arguments, which `eh` prepends before its mandatory machine-mode
+arguments.
 
 **Phase 2 (later): local router.** An opt-in localhost proxy that receives
 Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
@@ -248,20 +263,22 @@ resolve at launch time without eh storing anything.
   **Statusline:** session override via
   `claude --settings ~/.config/eh/claude-statusline.json` pointing at
   `eh statusline`. Env `EH_PROVIDER` / `EH_MODEL` / `EH_EFFORT` / `EH_PRICE_IN`
-  / `EH_PRICE_OUT` / `EH_CONTEXT_WINDOW` (list rates
-  $/1M + real context size
-  from the provider models API at launch). Context % is recomputed as
+  / `EH_PRICE_OUT` / cache-price vars / `EH_RATE_LABEL` / `EH_CONTEXT_WINDOW`
+  (active provider rate range
+  $/1M + real context size from the provider APIs at
+  launch). Context % is recomputed as
   `(input + cache_write + cache_read) / provider_window` from live
-  `current_usage` — not Claude's default 200k-based `used_percentage`. Session
-  $
-  uses transcript tokens × list rates. Claude's `cost.total_cost_usd` is
-  ignored. **External web access:** when selected, the launch plan retains the
-  real upstream base URL and Firecrawl credential, starts the loopback proxy,
-  and gives the child its Messages base URL plus a non-secret hook endpoint. The
-  credential remains in the parent proxy and is removed from the child
-  environment. The proxy is closed when Claude exits. `--print-env` rejects
-  external web access because the process-scoped proxy cannot be represented as
-  static exports.
+  `current_usage` — not Claude's default 200k-based `used_percentage`. Vercel
+  Gateway launches pass through an eh-owned loopback proxy that relays the
+  Anthropic SSE event payloads without modification and records
+  `provider_metadata.gateway.{generationId,cost}` in a session ledger. Those
+  unprefixed totals are the gateway's exact billed costs, deduplicated by
+  generation. A resumed session is only exact when its ledger already covers the
+  session; otherwise it shows `—`. Non-gateway paid sessions fall back to
+  transcript tokens × explicitly published rates and prefix the result with
+  `~`; providers with published zero rates show exact `$0`. Missing cache rates make the estimate unavailable rather than inferred. Claude's `cost.total_cost_usd`is ignored because it applies Anthropic rates. **External web access:** when selected, the launch plan retains the real upstream base URL and Firecrawl credential, starts the search proxy, and gives the child its Messages base URL plus a non-secret hook endpoint. The credential remains in the parent and is removed from the child environment. On Vercel Gateway the search proxy forwards ordinary traffic through the cost proxy, preserving both features. Both proxies close when Claude exits.`--print-env`
+  rejects external web access because the process-scoped proxy cannot be
+  represented as static exports.
 - **codex**: `-c` TOML overrides — `model`, `model_provider=eh`,
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
   `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
@@ -320,9 +337,11 @@ which keeps non-TTY use clean and a future Ink/miller-column UI swappable.
 ```text
 src/main.ts       entry: commander wiring
 src/flow.ts       positional/profile resolution → pickers → launch
+src/headless-run.ts  non-interactive harness execution + NDJSON normalization
 src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
-src/pricing.ts    provider list rates ($/1M) for statusline session cost
+src/pricing.ts    provider rates/ranges ($/1M) and fallback cost estimates
+src/gateway-costs.ts transparent Vercel stream proxy + exact session ledger
 src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
 src/sessions.ts   cross-harness session enumeration for -r (read-only store scans)

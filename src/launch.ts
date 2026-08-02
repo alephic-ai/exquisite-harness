@@ -3,29 +3,35 @@ import os from 'node:os'
 
 import type { LaunchPlan } from './types.js'
 
+import { gatewayCostsDir, startGatewayCostProxy } from './gateway-costs.js'
 import { startSearchProxy } from './search-proxy.js'
 
 export async function exec(plan: LaunchPlan) {
-  const proxy = plan.searchProxy
-    ? await startSearchProxy(plan.searchProxy)
+  const costProxy = plan.gatewayCostCapture
+    ? await startGatewayCostProxy({
+        costDir: gatewayCostsDir(),
+        resumed: plan.gatewayCostCapture.resumed,
+        targetBaseURL: gatewayTargetBaseURL(plan),
+      })
     : undefined
   try {
-    const { EH_SEARCH_PROXY_URL: _ambientProxyURL, ...parentEnv } = process.env
-    const env: Record<string, string | undefined> = {
-      ...parentEnv,
-      ...plan.env,
-      ...(proxy
-        ? {
-            ANTHROPIC_BASE_URL: proxy.baseURL,
-            EH_SEARCH_PROXY_URL: `${proxy.baseURL}/hooks/web-fetch`,
-          }
-        : {}),
+    const searchProxy = plan.searchProxy
+      ? await startSearchProxy({
+          ...plan.searchProxy,
+          upstreamBaseURL:
+            costProxy?.baseURL ?? plan.searchProxy.upstreamBaseURL,
+        })
+      : undefined
+    try {
+      return await spawnWithProxies(plan, {
+        costProxyURL: costProxy?.baseURL,
+        searchProxyURL: searchProxy?.baseURL,
+      })
+    } finally {
+      await searchProxy?.close()
     }
-    if (!plan.searchProxy) return await spawnHarness(plan, env)
-    const { [plan.searchProxy.envKey]: _searchKey, ...childEnv } = env
-    return await spawnHarness(plan, childEnv)
   } finally {
-    await proxy?.close()
+    await costProxy?.close()
   }
 }
 
@@ -36,6 +42,14 @@ export function printEnv(plan: LaunchPlan) {
   if (plan.args.length > 0) {
     console.log(`# plus args: ${plan.bin} ${plan.args.join(' ')}`)
   }
+}
+
+function gatewayTargetBaseURL(plan: LaunchPlan) {
+  const targetBaseURL = plan.env.ANTHROPIC_BASE_URL
+  if (!targetBaseURL) {
+    throw new Error('gateway cost capture requires ANTHROPIC_BASE_URL')
+  }
+  return targetBaseURL
 }
 
 async function spawnHarness(
@@ -59,4 +73,34 @@ async function spawnHarness(
       resolve(code ?? 128 + (signal ? os.constants.signals[signal] : 1))
     })
   })
+}
+
+async function spawnWithProxies(
+  plan: LaunchPlan,
+  proxies: { costProxyURL?: string; searchProxyURL?: string },
+) {
+  const {
+    EH_GATEWAY_COST_CAPTURE: _ambientCostCapture,
+    EH_SEARCH_PROXY_URL: _ambientProxyURL,
+    ...parentEnv
+  } = process.env
+  const env: Record<string, string | undefined> = {
+    ...parentEnv,
+    ...plan.env,
+    ...(proxies.costProxyURL
+      ? {
+          ANTHROPIC_BASE_URL: proxies.costProxyURL,
+          EH_GATEWAY_COST_CAPTURE: '1',
+        }
+      : {}),
+    ...(proxies.searchProxyURL
+      ? {
+          ANTHROPIC_BASE_URL: proxies.searchProxyURL,
+          EH_SEARCH_PROXY_URL: `${proxies.searchProxyURL}/hooks/web-fetch`,
+        }
+      : {}),
+  }
+  if (!plan.searchProxy) return spawnHarness(plan, env)
+  const { [plan.searchProxy.envKey]: _searchKey, ...childEnv } = env
+  return spawnHarness(plan, childEnv)
 }

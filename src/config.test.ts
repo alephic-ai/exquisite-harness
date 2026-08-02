@@ -7,6 +7,7 @@ import path from 'node:path'
 import type { Config } from './config.js'
 
 import {
+  reservedProfileNameMessage,
   searchProviderForSelection,
   withDefaultSearchProvider,
 } from './config.js'
@@ -129,3 +130,9 @@ function buildConfig(defaultSearchProvider?: string) {
     version: 1,
   } satisfies Config
 }
+
+test('run is a reserved profile name', () => {
+  expect(reservedProfileNameMessage('run')).toBe(
+    '"run" is a subcommand — pick another profile name',
+  )
+})

@@ -45,9 +45,13 @@ self-updates to the latest public release.
 ![Claude Code launched via eh, with a powerline statusline showing Vercel AI Gateway, model, list rates, session cost, and context usage](docs/images/eh-statusline.jpg)
 
 When you launch Claude through `eh`, it injects a session statusline: provider,
-model, list rates ($/1M), session cost from real tokens × those rates, and
-context % against the provider’s published window — not Claude’s default cost
-meter.
+model, the active provider rate range
+($/1M), session cost, and context %
+against the provider’s published window. Vercel AI Gateway sessions use the
+gateway's exact billed cost metadata. Other totals are token-based estimates and
+paid-provider fallbacks carry a `~`; providers with published zero rates show
+exact `$0`. Partial or unpriceable totals show `—`
+instead of guessing.
 
 ## Use it
 
@@ -91,6 +95,32 @@ gateway model. `eh -r codex` lists only codex sessions.
 Resume needs an interactive terminal. For scripts, `eh -r --print-env …` keeps
 the old behavior: no picker, prints the env lines plus the harness's bare resume
 args (its own picker / most recent).
+
+### Headless runs
+
+`eh run` is the non-interactive execution contract for orchestrators. It reads
+one prompt from stdin, runs the selected harness in its native JSON streaming
+mode, and writes versioned NDJSON to stdout:
+
+```bash
+printf 'fix the parser' |
+  eh run codex ollama qwen3-coder --reasoning-effort high
+```
+
+Every output object carries `v: 1`. The normalized events are `run.started`,
+`session.started`, `assistant.text`, `usage`, `run.error`, and `run.completed`.
+Native machine events are preserved as `harness.event`; non-JSON output is
+preserved as `harness.output`. Harness stderr remains stderr. A semantically
+failed native result makes both `run.completed.exitCode` and the `eh` process
+exit code non-zero, even when the child process exits zero.
+
+The fully specified command never opens UI, updates recents, or installs a
+statusline. Claude and Codex receive the prompt over stdin. Grok receives a
+private temporary prompt file because its headless CLI exposes `--prompt-file`;
+`eh` removes that file after the child exits. Native session resume is available
+with `--resume-session <id>`. Orchestrators that must preserve harness-specific
+policy flags can pass a JSON string array with `--native-args-json`; those args
+are prepended before `eh`'s required machine-output flags.
 
 ### Keys
 

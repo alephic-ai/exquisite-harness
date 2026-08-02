@@ -101,6 +101,10 @@ hooks, provider failures, concurrent traffic, and process lifetime.
 4. Launch without a search provider. → no proxy variables are added and the
    native model-provider URL remains unchanged, even if the parent process has a
    stale `EH_SEARCH_PROXY_URL`.
+5. Launch a Vercel Gateway child with Firecrawl selected. → ordinary Messages
+   traffic flows through gateway cost capture while hidden search traffic is
+   intercepted by Firecrawl; both proxy flags reach the child, the search key
+   does not, and both loopback listeners close on exit.
 
 ## G. Real Claude Code acceptance
 

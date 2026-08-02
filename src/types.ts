@@ -2,6 +2,9 @@ export interface LaunchPlan {
   args: string[]
   bin: string
   env: Record<string, string>
+  gatewayCostCapture?: {
+    resumed: boolean
+  }
   notes: string[]
   searchProxy?: SearchProxy
 }
