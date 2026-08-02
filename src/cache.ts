@@ -4,12 +4,19 @@ import { z } from 'zod'
 import type { ModelInfo } from './types.js'
 
 import { cachePath, configDir } from './config.js'
+import { MODEL_EFFORT_LEVELS } from './types.js'
 
 const cacheSchema = z.record(
   z.string(),
   z.object({
     fetchedAt: z.number(),
-    models: z.array(z.object({ hint: z.string().optional(), id: z.string() })),
+    models: z.array(
+      z.object({
+        efforts: z.array(z.enum(MODEL_EFFORT_LEVELS)).optional(),
+        hint: z.string().optional(),
+        id: z.string(),
+      }),
+    ),
   }),
 )
 

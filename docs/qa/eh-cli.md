@@ -46,6 +46,9 @@ Each prints env/args and exits 0 without launching.
 8. `eh -r --print-env codex ollama qwen3-coder` → args end with `resume` (after
    the `-c` overrides).
 9. `eh -r --print-env grok ollama qwen3-coder` → args end with `--resume`.
+10. `eh --print-env codex ollama openai/gpt-5.6 -e xhigh` → args contain
+    `model_reasoning_effort="xhigh"` exactly, with no downgrade note. Repeat
+    with `none`, `minimal`, `max`, and `ultra` → each exact value is preserved.
 
 ## C. Config / error paths
 
@@ -110,6 +113,28 @@ Drive each with the PTY; assert on screen text.
 10. **Resume wiring**: with a recent for (claude, model X) in this directory,
     pick a claude session whose model is X → resumes on that recent's provider
     with no further prompts. `-p`/`-m` override.
+11. **Model-specific effort — Vercel shape**: configure a `vercel-gateway`
+    fixture with `envKey: "FIXTURE_API_KEY"` whose `/v1/models` response
+    contains one model with
+    `reasoning_options: [{"type":"effort","values":["minimal","high"]}]`. Run
+    `FIXTURE_API_KEY=fake eh --print-env codex <fixture>` and select it → effort
+    picker contains exactly `auto`, `minimal`, `high`; select `high` → printed
+    args contain `model_reasoning_effort="high"`.
+12. **Model-specific effort — OpenRouter shape**: configure a no-key
+    `openai-chat` fixture with one model whose `reasoning.supported_efforts` is
+    `["max","high","low"]`. Select it with `eh --print-env codex <fixture>` →
+    picker contains exactly `auto`, `low`, `high`, `max` in normalized order; it
+    does not contain `medium`, `xhigh`, or `ultra`.
+13. **No exact effort metadata**: the same fixture lists a model with no
+    `reasoning.supported_efforts`, and one with only toggle/budget reasoning.
+    Select either with `--print-env` → no effort prompt appears and printed args
+    contain no effort override. Choose `other…` and type a manual ID → same
+    no-prompt behavior.
+14. **Harness intersection**: serve a Vercel-style model with
+    `none|minimal|low|medium|high|xhigh|max|ultra`. Select it through Claude
+    with `FIXTURE_API_KEY=fake` → picker shows only
+    `auto|low|medium|high|xhigh|max`. Select it through Codex or Grok → every
+    provider-published value appears.
 
 ## E. Key storage
 
@@ -153,6 +178,15 @@ Drive each with the PTY; assert on screen text.
    `fetchedAt` unchanged).
 3. Stop Ollama, `eh` → model picker → spinner fails, falls back to stale cache,
    list still shown. Restart Ollama after.
+4. With a fixture model that publishes exact efforts, complete one model fetch
+   and inspect `cache.json` → the model entry includes its normalized `efforts`
+   array. Stop the fixture and rerun the picker after the five-minute freshness
+   window → stale-cache fallback presents the same exact effort choices.
+5. Fetch the live Vercel AI Gateway and OpenRouter `/v1/models` catalogs into an
+   isolated config directory. Inspect `cache.json` → Vercel
+   `reasoning_options[type=effort].values` and OpenRouter
+   `reasoning.supported_efforts` are retained as normalized `efforts` per model;
+   models that omit exact effort metadata do not receive invented choices.
 
 ## H. Doctor / providers
 
@@ -166,13 +200,14 @@ Drive each with the PTY; assert on screen text.
   of clack in a real terminal emulator are not fully covered.
 - Real `claude`/`codex`/`grok` sessions are conditional on installed binaries
   and keys; fake harnesses cover the default spawn contract.
-- OpenRouter/Vercel AI Gateway live model-list fetches need real keys and are
-  SKIPPED unless keys are present.
+- OpenRouter/Vercel AI Gateway model-list endpoints can be checked without paid
+  inference; actual launches still require keys and are SKIPPED unless present.
 - Linux Secret Service is verified against a simulated `secret-tool`; a real
   GNOME Keyring/KWallet run needs a Linux machine.
 
 ## Automated coverage
 
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
-- `bun test` — exact gateway stream/cost capture, active-provider pricing
-  ranges, transcript usage/cost fallbacks, and resume session-store parsers.
+- `bun test` — provider effort-metadata parsing, exact Codex effort
+  pass-through, gateway stream/cost capture, active-provider pricing ranges,
+  transcript usage/cost fallbacks, and resume session-store parsers.

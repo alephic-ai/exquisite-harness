@@ -5,6 +5,7 @@ import type { ModelInfo, Protocol, ProviderType } from './types.js'
 
 import { cachedModels, freshModels, writeModels } from './cache.js'
 import { resolveApiKey } from './keys.js'
+import { MODEL_EFFORT_LEVELS } from './types.js'
 
 interface ProviderBehavior {
   // Base URL to hand to Anthropic-protocol harnesses (e.g. Claude Code's
@@ -21,7 +22,21 @@ const openAiModelsSchema = z.object({
   data: z.array(
     z.looseObject({
       context_length: z.number().optional(),
+      context_window: z.number().optional(),
       id: z.string(),
+      reasoning: z
+        .looseObject({
+          supported_efforts: z.array(z.string()).nullable().optional(),
+        })
+        .optional(),
+      reasoning_options: z
+        .array(
+          z.looseObject({
+            type: z.string(),
+            values: z.array(z.string()).optional(),
+          }),
+        )
+        .optional(),
     }),
   ),
 })
@@ -74,14 +89,35 @@ async function listOpenAiModels(baseURL: string, apiKey?: string) {
   const body = await fetchJson(`${withV1(baseURL)}/models`, apiKey)
   return openAiModelsSchema
     .parse(body)
-    .data.map((m) => ({
-      hint:
-        m.context_length == null
-          ? undefined
-          : `${String(Math.round(m.context_length / 1024))}k ctx`,
-      id: m.id,
-    }))
+    .data.map((m) => {
+      const contextLength = m.context_window ?? m.context_length
+      const efforts = modelEfforts(m)
+      return {
+        ...(efforts === undefined ? {} : { efforts }),
+        ...(contextLength === undefined
+          ? {}
+          : { hint: `${String(Math.round(contextLength / 1024))}k ctx` }),
+        id: m.id,
+      }
+    })
     .sort((a, b) => a.id.localeCompare(b.id))
+}
+
+function modelEfforts(
+  model: z.infer<typeof openAiModelsSchema>['data'][number],
+) {
+  const gatewayEfforts = model.reasoning_options?.find(
+    (option) => option.type === 'effort',
+  )?.values
+  const providerEfforts = gatewayEfforts ?? model.reasoning?.supported_efforts
+  // OpenRouter uses null for every gateway effort, whose documented set does
+  // not include Codex's client-level `ultra` mode.
+  if (providerEfforts === null) {
+    return MODEL_EFFORT_LEVELS.filter((effort) => effort !== 'ultra')
+  }
+  if (providerEfforts === undefined) return undefined
+  const supported = new Set(providerEfforts)
+  return MODEL_EFFORT_LEVELS.filter((effort) => supported.has(effort))
 }
 
 function stripTrailingSlash(url: string) {

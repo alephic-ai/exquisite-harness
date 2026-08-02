@@ -225,18 +225,19 @@ resolve at launch time without eh storing anything.
   is ignored because it applies Anthropic rates.
 - **codex**: `-c` TOML overrides — `model`, `model_provider=eh`,
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
-  `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
-  down). No writes to `~/.codex/config.toml`.
+  `model_reasoning_effort=<level>`. No writes to `~/.codex/config.toml`.
 - **grok**: env `GROK_API_KEY`, `GROK_BASE_URL`, args `--model <id>`. grok-cli
-  has no effort knob; an explicit effort is noted and ignored. (Flag shape
-  follows grok-cli's README; verify against installed version — `eh doctor`
-  reports the binary path.)
+  receives `--reasoning-effort <level>` when explicitly selected.
 
-**Effort** is an optional part of a selection (`auto`, `low`, `medium`, `high`,
-`xhigh`, `max`), resolved flag → profile → interactive default (`auto` = model
-default, sends nothing). Vercel AI Gateway also exposes the OpenAI
-`reasoning.effort` pass-through, so effort works end-to-end for Vercel AI
-Gateway–backed codex/OpenAI models.
+**Effort** is an optional part of a selection (`auto`, `none`, `minimal`, `low`,
+`medium`, `high`, `xhigh`, `max`, `ultra`), resolved flag → profile →
+interactive default (`auto` = model default, sends nothing). Interactive model
+selection reads exact per-model values from Vercel AI Gateway's
+`reasoning_options` or OpenRouter's `reasoning.supported_efforts`, intersects
+them with the selected harness, and skips the effort prompt when no exact
+selectable values remain. Manual model IDs and providers without exact metadata
+therefore default to `auto`; the explicit flag remains available. Capability
+metadata is cached with the model list.
 
 **Resume** (`-r`): an eh-owned picker over this directory's sessions across all
 three harnesses, then resume the pick by session id — claude `--resume <id>`,

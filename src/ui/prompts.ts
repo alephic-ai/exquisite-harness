@@ -1,29 +1,29 @@
 import { autocomplete, isCancel, password, select, text } from '@clack/prompts'
 
 import type { ResolvedProvider } from '../config.js'
-import type { Protocol } from '../types.js'
+import type { ModelEffortLevel, ModelInfo, Protocol } from '../types.js'
 
 import { freshModels } from '../cache.js'
 import { providerLabel, reservedProfileNameMessage } from '../config.js'
 import { HARNESSES } from '../harnesses.js'
 import { resolveApiKey, storeApiKey } from '../keys.js'
 import { canServeAny, listModelsCached } from '../providers.js'
-import { EFFORT_LEVELS } from '../types.js'
 import { findBin } from '../which.js'
 import { bail, keyStoredText, log, note, spinner } from './output.js'
 
 type ProviderRowState = 'incompatible' | 'key-missing' | 'key-set' | 'no-key'
 
 // Effort defaults to `auto` (model default); anything else is an override.
-export async function pickEffort() {
+export async function pickEffort(efforts: readonly ModelEffortLevel[]) {
+  if (efforts.length === 0) return 'auto' as const
   const value = await select({
     message: 'effort',
-    options: EFFORT_LEVELS.map((level) => ({
+    options: ['auto' as const, ...efforts].map((level) => ({
       hint:
         level === 'auto'
           ? 'model default (recommended)'
-          : level === 'xhigh' || level === 'max'
-            ? 'claude only; codex maps to high'
+          : level === 'none'
+            ? 'disable reasoning'
             : undefined,
       label: level,
       value: level,
@@ -190,25 +190,29 @@ export async function pickModel(provider: ResolvedProvider) {
   if (!models.some((m) => m.id === MANUAL)) {
     options.push({ hint: 'type a model id', label: 'other…', value: MANUAL })
   }
-  const value = await autocomplete({
-    maxItems: 12,
-    message: `model · ${provider.name}`,
-    options,
-    placeholder: 'type to filter…',
-  })
-  if (isCancel(value)) bail()
-  if (value === MANUAL) {
-    const typed = await text({
-      message: 'model id',
-      validate: (v) => (v == null || v.length === 0 ? 'required' : undefined),
+  for (;;) {
+    const value = await autocomplete({
+      maxItems: 12,
+      message: `model · ${provider.name}`,
+      options,
+      placeholder: 'type to filter…',
     })
-    if (isCancel(typed)) bail()
-    return typed
+    if (isCancel(value)) bail()
+    if (value === MANUAL) {
+      const typed = await text({
+        message: 'model id',
+        validate: (v) => (v == null || v.length === 0 ? 'required' : undefined),
+      })
+      if (isCancel(typed)) bail()
+      return { id: typed }
+    }
+    const model = models.find((candidate) => candidate.id === value)
+    if (model) return model
+    log.warn('no model selected — clear the filter or pick one')
   }
-  return value
 }
 
-async function loadModels(provider: ResolvedProvider) {
+async function loadModels(provider: ResolvedProvider): Promise<ModelInfo[]> {
   // Skip the spinner flash when the fresh cache can answer instantly.
   const fresh = freshModels(provider.name)
   if (fresh) return fresh

@@ -9,6 +9,7 @@ export interface LaunchPlan {
 }
 
 export interface ModelInfo {
+  efforts?: ModelEffortLevel[]
   hint?: string
   id: string
 }
@@ -29,15 +30,20 @@ export interface Selection {
   provider: string
 }
 
-// Reasoning/effort levels, normalized across harnesses. `auto` means the
-// model default (no override sent). claude accepts xhigh/max; codex maps
-// max→high; grok has no knob.
-export const EFFORT_LEVELS = [
-  'auto',
+// Provider-reported effort values. Harnesses intersect these with what their
+// CLIs accept before showing the picker.
+export const MODEL_EFFORT_LEVELS = [
+  'none',
+  'minimal',
   'low',
   'medium',
   'high',
   'xhigh',
   'max',
+  'ultra',
 ] as const
+export type ModelEffortLevel = (typeof MODEL_EFFORT_LEVELS)[number]
+
+// `auto` means the model default: no override is sent.
+export const EFFORT_LEVELS = ['auto', ...MODEL_EFFORT_LEVELS] as const
 export type EffortLevel = (typeof EFFORT_LEVELS)[number]

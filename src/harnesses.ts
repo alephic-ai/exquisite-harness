@@ -1,5 +1,5 @@
 import type { ResolvedProvider } from './config.js'
-import type { LaunchPlan, Protocol } from './types.js'
+import type { LaunchPlan, ModelEffortLevel, Protocol } from './types.js'
 
 import { fetchModelMeta } from './pricing.js'
 import {
@@ -9,9 +9,11 @@ import {
   resolveKey,
 } from './providers.js'
 import { statuslineEnv, writeClaudeStatuslineSettings } from './statusline.js'
+import { MODEL_EFFORT_LEVELS } from './types.js'
 
 export interface HarnessDef {
   bin: string
+  efforts: readonly ModelEffortLevel[]
   label: string
   plan: (
     provider: ResolvedProvider,
@@ -141,10 +143,7 @@ async function planCodex(
   }
   const notes: string[] = []
   if (effort && effort !== 'auto') {
-    // codex caps at high — map xhigh/max down.
-    const level = effort === 'xhigh' || effort === 'max' ? 'high' : effort
-    args.push('-c', `model_reasoning_effort=${tomlString(level)}`)
-    if (level !== effort) notes.push(`effort ${effort} → codex max is high`)
+    args.push('-c', `model_reasoning_effort=${tomlString(effort)}`)
   }
   return { args, bin: 'codex', env, notes }
 }
@@ -180,6 +179,7 @@ function tomlString(value: string) {
 export const HARNESSES: Record<string, HarnessDef> = {
   claude: {
     bin: 'claude',
+    efforts: ['low', 'medium', 'high', 'xhigh', 'max'],
     label: 'Claude Code',
     plan: planClaude,
     protocols: ['anthropic'],
@@ -187,6 +187,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
   },
   codex: {
     bin: 'codex',
+    efforts: MODEL_EFFORT_LEVELS,
     label: 'Codex CLI',
     plan: planCodex,
     protocols: ['openai-chat', 'openai-responses'],
@@ -196,6 +197,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
   },
   grok: {
     bin: 'grok',
+    efforts: MODEL_EFFORT_LEVELS,
     label: 'Grok CLI',
     plan: planGrok,
     protocols: ['openai-chat'],

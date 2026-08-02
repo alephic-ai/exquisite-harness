@@ -249,10 +249,16 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
   const provider = partial.provider
     ? mustGetProvider(config, partial.provider, def.protocols)
     : await pickProvider(def.protocols, allProviders(config))
-  const model = partial.model ?? (await pickModel(provider))
+  const pickedModel = partial.model
+    ? { id: partial.model }
+    : await pickModel(provider)
+  const model = pickedModel.id
   // Only ask when the user is picking interactively and hasn't chosen one.
   const effort =
-    partial.effort ?? (harness === 'grok' ? 'auto' : await pickEffort())
+    partial.effort ??
+    (await pickEffort(
+      pickedModel.efforts?.filter((level) => def.efforts.includes(level)) ?? [],
+    ))
   return { effort, harness, model, provider: provider.name }
 }
 

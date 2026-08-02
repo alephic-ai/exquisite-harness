@@ -71,12 +71,20 @@ eh --print-env claude ollama qwen3-coder
 ### Effort
 
 ```bash
-eh claude ollama qwen3-coder -e high  # low|medium|high|xhigh|max (default auto)
+eh claude ollama qwen3-coder -e high  # explicit override (default auto)
 ```
 
+After a model is picked, eh shows `auto` plus only the effort values that model
+publishes and the selected harness accepts. Vercel AI Gateway exposes these as
+`reasoning_options`; OpenRouter uses `reasoning.supported_efforts`. Models and
+manual IDs without exact metadata stay on `auto`; `-e` remains the explicit
+escape hatch.
+
 claude → `CLAUDE_CODE_EFFORT_LEVEL` (+ `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT` for
-non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map to
-`high`); grok has no knob and ignores it. Profiles and recents remember it.
+non-Anthropic providers); codex → `model_reasoning_effort`; grok →
+`--reasoning-effort`. Profiles and recents remember the choice. The complete
+override vocabulary is `auto|none|minimal|low|medium|high|xhigh|max|ultra`, then
+each harness/provider enforces what it supports.
 
 ### Resume
 
