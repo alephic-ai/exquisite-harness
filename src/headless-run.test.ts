@@ -432,7 +432,7 @@ describe('eh run', () => {
     expect(exitCode).toBe(1)
     expect(stdout).toBe('')
     expect(stderr).toBe(
-      "eh run expects a prompt on stdin; pipe one in, for example: printf 'fix the parser' | eh run codex ollama qwen3-coder\n",
+      "eh: eh run expects a prompt on stdin; pipe one in, for example: printf 'fix the parser' | eh run codex ollama qwen3-coder\n",
     )
   })
 
