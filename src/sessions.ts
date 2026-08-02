@@ -50,9 +50,7 @@ export async function listSessionsForCwd(
   options: ListSessionsOptions = {},
 ) {
   const home = os.homedir()
-  // claude/codex move their whole config dir via env (CLAUDE_CONFIG_DIR /
-  // CODEX_HOME, both verified against the installed binaries); grok has no
-  // such knob.
+  // Each harness can move its config root through its documented env var.
   const roots = {
     claude:
       options.roots?.claude ??
@@ -66,7 +64,9 @@ export async function listSessionsForCwd(
         process.env.CODEX_HOME ?? path.join(home, '.codex'),
         'sessions',
       ),
-    grok: options.roots?.grok ?? path.join(home, '.grok', 'sessions'),
+    grok:
+      options.roots?.grok ??
+      path.join(process.env.GROK_HOME ?? path.join(home, '.grok'), 'sessions'),
   }
   const wanted = options.harness
   const jobs: Promise<SessionInfo[]>[] = []

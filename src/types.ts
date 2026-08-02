@@ -31,7 +31,7 @@ export interface Selection {
 
 // Reasoning/effort levels, normalized across harnesses. `auto` means the
 // model default (no override sent). claude accepts xhigh/max; codex maps
-// max→high; grok has no knob.
+// max→high; grok accepts the normalized levels directly.
 export const EFFORT_LEVELS = [
   'auto',
   'low',
