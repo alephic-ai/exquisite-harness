@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { sessionCostUsd } from './pricing.js'
+import { formatStatuslineCost, sessionCostUsd } from './pricing.js'
 import { sumTranscriptUsage } from './statusline.js'
 
 const tempDirs: string[] = []
@@ -52,6 +52,29 @@ describe('sumTranscriptUsage', () => {
     })
   })
 
+  test('keeps the final cumulative usage for repeated message rows', async () => {
+    const file = writeTranscript([
+      assistantLine('msg_1', {
+        cache_creation_input_tokens: 200,
+        cache_read_input_tokens: 5000,
+        input_tokens: 1000,
+        output_tokens: 3,
+      }),
+      assistantLine('msg_1', {
+        cache_creation_input_tokens: 200,
+        cache_read_input_tokens: 5000,
+        input_tokens: 1000,
+        output_tokens: 100,
+      }),
+    ])
+    expect(await sumTranscriptUsage(file)).toEqual({
+      cacheRead: 5000,
+      cacheWrite: 200,
+      input: 1000,
+      output: 100,
+    })
+  })
+
   // Dedup keys on message id — id-less lines must not collapse into each other.
   test('counts usage lines without a message id', async () => {
     const file = writeTranscript([
@@ -79,7 +102,7 @@ describe('sumTranscriptUsage', () => {
 })
 
 describe('sessionCostUsd', () => {
-  // kimi-k3 via vercel-ai-gateway: $3 in / $15 out / $0.30 cache-read per 1M.
+  // Fixed arithmetic fixture; these are not asserted as current provider rates.
   const rates = {
     cacheReadPerMillion: 0.3,
     inputPerMillion: 3,
@@ -97,7 +120,7 @@ describe('sessionCostUsd', () => {
     ).toBe('$0.17')
   })
 
-  test('falls back to 10% of input for cache reads, input for writes', () => {
+  test('does not invent cache prices when the provider omits them', () => {
     const noCacheRates = { inputPerMillion: 10, outputPerMillion: 30 }
     expect(
       sessionCostUsd(noCacheRates, {
@@ -106,6 +129,43 @@ describe('sessionCostUsd', () => {
         input: 1_000_000,
         output: 1_000_000,
       }),
-    ).toBe('$51.00')
+    ).toBeUndefined()
+  })
+})
+
+describe('formatStatuslineCost', () => {
+  test('distinguishes exact, estimated, free, and unavailable costs', () => {
+    expect(
+      formatStatuslineCost({
+        capturedCost: '0.0012300',
+        captureExpected: true,
+        estimatedCost: '$9.99',
+        rates: { inputPerMillion: 1, outputPerMillion: 2 },
+      }),
+    ).toBe('$0.0012300')
+    expect(
+      formatStatuslineCost({
+        capturedCost: undefined,
+        captureExpected: false,
+        estimatedCost: '$0',
+        rates: { inputPerMillion: 1, outputPerMillion: 2 },
+      }),
+    ).toBe('~$0')
+    expect(
+      formatStatuslineCost({
+        capturedCost: undefined,
+        captureExpected: false,
+        estimatedCost: '$0',
+        rates: { inputPerMillion: 0, outputPerMillion: 0 },
+      }),
+    ).toBe('$0')
+    expect(
+      formatStatuslineCost({
+        capturedCost: undefined,
+        captureExpected: true,
+        estimatedCost: '$0.01',
+        rates: { inputPerMillion: 1, outputPerMillion: 2 },
+      }),
+    ).toBe('—')
   })
 })

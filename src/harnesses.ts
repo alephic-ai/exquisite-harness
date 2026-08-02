@@ -52,7 +52,7 @@ async function authTokenFor(provider: ResolvedProvider) {
 
 // Claude Code speaks Anthropic Messages; everything it needs is env vars.
 // Session statusline: override Claude's (wrong for third-party models) cost
-// display with provider/model/effort/list rates + recomputed session $.
+// display with provider/model/effort/rates + an exact gateway session total.
 async function planClaude(
   provider: ResolvedProvider,
   model: string,
@@ -70,10 +70,15 @@ async function planClaude(
   const [meta, authToken] = await Promise.all([
     statusline
       ? fetchModelMeta(provider, model)
-      : Promise.resolve({ contextWindow: undefined, rates: undefined }),
+      : Promise.resolve({
+          contextWindow: undefined,
+          rateLabel: undefined,
+          rates: undefined,
+        }),
     authTokenFor(provider),
   ])
   const env: Record<string, string> = {
+    ANTHROPIC_API_KEY: '',
     ANTHROPIC_AUTH_TOKEN: authToken,
     ANTHROPIC_BASE_URL: baseURL,
     ANTHROPIC_MODEL: model,
@@ -84,6 +89,7 @@ async function planClaude(
           effort,
           model,
           provider: provider.name,
+          rateLabel: meta.rateLabel,
           rates: meta.rates,
         })
       : {}),
@@ -106,6 +112,13 @@ async function planClaude(
     args: statusline ? ['--settings', writeClaudeStatuslineSettings()] : [],
     bin: 'claude',
     env,
+    ...(statusline && isVercelGatewayURL(baseURL)
+      ? {
+          gatewayCostCapture: {
+            resumed: false,
+          },
+        }
+      : {}),
     notes,
   }
 }
@@ -297,8 +310,20 @@ export async function buildLaunchPlan(
     effort: options.effort,
     statusline: options.statusline,
   })
-  if (options.resume) plan.args.push(...def.resumeArgs(options.resumeSessionId))
-  return plan
+  return {
+    ...plan,
+    args: options.resume
+      ? [...plan.args, ...def.resumeArgs(options.resumeSessionId)]
+      : plan.args,
+    ...(plan.gatewayCostCapture
+      ? {
+          gatewayCostCapture: {
+            ...plan.gatewayCostCapture,
+            resumed: options.resume ?? false,
+          },
+        }
+      : {}),
+  }
 }
 
 export function getHarness(name: string) {
@@ -307,4 +332,12 @@ export function getHarness(name: string) {
 
 export function harnessNames() {
   return Object.keys(HARNESSES)
+}
+
+function isVercelGatewayURL(baseURL: string) {
+  try {
+    return new URL(baseURL).hostname === 'ai-gateway.vercel.sh'
+  } catch {
+    return false
+  }
 }
