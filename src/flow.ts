@@ -4,6 +4,7 @@ import type { EffortLevel, Protocol, Selection } from './types.js'
 
 import {
   allProviders,
+  allSearchProviders,
   canonicalProviderName,
   configExists,
   getProvider,
@@ -12,11 +13,14 @@ import {
   pushRecent,
   reservedProfileNameMessage,
   saveConfig,
+  searchProviderForSelection,
+  searchProviderLabel,
 } from './config.js'
 import { doctor } from './doctor.js'
 import { buildLaunchPlan, getHarness, harnessNames } from './harnesses.js'
 import { exec, printEnv } from './launch.js'
 import { canServeAny } from './providers.js'
+import { resolveSearchBackend } from './search-provider.js'
 import { listSessionsForCwd } from './sessions.js'
 import { home, selectionFromRecent } from './ui/home.js'
 import { intro, log, outro } from './ui/output.js'
@@ -27,6 +31,7 @@ import {
   pickHarness,
   pickModel,
   pickProvider,
+  pickSearchProvider,
 } from './ui/prompts.js'
 import { providersScreen } from './ui/providers-screen.js'
 import { pickSession } from './ui/sessions.js'
@@ -39,6 +44,7 @@ export interface LaunchOptions {
   printEnvOnly: boolean
   resume?: boolean
   saveAs?: string
+  searchProvider?: string
 }
 
 // Values that exist to be launched, not to be read off a screen.
@@ -72,6 +78,9 @@ export async function launchFlow(
   // Effort: explicit flag wins, then a saved profile's, else interactive/default.
   // Applied before resume resolution so a recent's effort never masks -e.
   if (options.effort) selection.effort = options.effort
+  if (options.searchProvider !== undefined) {
+    selection.searchProvider = options.searchProvider
+  }
 
   // Before any session-store scanning: `eh -r bogus` should error, not scan.
   if (
@@ -115,6 +124,8 @@ export async function launchFlow(
         effort: selection.effort ?? recent.effort,
         model: selection.model ?? (sameProvider ? recent.model : undefined),
         provider,
+        searchProvider:
+          selection.searchProvider ?? recent.searchProvider ?? 'native',
       }
     }
   } else if (options.resume) {
@@ -173,7 +184,7 @@ export async function launchFlow(
           continue
         }
         if (choice.kind === 'providers') {
-          await providersScreen(config)
+          config = await providersScreen(config)
           continue
         }
         if (choice.kind === 'recent') {
@@ -198,12 +209,27 @@ export async function launchFlow(
     harness,
     model,
     provider: provider.name,
+    searchProvider: searchProviderForSelection(config, selection),
   }
+
+  const searchProviderName = complete.searchProvider ?? 'native'
+  if (searchProviderName !== 'native' && harness !== 'claude') {
+    throw new Error(
+      `search provider "${searchProviderName}" is only supported by Claude Code`,
+    )
+  }
+  if (searchProviderName !== 'native' && options.printEnvOnly) {
+    throw new Error(
+      '--print-env cannot start the local search proxy — launch through eh instead',
+    )
+  }
+  const searchBackend = await resolveSearchBackend(config, searchProviderName)
 
   const plan = await buildLaunchPlan(harness, provider, model, {
     effort: complete.effort,
     resume: options.resume,
     resumeSessionId,
+    searchBackend,
   })
 
   if (options.printEnvOnly) {
@@ -253,7 +279,20 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
   // Only ask when the user is picking interactively and hasn't chosen one.
   const effort =
     partial.effort ?? (harness === 'grok' ? 'auto' : await pickEffort())
-  return { effort, harness, model, provider: provider.name }
+  return {
+    effort,
+    harness,
+    model,
+    provider: provider.name,
+    searchProvider:
+      partial.searchProvider ??
+      (harness === 'claude'
+        ? await pickSearchProvider(
+            allSearchProviders(config),
+            config.defaultSearchProvider,
+          )
+        : 'native'),
+  }
 }
 
 function mustGetProvider(config: Config, name: string, protocols: Protocol[]) {
@@ -272,6 +311,7 @@ function planSummary(selection: Selection, env: Record<string, string>) {
     `harness:  ${selection.harness}`,
     `provider: ${providerLabel(selection.provider)} (${selection.provider})`,
     `model:    ${selection.model}`,
+    `search:   ${searchProviderLabel(selection.searchProvider ?? 'native')}`,
     '',
     ...Object.entries(env).map(
       ([k, v]) => `${k}=${SECRET_ENV.test(k) ? '•••' : v}`,
@@ -318,5 +358,7 @@ function resolveResumeWiring(args: {
       session.model ??
       (sameProvider ? recent.model : undefined),
     provider,
+    searchProvider:
+      selection.searchProvider ?? recent.searchProvider ?? 'native',
   }
 }

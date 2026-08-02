@@ -3,7 +3,11 @@ import { isCancel, select } from '@clack/prompts'
 import type { Config, RecentEntry } from '../config.js'
 import type { Selection } from '../types.js'
 
-import { canonicalProviderName, providerLabel } from '../config.js'
+import {
+  canonicalProviderName,
+  providerLabel,
+  searchProviderLabel,
+} from '../config.js'
 import { timeAgo } from '../time-ago.js'
 import { bail } from './output.js'
 
@@ -33,7 +37,7 @@ export async function home(config: Config) {
         value: NEW,
       },
       {
-        hint: 'configured providers + status',
+        hint: 'model + search providers',
         label: 'providers',
         value: PROVIDERS,
       },
@@ -57,11 +61,16 @@ export function selectionFromRecent(r: RecentEntry) {
     harness: r.harness,
     model: r.model,
     provider: canonicalProviderName(r.provider),
+    searchProvider: r.searchProvider ?? 'native',
   }
   return selection
 }
 
 function recentLabel(r: RecentEntry) {
   const effort = r.effort && r.effort !== 'auto' ? ` @${r.effort}` : ''
-  return `${r.harness} · ${providerLabel(r.provider)} · ${r.model}${effort}`
+  const search =
+    r.searchProvider && r.searchProvider !== 'native'
+      ? ` · ${searchProviderLabel(r.searchProvider)} search`
+      : ''
+  return `${r.harness} · ${providerLabel(r.provider)} · ${r.model}${effort}${search}`
 }

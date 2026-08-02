@@ -1,10 +1,22 @@
-import { autocomplete, isCancel, password, select, text } from '@clack/prompts'
+import {
+  autocomplete,
+  confirm,
+  isCancel,
+  password,
+  select,
+  text,
+} from '@clack/prompts'
 
-import type { ResolvedProvider } from '../config.js'
+import type { ResolvedProvider, ResolvedSearchProvider } from '../config.js'
 import type { Protocol } from '../types.js'
 
 import { freshModels } from '../cache.js'
-import { providerLabel, reservedProfileNameMessage } from '../config.js'
+import {
+  providerLabel,
+  reservedProfileNameMessage,
+  searchProviderKeyAccount,
+  searchProviderLabel,
+} from '../config.js'
 import { HARNESSES } from '../harnesses.js'
 import { resolveApiKey, storeApiKey } from '../keys.js'
 import { canServeAny, listModelsCached } from '../providers.js'
@@ -115,17 +127,88 @@ export async function pickProvider(
   }
 }
 
+// Claude keeps its native server-tool path by default; configured external
+// backends share model providers' inline key-status and masked key entry.
+export async function pickSearchProvider(
+  providers: ResolvedSearchProvider[],
+  defaultProvider: string | undefined,
+) {
+  for (;;) {
+    const rows = await Promise.all(
+      providers.map(async (provider) => {
+        const keyAccount = searchProviderKeyAccount(provider.name)
+        const key = await resolveApiKey(provider.envKey, keyAccount)
+        const keySet = key.source !== 'none'
+        return {
+          hint: `${provider.baseURL} · ${keySet ? '✓ key set' : `✗ ${provider.envKey} not set`}${defaultProvider === provider.name ? ' · default' : ''}`,
+          label: keySet
+            ? searchProviderLabel(provider.name)
+            : `✗ ${searchProviderLabel(provider.name)}`,
+          value: provider.name,
+        }
+      }),
+    )
+    const value = await select({
+      initialValue: pickerInitialValue(providers, defaultProvider),
+      message: 'web search',
+      options: [
+        {
+          hint:
+            defaultProvider === undefined || defaultProvider === 'native'
+              ? 'default'
+              : 'Claude Code native search',
+          label: searchProviderLabel('native'),
+          value: 'native',
+        },
+        ...rows,
+      ],
+    })
+    if (isCancel(value)) bail()
+    if (value === 'native') return value
+    const provider = providers.find((candidate) => candidate.name === value)
+    if (!provider) throw new Error(`unknown search provider "${value}"`)
+    if (
+      await ensureKey({
+        ...provider,
+        keyAccount: searchProviderKeyAccount(provider.name),
+      })
+    ) {
+      return provider.name
+    }
+  }
+}
+
+function pickerInitialValue(
+  providers: ResolvedSearchProvider[],
+  defaultProvider: string | undefined,
+) {
+  if (
+    defaultProvider &&
+    providers.some((provider) => provider.name === defaultProvider)
+  ) {
+    return defaultProvider
+  }
+  return 'native'
+}
+
 // A provider with an envKey needs a key from somewhere. If none resolves
 // (env → OS store → file), offer to store one right here. Returns false when
 // the user bails out of the key prompt.
-async function ensureKey(provider: ResolvedProvider) {
+async function ensureKey(provider: {
+  envKey?: string
+  keyAccount?: string
+  name: string
+}) {
   if (!provider.envKey) return true
-  const key = await resolveApiKey(provider.envKey, provider.name)
+  const key = await resolveApiKey(
+    provider.envKey,
+    provider.keyAccount ?? provider.name,
+  )
   if (key.source !== 'none') return true
   log.warn(`"${provider.name}" needs ${provider.envKey} — none found`)
   const value = await askApiKeyOptional(provider.name)
   if (!value) return false
-  const where = await storeApiKey(provider.name, value)
+  const where = await storeApiKey(provider.keyAccount ?? provider.name, value)
   log.success(keyStoredText(where))
   return true
 }
@@ -177,6 +260,13 @@ export async function confirmLaunch(summary: string) {
   })
   if (isCancel(value)) bail()
   return value
+}
+
+export async function confirmSearchProviderDefault(providerName: string) {
+  const value = await confirm({
+    message: `use ${providerName} by default for new Claude sessions?`,
+  })
+  return !isCancel(value) && value
 }
 
 export async function pickModel(provider: ResolvedProvider) {

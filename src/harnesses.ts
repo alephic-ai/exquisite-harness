@@ -1,5 +1,5 @@
 import type { ResolvedProvider } from './config.js'
-import type { LaunchPlan, Protocol } from './types.js'
+import type { LaunchPlan, Protocol, SearchBackend } from './types.js'
 
 import { fetchModelMeta } from './pricing.js'
 import {
@@ -189,11 +189,28 @@ export async function buildLaunchPlan(
   harness: string,
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; resume?: boolean; resumeSessionId?: string } = {},
+  options: {
+    effort?: string
+    resume?: boolean
+    resumeSessionId?: string
+    searchBackend?: SearchBackend
+  } = {},
 ) {
   const def = getHarness(harness)
   if (!def) throw new Error(`unknown harness "${harness}"`)
-  const plan = await def.plan(provider, model, options.effort)
+  let plan = await def.plan(provider, model, options.effort)
+  if (options.searchBackend) {
+    const upstreamBaseURL = plan.env.ANTHROPIC_BASE_URL
+    if (!upstreamBaseURL) {
+      throw new Error(
+        `search provider "${options.searchBackend.type}" is only supported by Claude Code`,
+      )
+    }
+    plan = {
+      ...plan,
+      searchProxy: { ...options.searchBackend, upstreamBaseURL },
+    }
+  }
   if (options.resume) plan.args.push(...def.resumeArgs(options.resumeSessionId))
   return plan
 }

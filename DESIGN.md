@@ -31,9 +31,37 @@ Resulting compatibility (✅ = native, ⚠️ = needs protocol translation):
 
 ## Architecture
 
-**Phase 1 (this build): thin launcher.** Resolve `(harness, provider, model)` →
-env vars + CLI args → `spawn` the harness with inherited stdio. No server, no
-runtime dependency, no mutation of the harnesses' own config files.
+**Phase 1 (this build): thin launcher plus an opt-in web shim.** Resolve
+`(harness, provider, model)` → env vars + CLI args → `spawn` the harness with
+inherited stdio. Native web access remains server-free. Choosing Firecrawl for a
+Claude launch starts a process-scoped localhost proxy; there is still no daemon,
+separately installed runtime, or mutation of the harnesses' own config files.
+The official Firecrawl Node SDK is bundled into the standalone `eh` binary.
+
+Claude Code exposes `WebSearch` to the main model as a normal custom tool, then
+fulfills it with a second, hidden Anthropic Messages request whose sole tool has
+type `web_search_20250305` and whose user message starts
+`Perform a web search for the query:`. The search shim temporarily points
+`ANTHROPIC_BASE_URL` at itself, forwards all ordinary requests and streams to
+the selected model provider, and answers only that hidden request using
+Firecrawl `POST /v2/search`. It returns an Anthropic Messages JSON/SSE response
+with `server_tool_use`, `web_search_tool_result`, and server-use accounting plus
+linked result text. Claude's allowed/blocked-domain constraints are forwarded to
+Firecrawl. Claude Code therefore renders the real search count and wraps the
+Firecrawl data as the original `WebSearch` tool result. This preserves the
+harness UX without MCP and works with non-Anthropic models. It is deliberately
+coupled to an undocumented Claude Code boundary, so a real loopback integration
+test locks down both interception and transparent passthrough.
+
+`WebFetch` is a local Claude Code tool, so it never reaches that Messages proxy.
+The generated session settings add `PostToolUse` and `PostToolUseFailure`
+command hooks for `WebFetch`; their hidden eh subprocess passes the hook payload
+to the same process-scoped proxy, which calls Firecrawl `POST /v2/scrape`.
+Successful tool output is replaced with Firecrawl markdown, and failed native
+fetches receive it as recovery context. The built-in download still runs before
+the post-tool hook; this controls the content the model sees, not the original
+network request. The hook is inert without the proxy URL, so native sessions and
+concurrent launches retain their own behavior.
 
 **Phase 2 (later): local router.** An opt-in localhost proxy that receives
 Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
@@ -61,6 +89,9 @@ eh cheap-local                      # launch saved profile
 eh -r                               # pick from this dir's sessions (all harnesses) and resume
 eh -r codex -p ollama               # only codex sessions; -p/-m/-e override the wiring
 eh --print-env claude ollama …      # print the export lines, don't launch
+eh claude ollama … --search firecrawl
+                                    # native web UX, Firecrawl backend
+eh search key firecrawl             # store its key like a provider key
 eh doctor                           # harnesses installed? providers reachable? keys set?
 eh models ollama                    # live model list (5 min cache)
 eh providers                        # configured providers + status
@@ -81,17 +112,23 @@ Picker flow (via `@clack/prompts`, skipped per already-specified args):
    ones, then rows missing a key (with a `✗` label marker), then incompatible
    rows last. Selecting a provider that needs a key but has none prompts for it
    inline (masked, Esc to go back) — no separate command needed. Home →
-   providers is a management screen: per-provider key status (same ordering, `⚠`
-   marker on keyless rows) with set/delete-key actions.
+   providers is one management screen split into visible Model providers and
+   Search providers sections, with per-provider key status (same ordering, `⚠`
+   marker on keyless rows), a visible search default, and set/delete/default
+   actions. Storing a new search key offers to make that provider the default.
 4. **Model** — live list from the provider (cached 5 min, stale fallback),
    scrollable, with a manual-entry escape hatch.
-5. **Confirm** — `note()` with resolved env/args → go / save as profile / back.
+5. **Web access** (Claude only) — Native (default), or Firecrawl with the same
+   inline key-status and masked key-entry behavior as model providers. Explicit
+   `--search` skips this picker; Codex and Grok stay native.
+6. **Confirm** — `note()` with resolved env/args → go / save as profile / back.
 
 First run (no config file): mini-wizard detects harness binaries, probes
-`localhost:11434`, detects `OPENROUTER_API_KEY` / `AI_GATEWAY_API_KEY` in the
-environment, and offers to stash those keys in the OS credential store (there is
-nothing provider-related to write — all three are built in). Non-TTY stdout ⇒
-positional args must be complete; no prompts.
+`localhost:11434`, detects `OPENROUTER_API_KEY` / `AI_GATEWAY_API_KEY` /
+`FIRECRAWL_API_KEY` in the environment, and offers to stash those keys in the OS
+credential store (there is nothing provider-related to write — model and search
+providers are built in). Non-TTY stdout ⇒ positional args must be complete; no
+prompts.
 
 ## Config
 
@@ -100,6 +137,7 @@ positional args must be complete; no prompts.
 ```jsonc
 {
   "version": 1,
+  "defaultSearchProvider": "firecrawl",
   "providers": {
     "ollama": { "type": "ollama", "baseURL": "http://localhost:11434" },
     "openrouter": { "type": "openai-chat", "envKey": "OPENROUTER_API_KEY" },
@@ -108,11 +146,19 @@ positional args must be complete; no prompts.
       "envKey": "AI_GATEWAY_API_KEY",
     },
   },
+  "searchProviders": {
+    "firecrawl": {
+      "type": "firecrawl",
+      "baseURL": "https://api.firecrawl.dev",
+      "envKey": "FIRECRAWL_API_KEY",
+    },
+  },
   "profiles": {
     "cheap-local": {
       "harness": "claude",
       "provider": "ollama",
       "model": "qwen3-coder",
+      "searchProvider": "firecrawl",
     },
   },
   "recent": [
@@ -120,6 +166,7 @@ positional args must be complete; no prompts.
       "harness": "claude",
       "provider": "ollama",
       "model": "qwen3-coder",
+      "searchProvider": "firecrawl",
       "cwd": "…",
       "usedAt": "…",
     },
@@ -139,10 +186,15 @@ not set" hint until a key is stored or their env var is set. The config file
 only overrides built-ins or adds custom providers. Model cache:
 `~/.config/eh/cache.json`, 5-minute TTL.
 
+Search resolution is explicit `--search` → profile/recent choice →
+`defaultSearchProvider` → Native. The global default applies only to Claude and
+retargets existing Claude recents so home-screen shortcuts follow it. Saved
+profiles remain reproducible and keep their explicit choice.
+
 ## Key handling
 
-`eh` can store provider API keys so you don't have to pre-export env vars.
-Design follows the doc-backed patterns of the harnesses themselves:
+`eh` can store provider and search API keys so you don't have to pre-export env
+vars. Design follows the doc-backed patterns of the harnesses themselves:
 
 | Tool        | Storage pattern                                                                                 |
 | ----------- | ----------------------------------------------------------------------------------------------- |
@@ -178,7 +230,9 @@ Key-entry hygiene (from Codex's `--with-api-key` stdin pattern): the key comes
 in through a masked `password` prompt on stdin — never argv, never shell
 history, never echoed. `eh provider key <name> --delete` removes it.
 `checkProvider`/`doctor` report the key _source_ (`env`/`keychain`/`file`),
-never the value.
+never the value. Search credentials use namespaced store accounts such as
+`search:firecrawl`, so a custom model provider and search provider can safely
+share a config name. `FIRECRAWL_API_KEY` still wins over stored credentials.
 
 Phase-2 note (Claude Code's `apiKeyHelper` pattern): a stored key _command_
 (`eh provider key <name> --cmd 'op read "op://…"'`) would let 1Password users
@@ -201,7 +255,13 @@ resolve at launch time without eh storing anything.
   `current_usage` — not Claude's default 200k-based `used_percentage`. Session
   $
   uses transcript tokens × list rates. Claude's `cost.total_cost_usd` is
-  ignored.
+  ignored. **External web access:** when selected, the launch plan retains the
+  real upstream base URL and Firecrawl credential, starts the loopback proxy,
+  and gives the child its Messages base URL plus a non-secret hook endpoint. The
+  credential remains in the parent proxy and is removed from the child
+  environment. The proxy is closed when Claude exits. `--print-env` rejects
+  external web access because the process-scoped proxy cannot be represented as
+  static exports.
 - **codex**: `-c` TOML overrides — `model`, `model_provider=eh`,
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
   `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
@@ -267,6 +327,10 @@ src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
 src/sessions.ts   cross-harness session enumeration for -r (read-only store scans)
 src/launch.ts     spawn / print-env
+src/search-provider.ts  web config/key resolution + Firecrawl v2 client
+src/search-proxy.ts  Claude WebSearch/WebFetch interception + upstream passthrough
+src/search-proxy.test.ts  loopback boundary tests with fake upstreams
+src/web-fetch-hook.ts  Claude command-hook bridge to the process-scoped proxy
 src/doctor.ts     doctor report
 src/update.ts     self-update: gh-auth release lookup → staged download → atomic swap
 src/runtime.ts    build-time constants (standalone-binary detection)

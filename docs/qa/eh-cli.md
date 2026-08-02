@@ -46,6 +46,10 @@ Each prints env/args and exits 0 without launching.
 8. `eh -r --print-env codex ollama qwen3-coder` → args end with `resume` (after
    the `-c` overrides).
 9. `eh -r --print-env grok ollama qwen3-coder` → args end with `--resume`.
+10. `eh --print-env claude ollama qwen3-coder --search firecrawl` → actionable
+    error explaining that a process-scoped proxy requires a normal launch.
+11. `eh codex ollama qwen3-coder --search firecrawl` → "only supported by Claude
+    Code" before attempting search-key resolution.
 
 ## C. Config / error paths
 
@@ -84,8 +88,12 @@ Drive each with the PTY; assert on screen text.
    config?" prompt. Answer yes → config written to disk with expected keys.
 2. **Home**: with one recent entry present, run `eh`. → home select lists the
    recent combo with a relative-time hint, plus "new session →", "providers",
-   "doctor". Enter on the recent → launch-plan note with **redacted** secrets
-   (`ANTHROPIC_AUTH_TOKEN=•••`), and go/save/back options.
+   "doctor". Enter providers → one list with disabled "Model providers" and
+   "Search providers" headings; Native and Firecrawl appear in the latter, the
+   active default is labeled, and both expose make-default actions. Firecrawl
+   also exposes set/delete key actions. Enter on the recent → launch-plan note
+   with **redacted** secrets (`ANTHROPIC_AUTH_TOKEN=•••`), and go/save/back
+   options.
 3. **Pickers**: run `eh claude` → provider picker lists ollama (compatible) and,
    if configured, openrouter. Arrow down to focus openrouter → its hint reads
    "needs router (phase 2)" (clack only shows the focused row's hint). Pick
@@ -126,6 +134,14 @@ Drive each with the PTY; assert on screen text.
    script; rerun only if keys.ts changed.)
 5. Non-TTY `eh provider key openrouter` → "storing a key needs an interactive
    terminal", non-zero exit.
+6. `eh search key firecrawl` follows the same masked-prompt and storage rules,
+   under the separate `search:firecrawl` account. `FIRECRAWL_API_KEY` overrides
+   that stored value; `--delete` removes only the search credential.
+7. Home → providers → Firecrawl → make default writes
+   `defaultSearchProvider: "firecrawl"`; the list labels Firecrawl as default.
+   Setting a new key first asks whether Firecrawl should become the default.
+   Making Native default reverses the config and retargets Claude recents; saved
+   profiles keep their explicit search choice.
 
 ## F. Launch / spawn
 
@@ -136,7 +152,32 @@ Drive each with the PTY; assert on screen text.
 2. Fake harness exits 3 → eh exit code is 3.
 3. Fake harness killed by SIGTERM → eh exit code 143 (128+15).
 
-## G. Models cache
+## G. Claude WebSearch/WebFetch → Firecrawl shim
+
+1. `bun test src/search-proxy.test.ts` → the hidden Claude Code request with a
+   `web_search_20250305` tool calls fake Firecrawl `POST /v2/search` with the
+   expected bearer token, query, and allowed/blocked-domain constraints, returns
+   `server_tool_use` and `web_search_tool_result` SSE blocks with
+   `web_search_requests: 1`, and never reaches the model-provider upstream.
+2. The same test suite sends an ordinary streamed Messages request → headers and
+   body reach the fake upstream, its SSE body passes through byte-for-byte, and
+   Firecrawl is not contacted. A configured upstream path prefix and query
+   string are preserved.
+3. With a real Firecrawl key stored, launch real Claude Code through a
+   configured model provider and force exactly one `WebSearch` call → the UI
+   reports `Did 1 search`, the persisted tool result contains Firecrawl
+   links/descriptions, the final answer links a returned source, and the proxy
+   exits with the harness.
+4. The loopback tests send Claude Code `PostToolUse` and `PostToolUseFailure`
+   payloads for `WebFetch` → fake Firecrawl receives `POST /v2/scrape` with the
+   selected URL; success replaces the structured tool output with Firecrawl
+   markdown and updates HTTP code/status text together, while native failure
+   receives the markdown as recovery context.
+5. In a real Firecrawl-backed Claude session, force exactly one `WebFetch` → the
+   persisted tool result contains the `Firecrawl fetched` marker and page
+   content, and the final answer uses that content.
+
+## H. Models cache
 
 1. `eh models ollama` (fresh) → prints live models with size hints; writes
    `cache.json`.
@@ -145,18 +186,20 @@ Drive each with the PTY; assert on screen text.
 3. Stop Ollama, `eh` → model picker → spinner fails, falls back to stale cache,
    list still shown. Restart Ollama after.
 
-## H. Doctor / providers
+## I. Doctor / providers
 
 1. `eh doctor` → per-harness installed/not-installed lines, per-provider status;
    ollama shows "N models"; configured key providers show "key from
-   env|keychain|file" or the "run eh provider key <name>" hint.
+   env|keychain|file" or the "run eh provider key <name>" hint; Firecrawl shows
+   the same key source or `eh search key firecrawl` hint without making a live
+   search request.
 
 ## Known limitations
 
 - Interactive steps are driven by a PTY harness, not a human; rendering quirks
   of clack in a real terminal emulator are not fully covered.
-- No real `claude`/`codex`/`grok` sessions are started (a fake harness covers
-  the spawn contract; live-agent behavior is out of scope).
+- No real `claude`/`codex`/`grok` sessions are required (a fake harness covers
+  the spawn contract; live Firecrawl QA is conditional on a real key).
 - OpenRouter/Vercel AI Gateway live model-list fetches need real keys and are
   SKIPPED unless keys are present.
 - Linux Secret Service is verified against a simulated `secret-tool`; a real
@@ -165,5 +208,8 @@ Drive each with the PTY; assert on screen text.
 ## Automated coverage
 
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
-- `bun test` — `src/statusline.test.ts` (transcript usage) and
-  `src/sessions.test.ts` (resume session-store parsers).
+- `bun test` — `src/statusline.test.ts` (transcript usage),
+  `src/sessions.test.ts` (resume session-store parsers), `src/config.test.ts`
+  (search-default precedence and recent retargeting), and
+  `src/search-proxy.test.ts` (Firecrawl search/fetch interception + Anthropic
+  passthrough).

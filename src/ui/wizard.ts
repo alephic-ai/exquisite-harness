@@ -3,7 +3,11 @@ import { confirm, isCancel, select, text } from '@clack/prompts'
 import type { Config } from '../config.js'
 import type { ProviderType } from '../types.js'
 
-import { defaultBaseURLFor, getProvider } from '../config.js'
+import {
+  defaultBaseURLFor,
+  getProvider,
+  searchProviderKeyAccount,
+} from '../config.js'
 import { HARNESSES } from '../harnesses.js'
 import { storeApiKey } from '../keys.js'
 import { checkProvider } from '../providers.js'
@@ -31,7 +35,11 @@ export async function wizard(config: Config) {
     )
   }
 
-  const detectedKeys: { envVar: string; provider: string }[] = []
+  const detectedKeys: {
+    account?: string
+    envVar: string
+    provider: string
+  }[] = []
   if (process.env.OPENROUTER_API_KEY) {
     detectedKeys.push({ envVar: 'OPENROUTER_API_KEY', provider: 'openrouter' })
   }
@@ -39,6 +47,13 @@ export async function wizard(config: Config) {
     detectedKeys.push({
       envVar: 'AI_GATEWAY_API_KEY',
       provider: 'vercel-ai-gateway',
+    })
+  }
+  if (process.env.FIRECRAWL_API_KEY) {
+    detectedKeys.push({
+      account: searchProviderKeyAccount('firecrawl'),
+      envVar: 'FIRECRAWL_API_KEY',
+      provider: 'firecrawl search',
     })
   }
   for (const k of detectedKeys) {
@@ -54,13 +69,13 @@ export async function wizard(config: Config) {
     if (isCancel(wants)) bail()
     const value = process.env[k.envVar]
     if (wants && value) {
-      const where = await storeApiKey(k.provider, value)
+      const where = await storeApiKey(k.account ?? k.provider, value)
       log.success(keyStoredText(where))
     }
   }
 
   log.success(
-    'ollama, openrouter and vercel-ai-gateway are built in — nothing to write',
+    'ollama, openrouter, vercel-ai-gateway and firecrawl search are built in — nothing to write',
   )
   return config
 }
