@@ -104,10 +104,13 @@ export function readGatewaySessionCost(props: {
     if (previous != null && previous !== costUsd) return undefined
     costs.set(entry.data.generationId, costUsd)
   }
-  if (complete !== true || pending.size > 0) return undefined
+  if (complete !== true) return undefined
   if (costs.size === 0) return undefined
   return {
-    exact: !hasUnpriced,
+    // A pending request or one that finished without cost data keeps the total
+    // partial, but does not hide the priced sum — the statusline shows it live
+    // (prefixed with `~`) instead of going dark mid-conversation.
+    exact: !hasUnpriced && pending.size === 0,
     total: sumUsdDecimals([...costs.values()]),
   }
 }

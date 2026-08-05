@@ -246,6 +246,72 @@ describe('gateway cost capture', () => {
     }
   })
 
+  test('keeps showing the priced total while a later request is still pending', async () => {
+    const sessionId = '6e2a4c8b-1d5f-4a7e-9b3c-8f2a4b6c7d8e'
+    const costEvent = gatewayCostEvent('gen_priced', '0.00001596')
+    const costBody = `data: ${JSON.stringify(costEvent)}\n\n`
+    const costDir = makeTempDir()
+    let finishSecond: (() => void) | undefined
+    let secondStarted: (() => void) | undefined
+    const secondResponse = new Promise<void>((resolve) => {
+      finishSecond = resolve
+    })
+    const secondInFlight = new Promise<void>((resolve) => {
+      secondStarted = resolve
+    })
+    let requestNumber = 0
+    const upstream = await startUpstream((_request, response) => {
+      response.setHeader('content-type', 'text/event-stream')
+      requestNumber += 1
+      if (requestNumber === 1) {
+        response.end(costBody)
+      } else {
+        secondStarted?.()
+        // Hold the second request open so it stays pending.
+        response.write('event: ping\ndata: {}\n\n')
+        void secondResponse.then(() => response.end())
+      }
+    })
+    const proxy = await startGatewayCostProxy({
+      costDir,
+      resumed: false,
+      targetBaseURL: upstream.baseURL,
+    })
+
+    try {
+      await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }).then(async (response) => response.text())
+      const second = fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      })
+      await settleWithin(secondInFlight, 'second request in flight')
+      // The priced request has settled; the second is still in flight, so the
+      // total must stay visible (partial) rather than disappear.
+      expect(readGatewaySessionCost({ costDir, sessionId })).toEqual({
+        exact: false,
+        total: '0.00001596',
+      })
+      finishSecond?.()
+      await settleWithin(
+        second.then(async (response) => response.text()),
+        'second request',
+      )
+      expect(readGatewaySessionCost({ costDir, sessionId })).toEqual({
+        exact: false,
+        total: '0.00001596',
+      })
+    } finally {
+      finishSecond?.()
+      await settleWithin(proxy.close(), 'pending-visible proxy close')
+      await settleWithin(upstream.close(), 'pending-visible upstream close')
+    }
+  })
+
   test('aborts the upstream request when the downstream client disconnects', async () => {
     const sessionId = '0733a250-53f0-4378-b81e-b63279428f62'
     let markUpstreamClosed: (() => void) | undefined
