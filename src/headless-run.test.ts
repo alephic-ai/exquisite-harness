@@ -10,6 +10,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
+import { createServer } from 'node:http'
 import os, { tmpdir } from 'node:os'
 import path from 'node:path'
 import { createInterface } from 'node:readline'
@@ -242,6 +243,24 @@ describe('eh run', () => {
       'missing-key',
       'no API key for "missing-key"',
     ],
+    [
+      'unsupported Pi Gateway provider pin',
+      'pi',
+      'test-gateway',
+      'run the task',
+      ['--gateway-provider', 'bedrock'],
+      'gateway',
+      '--gateway-provider is not supported by pi',
+    ],
+    [
+      'unsupported opencode Gateway provider pin',
+      'opencode',
+      'test-gateway',
+      'run the task',
+      ['--gateway-provider', 'bedrock'],
+      'gateway',
+      '--gateway-provider is not supported by opencode',
+    ],
   ] as const)(
     'normalizes the %s preflight failure',
     async (
@@ -259,7 +278,7 @@ describe('eh run', () => {
       const piDir = path.join(root, 'pi')
       mkdirSync(configDir, { recursive: true })
       mkdirSync(piDir, { recursive: true })
-      if (setup === 'missing-key') {
+      if (setup === 'missing-key' || setup === 'gateway') {
         const ehConfigDir = path.join(configDir, 'eh')
         mkdirSync(ehConfigDir, { recursive: true })
         writeFileSync(
@@ -267,11 +286,18 @@ describe('eh run', () => {
           JSON.stringify({
             profiles: {},
             providers: {
-              'missing-key': {
-                baseURL: 'https://missing-key.invalid/v1',
-                envKey: 'EH_HEADLESS_MISSING_KEY',
-                type: 'openai-chat',
-              },
+              [setup === 'gateway' ? 'test-gateway' : 'missing-key']:
+                setup === 'gateway'
+                  ? {
+                      baseURL: 'https://ai-gateway.vercel.sh/v1',
+                      envKey: 'EH_HEADLESS_GATEWAY_KEY',
+                      type: 'vercel-gateway',
+                    }
+                  : {
+                      baseURL: 'https://missing-key.invalid/v1',
+                      envKey: 'EH_HEADLESS_MISSING_KEY',
+                      type: 'openai-chat',
+                    },
             },
             recent: [],
             version: 1,
@@ -294,6 +320,7 @@ describe('eh run', () => {
           cwd: repoRoot,
           env: {
             ...process.env,
+            EH_HEADLESS_GATEWAY_KEY: 'qa-key',
             EH_HEADLESS_MISSING_KEY: '',
             PI_CODING_AGENT_DIR:
               setup === 'missing-pi-provider' ? piDir : undefined,
@@ -404,6 +431,83 @@ describe('eh run', () => {
     expect(args).toContain('--permission-mode')
     expect(args).toContain('plan')
     expect(args).not.toContain('--dangerously-skip-permissions')
+  })
+
+  test('keeps a Gateway provider pin supplied after the run arguments', async () => {
+    const fixture = createFakeClaude()
+    const gateway = await startGatewayStub()
+    const ehConfigDir = path.join(fixture.configDir, 'eh')
+    mkdirSync(ehConfigDir, { recursive: true })
+    writeFileSync(
+      path.join(ehConfigDir, 'config.json'),
+      JSON.stringify({
+        profiles: {},
+        providers: {
+          'test-gateway': {
+            baseURL: gateway.baseURL,
+            envKey: 'EH_TEST_GATEWAY_KEY',
+            type: 'vercel-gateway',
+          },
+        },
+        recent: [],
+        version: 1,
+      }),
+    )
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'claude',
+        'test-gateway',
+        'test-model',
+        '--gateway-provider',
+        'bedrock',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TEST_GATEWAY_KEY: 'qa-key',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('verify routing')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    await gateway.close()
+    const events = parseEvents(stdout)
+
+    expect(exitCode).toBe(0)
+    expect(stderr).toBe('')
+    expect(events).toContainEqual({
+      effort: 'auto',
+      gatewayProvider: 'bedrock',
+      harness: 'claude',
+      model: 'test-model',
+      provider: 'test-gateway',
+      type: 'run.started',
+      v: 1,
+    })
+    const fakeEvent = z
+      .object({
+        event: z.object({
+          anthropicBaseUrl: z.string(),
+          type: z.literal('fake.args'),
+        }),
+        type: z.literal('harness.event'),
+      })
+      .parse(events.find((event) => event.type === 'harness.event'))
+    expect(fakeEvent.event.anthropicBaseUrl).toMatch(
+      /^http:\/\/127\.0\.0\.1:\d+$/,
+    )
   })
 
   test('uses and removes a private prompt file for Grok', async () => {
@@ -959,7 +1063,11 @@ function createFakeClaude() {
 for await (const chunk of process.stdin) chunks.push(chunk)
 const prompt = Buffer.concat(chunks).toString('utf8')
 const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
-emit({ type: 'fake.args', args: process.argv.slice(2) })
+emit({
+  type: 'fake.args',
+  args: process.argv.slice(2),
+  anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL,
+})
 emit({ type: 'system', session_id: 'claude-session' })
 emit({
   type: 'assistant',
@@ -1192,4 +1300,45 @@ async function readStream(stream: Readable) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)))
   }
   return Buffer.concat(chunks).toString('utf8')
+}
+
+async function startGatewayStub() {
+  const server = createServer((request, response) => {
+    if (request.url?.endsWith('/endpoints')) {
+      response.setHeader('content-type', 'application/json')
+      response.end(
+        JSON.stringify({
+          data: { endpoints: [{ provider_name: 'bedrock', status: 0 }] },
+        }),
+      )
+      return
+    }
+    response.statusCode = 500
+    response.end('unexpected request')
+  })
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject)
+    server.listen(0, '127.0.0.1', () => {
+      server.off('error', reject)
+      resolve()
+    })
+  })
+  const address = server.address()
+  if (!address || typeof address === 'string') {
+    server.close()
+    throw new Error('Gateway stub did not bind a TCP port')
+  }
+  return {
+    baseURL: `http://127.0.0.1:${String(address.port)}`,
+    close: async () => {
+      const closed = new Promise<void>((resolve, reject) => {
+        server.close((error) => {
+          if (error) reject(error)
+          else resolve()
+        })
+      })
+      server.closeAllConnections()
+      await closed
+    },
+  }
 }

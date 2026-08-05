@@ -17,6 +17,10 @@ export interface HarnessDef {
   // false = the interactive picker skips effort; explicit options may still
   // be handled by the launch plan (grok) or ignored with a note (opencode).
   effort?: false
+  // Pi's provider URL comes from its native catalog, and opencode's routing
+  // is owned by its inline provider definition. Neither currently supports
+  // eh's process-scoped Gateway routing proxy.
+  gatewayRouting?: false
   label: string
   plan: (
     provider: ResolvedProvider,
@@ -131,6 +135,7 @@ async function planClaude(
       provider,
       options.gatewayProvider,
       baseURL,
+      model,
     ),
     notes,
   }
@@ -183,6 +188,7 @@ async function planCodex(
       provider,
       options.gatewayProvider,
       baseURL,
+      model,
     ),
     notes,
   }
@@ -211,6 +217,7 @@ async function planGrok(
       provider,
       options.gatewayProvider,
       baseURL,
+      model,
     ),
     notes: [],
   }
@@ -227,8 +234,9 @@ function tomlString(value: string) {
 async function planPi(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string },
+  options: { effort?: string; gatewayProvider?: string },
 ) {
+  rejectUnsupportedGatewayRouting('pi', options.gatewayProvider)
   const { effort } = options
   const match = resolvePiProvider(provider)
   if (!match) {
@@ -254,8 +262,9 @@ async function planPi(
 async function planOpencode(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string },
+  options: { effort?: string; gatewayProvider?: string },
 ) {
+  rejectUnsupportedGatewayRouting('opencode', options.gatewayProvider)
   const { effort } = options
   const notes: string[] = []
   if (effort && effort !== 'auto') {
@@ -306,6 +315,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
   opencode: {
     bin: 'opencode',
     effort: false,
+    gatewayRouting: false,
     label: 'opencode',
     plan: planOpencode,
     protocols: ['openai-chat'],
@@ -313,6 +323,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
   },
   pi: {
     bin: 'pi',
+    gatewayRouting: false,
     label: 'pi',
     plan: planPi,
     protocols: ['openai-chat'],
@@ -387,6 +398,7 @@ function gatewayRoutingFor(
   provider: ResolvedProvider,
   gatewayProvider: string | undefined,
   targetBaseURL: string,
+  model: string,
 ) {
   if (gatewayProvider === undefined) return undefined
   if (provider.type !== 'vercel-gateway') {
@@ -397,7 +409,12 @@ function gatewayRoutingFor(
       `invalid gateway provider "${gatewayProvider}" (use its Vercel provider slug)`,
     )
   }
-  return { provider: gatewayProvider, targetBaseURL }
+  return {
+    apiKeyEnvKey: provider.envKey,
+    model,
+    provider: gatewayProvider,
+    targetBaseURL,
+  }
 }
 
 function isVercelGatewayURL(baseURL: string) {
@@ -405,5 +422,14 @@ function isVercelGatewayURL(baseURL: string) {
     return new URL(baseURL).hostname === 'ai-gateway.vercel.sh'
   } catch {
     return false
+  }
+}
+
+function rejectUnsupportedGatewayRouting(
+  harness: string,
+  gatewayProvider: string | undefined,
+) {
+  if (gatewayProvider !== undefined) {
+    throw new Error(`--gateway-provider is not supported by ${harness}`)
   }
 }

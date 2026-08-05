@@ -6,6 +6,8 @@ export interface LaunchPlan {
     resumed: boolean
   }
   gatewayRouting?: {
+    apiKeyEnvKey?: string
+    model: string
     provider: string
     targetBaseURL: string
   }

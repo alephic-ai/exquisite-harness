@@ -1154,6 +1154,17 @@ describe('search proxy', () => {
       )
     })
     const upstreamBaseURL = await listen(async (request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.writeHead(200, { 'Content-Type': 'application/json' })
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [{ provider_name: 'fireworks', status: 0 }],
+            },
+          }),
+        )
+        return
+      }
       upstreamRequests += 1
       upstreamBody = JSON.parse(await requestText(request))
       response.writeHead(200, { 'Content-Type': 'application/json' })
@@ -1201,6 +1212,7 @@ describe('search proxy', () => {
       env: { ANTHROPIC_BASE_URL: upstreamBaseURL },
       gatewayCostCapture: { resumed: false },
       gatewayRouting: {
+        model: 'test-model',
         provider: 'fireworks',
         targetBaseURL: upstreamBaseURL,
       },

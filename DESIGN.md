@@ -284,12 +284,13 @@ resolve at launch time without eh storing anything.
 ## Launch plans
 
 For a Vercel AI Gateway selection, `--gateway-provider <slug>` adds a
-process-scoped loopback proxy to any harness plan. The proxy preserves the
-harness's native Anthropic Messages, OpenAI Responses, or Chat Completions
-protocol and only merges `providerOptions.gateway.only: [slug]` into JSON
-inference bodies. Existing provider options are preserved; count-token bodies
-are relayed unchanged. With Claude, request routing composes with exact cost
-capture as `harness → cost proxy → routing proxy → Gateway`.
+process-scoped loopback proxy to Claude, Codex, and Grok launch plans. Pi and
+opencode reject the option. The proxy preserves the harness's native Anthropic
+Messages, OpenAI Responses, or Chat Completions protocol and only merges
+`providerOptions.gateway.only: [slug]` into JSON inference bodies. Existing
+provider options are preserved; count-token bodies are relayed unchanged. With
+Claude, request routing composes with exact cost capture as
+`harness → cost proxy → routing proxy → Gateway`.
 
 - **claude**: env `ANTHROPIC_BASE_URL` (provider's Anthropic endpoint),
   `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL`, `ANTHROPIC_SMALL_FAST_MODEL`.

@@ -138,7 +138,10 @@ program
   .action(async (harness, provider, model, opts) => {
     process.exitCode = await runHeadless({
       effort: opts.reasoningEffort,
-      gatewayProvider: opts.gatewayProvider,
+      // The root command exposes the same option for interactive launches.
+      // Commander assigns an option after a subcommand to the root when both
+      // define it, so read both scopes instead of silently dropping the pin.
+      gatewayProvider: opts.gatewayProvider ?? rootGatewayProvider(),
       harness,
       model,
       nativeArgsJson: opts.nativeArgsJson,
@@ -280,6 +283,11 @@ program
 
 async function main() {
   await program.parseAsync(process.argv)
+}
+
+function rootGatewayProvider() {
+  const value: unknown = program.getOptionValue('gatewayProvider')
+  return typeof value === 'string' ? value : undefined
 }
 
 main().catch((error: unknown) => {

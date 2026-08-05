@@ -302,7 +302,7 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
     : await pickProvider(def, allProviders(config))
   const model = partial.model ?? (await pickModel(provider))
   const gatewayProvider =
-    provider.type === 'vercel-gateway'
+    provider.type === 'vercel-gateway' && def.gatewayRouting !== false
       ? (partial.gatewayProvider ??
         (await pickGatewayProvider(provider, model)))
       : partial.gatewayProvider

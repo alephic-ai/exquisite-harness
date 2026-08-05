@@ -92,7 +92,9 @@ For Vercel AI Gateway models, interactive launches offer an additional provider
 picker after the model. Leave it on `automatic` for normal Gateway routing, or
 pin one upstream with `--gateway-provider <slug>`. A pin is fail-closed for that
 run: Gateway will not fall back to another provider. The option works with
-Claude, Codex, Grok, and `eh run`; profiles and recents remember it.
+Claude, Codex, and Grok, including their `eh run` forms; profiles and recents
+remember it. Pi and opencode reject the option instead of silently falling back
+to automatic Gateway routing.
 
 ### Resume
 
@@ -137,8 +139,8 @@ private temporary prompt file because its headless CLI exposes `--prompt-file`;
 for all five harnesses with `--resume-session <id>`. Orchestrators that must
 preserve harness-specific policy flags can pass a JSON string array with
 `--native-args-json`; those args are prepended before `eh`'s required
-machine-output flags. Vercel AI Gateway runs may also use
-`--gateway-provider <slug>`.
+machine-output flags. Vercel AI Gateway runs through Claude, Codex, or Grok may
+also use `--gateway-provider <slug>`; Pi and opencode reject it.
 
 ### Keys
 

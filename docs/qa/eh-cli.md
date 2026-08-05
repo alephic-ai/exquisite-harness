@@ -19,8 +19,8 @@ directly; interactive clack flows run under a PTY harness.
   needed for G.3 and G.5. Other provider/key steps use `--print-env`, loopback
   fakes, and a fake `secret-tool`/Keychain probe; F.5, G.1, G.2, and G.4 use
   loopback fakes.
-- PTY harness: `scripts/pty-drive.mjs` (node-pty if available, else `script(1)`
-  on macOS / `python3 -c pty`) drives interactive flows.
+- PTY harness: use the runner's real PTY support when available, or `expect`,
+  `script(1)` on macOS, or Python's `pty` module to drive interactive flows.
 
 ## A. Static gates
 
@@ -84,7 +84,7 @@ Each prints env/args and exits 0 without launching.
    Run any command. → friendly "invalid config at <path> — not valid JSON", not
    a stack trace.
 2. Write a syntactically valid but schema-wrong config (e.g. `"version": 2`). →
-   "invalid config at <path> — version: Invalid literal…".
+   "invalid config at <path> — version: Invalid input: expected 1".
 3. `eh bogus` → "unknown harness or profile \"bogus\" (known: claude, codex,
    grok, opencode, pi)", non-zero exit.
 4. `eh claude ollama` with stdout not a TTY → "incomplete arguments and stdout
