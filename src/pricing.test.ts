@@ -37,14 +37,17 @@ test('reports the full active gateway rate range including context tiers', async
                   { cost: '0.000004', min: 200_001 },
                 ],
               },
+              provider_name: 'fireworks',
               status: 0,
             },
             {
               pricing: { completion: '0.000007', prompt: '0.000002' },
+              provider_name: 'bedrock',
               status: 0,
             },
             {
               pricing: { completion: '0.9', prompt: '0.8' },
+              provider_name: 'fireworks',
               status: 1,
             },
           ],
@@ -63,17 +66,34 @@ test('reports the full active gateway rate range including context tiers', async
   }
 
   try {
-    const meta = await fetchModelMeta(
-      {
-        baseURL: `http://127.0.0.1:${String(address.port)}`,
-        name: 'test-gateway',
-        type: 'vercel-gateway',
-      },
-      'test/model',
-    )
+    const provider = {
+      baseURL: `http://127.0.0.1:${String(address.port)}`,
+      name: 'test-gateway',
+      type: 'vercel-gateway' as const,
+    }
+    const meta = await fetchModelMeta({
+      modelId: 'test/model',
+      provider,
+    })
     expect(meta).toEqual({
       contextWindow: 1_000_000,
       rateLabel: '$1–4/$5–9',
+      rates: {
+        cacheReadPerMillion: undefined,
+        cacheWritePerMillion: undefined,
+        inputPerMillion: 1,
+        outputPerMillion: 5,
+      },
+    })
+
+    const pinnedMeta = await fetchModelMeta({
+      gatewayProvider: 'bedrock',
+      modelId: 'test/model',
+      provider,
+    })
+    expect(pinnedMeta).toEqual({
+      contextWindow: 1_000_000,
+      rateLabel: '$2/$7',
       rates: {
         cacheReadPerMillion: undefined,
         cacheWritePerMillion: undefined,

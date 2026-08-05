@@ -45,7 +45,8 @@ self-updates to the latest public release.
 ![Claude Code launched via eh, with a powerline statusline showing Vercel AI Gateway, model, list rates, session cost, and context usage](docs/images/eh-statusline.jpg)
 
 When you launch Claude through `eh`, it injects a session statusline: provider,
-model, the active provider rate range
+model, the selected endpoint's rates when pinned (otherwise the active provider
+rate range)
 ($/1M), session cost, and context %
 against the provider’s published window. Vercel AI Gateway sessions use the
 gateway's exact billed cost metadata. Other totals are token-based estimates and
@@ -64,6 +65,8 @@ eh cheap-local                        # launch a saved profile
 eh claude -p ollama -s cheap-local    # save combo as a profile, then launch
 eh -r                                 # pick from this dir's sessions (all harnesses)
 eh -r codex -p ollama                 # only codex sessions; -p/-m/-e override the wiring
+eh claude vercel-ai-gateway anthropic/claude-sonnet-4.6 \
+  --gateway-provider bedrock          # pin this run to one Gateway provider
 eh --print-env claude ollama qwen3-coder
                                       # print the export lines, don't launch
 eh claude ollama qwen3-coder --search firecrawl
@@ -79,6 +82,14 @@ eh claude ollama qwen3-coder -e high  # low|medium|high|xhigh|max (default auto)
 claude → `CLAUDE_CODE_EFFORT_LEVEL` (+ `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT` for
 non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map to
 `high`); grok → `--reasoning-effort`. Profiles and recents remember it.
+
+### AI Gateway provider routing
+
+For Vercel AI Gateway models, interactive launches offer an additional provider
+picker after the model. Leave it on `automatic` for normal Gateway routing, or
+pin one upstream with `--gateway-provider <slug>`. A pin is fail-closed for that
+run: Gateway will not fall back to another provider. The option works with
+Claude, Codex, Grok, and `eh run`; profiles and recents remember it.
 
 ### Resume
 
@@ -120,7 +131,8 @@ private temporary prompt file because its headless CLI exposes `--prompt-file`;
 `eh` removes that file after the child exits. Native session resume is available
 with `--resume-session <id>`. Orchestrators that must preserve harness-specific
 policy flags can pass a JSON string array with `--native-args-json`; those args
-are prepended before `eh`'s required machine-output flags.
+are prepended before `eh`'s required machine-output flags. Vercel AI Gateway
+runs may also use `--gateway-provider <slug>`.
 
 ### Keys
 
@@ -204,7 +216,8 @@ protocol router (see [DESIGN.md](DESIGN.md)).
 providers, profiles, recents. `~/.config/eh/cache.json` — model lists. All three
 matrix providers are built in; config only overrides or adds custom ones.
 Firecrawl search is also built in; `searchProviders` can override its `baseURL`
-or `envKey`, and `defaultSearchProvider` controls new Claude launches.
+or `envKey`, and `defaultSearchProvider` controls new Claude launches. Saved
+profiles and recents also include an optional Gateway provider pin.
 
 ## Developing
 

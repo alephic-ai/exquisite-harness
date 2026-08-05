@@ -13,11 +13,12 @@ directly; interactive clack flows run under a PTY harness.
 - Harness binaries (`claude`, `codex`, `grok`) only need to exist for doctor and
   the conditional live steps F.4, G.3, and G.5. Launch steps F.1–F.3 use a
   **fake harness binary**.
-- Real provider keys are needed only for conditional live steps F.4, G.3, and
-  G.5. Other OpenRouter/Vercel AI Gateway steps use `--print-env` and a fake
-  `secret-tool`/Keychain probe; F.5 and G.1, G.2, and G.4 use loopback fakes.
-- PTY harness: `scripts/pty-drive.mjs` (node-pty if available, else `script(1)`
-  on macOS / `python3 -c pty`) drives interactive flows.
+- A real Gateway key is needed for D.11, F.4, and F.6. A real Firecrawl key is
+  needed for G.3 and G.5. Other provider/key steps use `--print-env`, loopback
+  fakes, and a fake `secret-tool`/Keychain probe; F.5, G.1, G.2, and G.4 use
+  loopback fakes.
+- A PTY-capable runner (`script(1)`, `expect`, or equivalent) drives interactive
+  flows.
 
 ## A. Static gates
 
@@ -50,6 +51,9 @@ Each prints env/args and exits 0 without launching.
     error explaining that a process-scoped proxy requires a normal launch.
 11. `eh codex ollama qwen3-coder --search firecrawl` → "only supported by Claude
     Code" before attempting search-key resolution.
+12. `AI_GATEWAY_API_KEY=test eh --print-env --gateway-provider bedrock codex vercel-ai-gateway anthropic/claude-sonnet-4.6`
+    → prints the normal Gateway launch plan plus `gateway provider: bedrock`; it
+    does not start a proxy in print-only mode.
 
 ## C. Config / error paths
 
@@ -78,14 +82,18 @@ Each prints env/args and exits 0 without launching.
 9. cd into a directory, delete it from another shell, then any `eh` command →
    the runtime refuses before eh's code runs ("The current working directory was
    deleted…"), non-zero exit — no raw `uv_cwd` stack trace.
+10. `eh --print-env --gateway-provider bedrock codex ollama qwen3-coder` → error
+    `--gateway-provider requires a Vercel AI Gateway provider`, non-zero exit.
+    An invalid slug such as `not valid` also fails before launch.
 
 ## D. Interactive flows (PTY harness)
 
 Drive each with the PTY; assert on screen text.
 
 1. **First-run wizard**: empty config dir, run `eh`. → intro banner, a
-   "detected" note listing harnesses + ollama status, then a "write this
-   config?" prompt. Answer yes → config written to disk with expected keys.
+   "detected" note listing harnesses + ollama status, then either the generated
+   config or a built-ins-only note. The config is written to disk and home
+   opens.
 2. **Home**: with one recent entry present, run `eh`. → home select lists the
    recent combo with a relative-time hint, plus "new session →", "providers",
    "doctor". Enter providers → one list with disabled "Model providers" and
@@ -96,9 +104,9 @@ Drive each with the PTY; assert on screen text.
    go/save/back options.
 3. **Pickers**: run `eh claude` → provider picker lists ollama (compatible) and,
    if configured, openrouter. Arrow down to focus openrouter → its hint reads
-   "needs router (phase 2)" (clack only shows the focused row's hint). Pick
-   ollama → model picker lists live Ollama models with size hints, plus
-   "other…". Select a model → confirm screen.
+   "needs router" (clack only shows the focused row's hint). Pick ollama → model
+   picker lists live Ollama models with size hints, plus "other…". Select a
+   model → confirm screen.
 4. **Manual model entry**: in the model picker choose "other…" → text prompt
    appears; type a model id → accepted and shown in the confirm note.
 5. **Cancel**: at any picker, press Ctrl+C → "bye" and exit 0 (no stack).
@@ -118,6 +126,10 @@ Drive each with the PTY; assert on screen text.
 10. **Resume wiring**: with a recent for (claude, model X) in this directory,
     pick a claude session whose model is X → resumes on that recent's provider
     with no further prompts. `-p`/`-m` override.
+11. **Gateway provider picker**: select Vercel AI Gateway and a model → the next
+    picker lists `automatic` first, then the model's active endpoint providers,
+    plus manual entry. Pick one → the confirm note shows `gateway: <slug>`; save
+    as a profile and relaunch → the pin is retained without another prompt.
 
 ## E. Key storage
 
@@ -160,10 +172,18 @@ Drive each with the PTY; assert on screen text.
    predates its ledger → cost displays `—`, not a partial total. Raw SSE →
    ledger equality is covered by `src/gateway-costs.test.ts`, which sends the
    stream through the proxy and compares the unchanged response with the ledger.
-5. Run the `chains search interception ahead of gateway cost capture` case in
+5. Run the `chains search, cost capture, and Gateway provider routing` case in
    `src/search-proxy.test.ts`. → ordinary Messages traffic reaches the fake
-   gateway through both proxies, hidden search reaches fake Firecrawl only, and
-   the Firecrawl credential is absent from the child environment.
+   gateway through all three proxies with the requested provider pin, hidden
+   search reaches fake Firecrawl only, and the Firecrawl credential is absent
+   from the child environment.
+6. **Conditional provider-routing check:** launch the same Gateway model with a
+   known endpoint slug via `--gateway-provider`, send one short prompt, and
+   confirm the Gateway trace used that provider. A deliberately unavailable slug
+   must fail rather than fall back. Request-body injection and unchanged
+   streamed responses are covered by `src/gateway-routing.test.ts` for Anthropic
+   Messages, OpenAI Responses, and Chat Completions; model discovery and
+   count-token requests are relayed unchanged.
 
 ## G. Claude WebSearch/WebFetch → Firecrawl shim
 
@@ -226,6 +246,6 @@ Drive each with the PTY; assert on screen text.
   `src/sessions.test.ts` (resume session-store parsers), `src/config.test.ts`
   (search-default precedence and recent retargeting), and
   `src/search-proxy.test.ts` (Firecrawl search/fetch interception + Anthropic
-  passthrough), plus exact gateway stream/cost capture, active-provider pricing
-  ranges, transcript usage/cost fallbacks, headless-run contracts, and resume
-  session-store parsers.
+  passthrough), plus exact Gateway stream/cost capture, provider routing and
+  model discovery, active-provider pricing ranges, transcript usage/cost
+  fallbacks, headless-run contracts, and resume session-store parsers.

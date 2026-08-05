@@ -75,6 +75,7 @@ const gatewayEndpointsSchema = z.object({
           prompt: priceField,
           prompt_tiers: z.array(priceTierSchema).optional(),
         }),
+        provider_name: z.string(),
         status: z.number().optional(),
       }),
     ),
@@ -82,10 +83,12 @@ const gatewayEndpointsSchema = z.object({
 })
 
 // Fetch the model facts and, for a routing gateway, active endpoint rates.
-export async function fetchModelMeta(
-  provider: ResolvedProvider,
-  modelId: string,
-): Promise<ModelMeta> {
+export async function fetchModelMeta(props: {
+  gatewayProvider?: string
+  modelId: string
+  provider: ResolvedProvider
+}): Promise<ModelMeta> {
+  const { gatewayProvider, modelId, provider } = props
   if (provider.type === 'ollama') {
     return {
       contextWindow: undefined,
@@ -99,7 +102,12 @@ export async function fetchModelMeta(
   const apiKey = key && key.source !== 'none' ? key.value : undefined
   try {
     if (provider.type === 'vercel-gateway') {
-      return await fetchGatewayMeta(provider.baseURL, modelId, apiKey)
+      return await fetchGatewayMeta({
+        apiKey,
+        baseURL: provider.baseURL,
+        gatewayProvider,
+        modelId,
+      })
     }
     return await fetchOpenRouterMeta(provider.baseURL, modelId, apiKey)
   } catch {
@@ -191,15 +199,16 @@ export function contextUsedPercentage(props: {
   return Math.min(100, (used / size) * 100)
 }
 
-async function fetchGatewayMeta(
-  baseURL: string,
-  modelId: string,
-  apiKey?: string,
-): Promise<ModelMeta> {
-  const body = await fetchJson(`${withV1(baseURL)}/models`, apiKey)
+async function fetchGatewayMeta(props: {
+  apiKey: string | undefined
+  baseURL: string
+  gatewayProvider: string | undefined
+  modelId: string
+}): Promise<ModelMeta> {
+  const body = await fetchJson(`${withV1(props.baseURL)}/models`, props.apiKey)
   const match = gatewayModelsSchema
     .parse(body)
-    .data.find((m) => m.id === modelId)
+    .data.find((m) => m.id === props.modelId)
   if (!match) {
     return {
       contextWindow: undefined,
@@ -211,7 +220,7 @@ async function fetchGatewayMeta(
     typeof match.context_window === 'number' && match.context_window > 0
       ? match.context_window
       : undefined
-  const rateLabel = await fetchGatewayRateLabel({ apiKey, baseURL, modelId })
+  const rateLabel = await fetchGatewayRateLabel(props)
     .then((label) => label ?? 'varies')
     .catch(() => 'varies')
   if (!match.pricing) return { contextWindow, rateLabel, rates: undefined }
@@ -241,6 +250,7 @@ async function fetchGatewayMeta(
 async function fetchGatewayRateLabel(props: {
   apiKey: string | undefined
   baseURL: string
+  gatewayProvider: string | undefined
   modelId: string
 }) {
   const modelPath = props.modelId.split('/').map(encodeURIComponent).join('/')
@@ -251,7 +261,10 @@ async function fetchGatewayRateLabel(props: {
   const endpoints = gatewayEndpointsSchema
     .parse(body)
     .data.endpoints.filter(
-      (endpoint) => endpoint.status == null || endpoint.status === 0,
+      (endpoint) =>
+        (endpoint.status == null || endpoint.status === 0) &&
+        (props.gatewayProvider == null ||
+          endpoint.provider_name === props.gatewayProvider),
     )
   if (endpoints.length === 0) return undefined
 

@@ -37,10 +37,12 @@ inherited stdio. Native web access remains server-free. Choosing Firecrawl for a
 Claude launch starts a process-scoped localhost proxy; there is still no daemon,
 separately installed runtime, or mutation of the harnesses' own config files.
 The official Firecrawl Node SDK is bundled into the standalone `eh` binary.
-Vercel Gateway launches use a second transparent process-scoped proxy to record
-exact billed cost from Anthropic SSE metadata without translating protocols.
-When both are active, ordinary model traffic flows through search interception,
-then cost capture, then the configured gateway.
+Vercel Gateway launches can use two more transparent process-scoped proxies: one
+records exact billed cost from Anthropic SSE metadata, and one injects an
+explicit upstream provider into JSON inference requests. None of these shims
+translates protocols. When all three are active, ordinary model traffic flows
+through search interception, then cost capture, then provider routing, then the
+configured Gateway.
 
 Claude Code exposes `WebSearch` to the main model as a normal custom tool, then
 fulfills it with a second, hidden Anthropic Messages request whose sole tool has
@@ -100,6 +102,7 @@ eh                                  # home: recents, new session, providers, doc
 eh claude                           # interactive: provider + model pickers
 eh claude ollama                    # interactive: model picker only
 eh claude ollama qwen3-coder        # no UI, just launches
+eh claude vercel-ai-gateway anthropic/claude-sonnet-4.6 --gateway-provider bedrock
 eh cheap-local                      # launch saved profile
 eh -r                               # pick from this dir's sessions (all harnesses) and resume
 eh -r codex -p ollama               # only codex sessions; -p/-m/-e override the wiring
@@ -133,10 +136,13 @@ Picker flow (via `@clack/prompts`, skipped per already-specified args):
    actions. Storing a new search key offers to make that provider the default.
 4. **Model** — live list from the provider (cached 5 min, stale fallback),
    scrollable, with a manual-entry escape hatch.
-5. **Web access** (Claude only) — Native (default), or Firecrawl with the same
+5. **Gateway provider** — only for Vercel AI Gateway: live endpoint providers
+   for the selected model, plus `automatic` (the default) and manual entry.
+   Selecting a provider pins the run with no fallback to another upstream.
+6. **Web access** (Claude only) — Native (default), or Firecrawl with the same
    inline key-status and masked key-entry behavior as model providers. Explicit
    `--search` skips this picker; Codex and Grok stay native.
-6. **Confirm** — `note()` with resolved env/args → go / save as profile / back.
+7. **Confirm** — `note()` with resolved env/args → go / save as profile / back.
 
 First run (no config file): mini-wizard detects harness binaries, probes
 `localhost:11434`, detects `OPENROUTER_API_KEY` / `AI_GATEWAY_API_KEY` /
@@ -169,10 +175,11 @@ prompts.
     },
   },
   "profiles": {
-    "cheap-local": {
+    "gateway-bedrock": {
       "harness": "claude",
-      "provider": "ollama",
-      "model": "qwen3-coder",
+      "provider": "vercel-ai-gateway",
+      "model": "anthropic/claude-sonnet-4.6",
+      "gatewayProvider": "bedrock",
       "searchProvider": "firecrawl",
     },
   },
@@ -198,8 +205,9 @@ providers are built in, so the full 3×3 is visible with no config file at all:
 Ollama works zero-config (no key needed; token value `ollama` is sent where
 required but ignored), while openrouter and vercel-ai-gateway appear with a "key
 not set" hint until a key is stored or their env var is set. The config file
-only overrides built-ins or adds custom providers. Model cache:
-`~/.config/eh/cache.json`, 5-minute TTL.
+only overrides built-ins or adds custom providers. Profiles and recents may
+store `gatewayProvider`; it is only valid for a Vercel Gateway selection. Model
+cache: `~/.config/eh/cache.json`, 5-minute TTL.
 
 Search resolution is explicit `--search` → profile/recent choice →
 `defaultSearchProvider` → Native. The global default applies only to Claude and
@@ -255,6 +263,14 @@ resolve at launch time without eh storing anything.
 
 ## Launch plans
 
+For a Vercel AI Gateway selection, `--gateway-provider <slug>` adds a
+process-scoped loopback proxy to any harness plan. The proxy preserves the
+harness's native Anthropic Messages, OpenAI Responses, or Chat Completions
+protocol and only merges `providerOptions.gateway.only: [slug]` into JSON
+inference bodies. Existing provider options are preserved; count-token bodies
+are relayed unchanged. With Claude, request routing composes with exact cost
+capture as `harness → cost proxy → routing proxy → Gateway`.
+
 - **claude**: env `ANTHROPIC_BASE_URL` (provider's Anthropic endpoint),
   `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL`, `ANTHROPIC_SMALL_FAST_MODEL`.
   Effort (when not `auto`): `CLAUDE_CODE_EFFORT_LEVEL=<level>`, plus
@@ -264,7 +280,8 @@ resolve at launch time without eh storing anything.
   `claude --settings ~/.config/eh/claude-statusline.json` pointing at
   `eh statusline`. Env `EH_PROVIDER` / `EH_MODEL` / `EH_EFFORT` / `EH_PRICE_IN`
   / `EH_PRICE_OUT` / cache-price vars / `EH_RATE_LABEL` / `EH_CONTEXT_WINDOW`
-  (active provider rate range
+  (selected endpoint rates when Gateway routing is pinned, otherwise the active
+  provider rate range
   $/1M + real context size from the provider APIs at
   launch). Context % is recomputed as
   `(input + cache_write + cache_read) / provider_window` from live
@@ -283,10 +300,10 @@ resolve at launch time without eh storing anything.
   upstream base URL and Firecrawl credential, starts the search proxy, and gives
   the child its Messages base URL plus a non-secret hook endpoint. The
   credential remains in the parent and is removed from the child environment. On
-  Vercel Gateway the search proxy forwards ordinary traffic through the cost
-  proxy, preserving both features. Both proxies close when Claude exits.
-  `--print-env` rejects external web access because the process-scoped proxy
-  cannot be represented as static exports.
+  Vercel Gateway the search proxy forwards ordinary traffic through the cost and
+  provider-routing proxies, preserving all three features. Every proxy closes
+  when Claude exits. `--print-env` rejects external web access because the
+  process-scoped proxy cannot be represented as static exports.
 
 - **codex**: `-c` TOML overrides — `model`, `model_provider=eh`,
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
@@ -350,6 +367,7 @@ src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
 src/pricing.ts    provider rates/ranges ($/1M) and fallback cost estimates
 src/gateway-costs.ts transparent Vercel stream proxy + exact session ledger
+src/gateway-routing.ts process-scoped request rewriter for Gateway provider pins
 src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
 src/sessions.ts   cross-harness session enumeration for -r (read-only store scans)

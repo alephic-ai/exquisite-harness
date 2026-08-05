@@ -9,6 +9,7 @@ import { z } from 'zod'
 import type { EffortLevel, LaunchPlan } from './types.js'
 
 import { getProvider, loadConfig } from './config.js'
+import { withGatewayRouting } from './gateway-routing.js'
 import { buildLaunchPlan } from './harnesses.js'
 
 const PROTOCOL_VERSION = 1
@@ -18,6 +19,7 @@ const recordSchema = z.record(z.string(), z.unknown())
 
 export interface HeadlessRunOptions {
   effort: EffortLevel
+  gatewayProvider?: string
   harness: string
   model: string
   nativeArgs?: string[]
@@ -53,12 +55,16 @@ export async function runHeadless(options: HeadlessRunOptions) {
   if (!provider) throw new Error(`unknown provider "${options.provider}"`)
   const plan = await buildLaunchPlan(options.harness, provider, options.model, {
     effort: options.effort,
+    gatewayProvider: options.gatewayProvider,
     statusline: false,
   })
   const prepared = await prepareHeadlessPlan({ options, plan, prompt })
 
   emit({
     effort: options.effort,
+    ...(options.gatewayProvider === undefined
+      ? {}
+      : { gatewayProvider: options.gatewayProvider }),
     harness: options.harness,
     model: options.model,
     provider: provider.name,
@@ -139,6 +145,16 @@ function emitUsage(usage: {
 }
 
 async function executeHeadlessPlan(options: {
+  harness: string
+  plan: LaunchPlan
+  stdin?: string
+}) {
+  return withGatewayRouting(options.plan, async (plan) =>
+    executePreparedHeadlessPlan({ ...options, plan }),
+  )
+}
+
+async function executePreparedHeadlessPlan(options: {
   harness: string
   plan: LaunchPlan
   stdin?: string

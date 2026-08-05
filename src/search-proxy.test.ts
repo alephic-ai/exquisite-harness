@@ -1135,8 +1135,9 @@ describe('search proxy', () => {
     expect(firecrawlRequests).toBe(1)
   })
 
-  test('chains search interception ahead of gateway cost capture', async () => {
+  test('chains search, cost capture, and Gateway provider routing', async () => {
     let firecrawlRequests = 0
+    let upstreamBody: unknown
     let upstreamRequests = 0
     const firecrawlBaseURL = await listen((_request, response) => {
       firecrawlRequests += 1
@@ -1152,8 +1153,9 @@ describe('search proxy', () => {
         }),
       )
     })
-    const upstreamBaseURL = await listen((_request, response) => {
+    const upstreamBaseURL = await listen(async (request, response) => {
       upstreamRequests += 1
+      upstreamBody = JSON.parse(await requestText(request))
       response.writeHead(200, { 'Content-Type': 'application/json' })
       response.end(JSON.stringify({ content: [], type: 'message' }))
     })
@@ -1198,6 +1200,10 @@ describe('search proxy', () => {
       bin: process.execPath,
       env: { ANTHROPIC_BASE_URL: upstreamBaseURL },
       gatewayCostCapture: { resumed: false },
+      gatewayRouting: {
+        provider: 'fireworks',
+        targetBaseURL: upstreamBaseURL,
+      },
       notes: [],
       searchProxy: {
         apiKey: 'fc-test',
@@ -1211,6 +1217,13 @@ describe('search proxy', () => {
     expect(code).toBe(0)
     expect(firecrawlRequests).toBe(1)
     expect(upstreamRequests).toBe(1)
+    expect(upstreamBody).toEqual({
+      messages: [{ content: 'hello', role: 'user' }],
+      model: 'test-model',
+      providerOptions: { gateway: { only: ['fireworks'] } },
+      stream: false,
+      tools: [],
+    })
   })
 
   test('isolates two concurrently launched search proxies', async () => {

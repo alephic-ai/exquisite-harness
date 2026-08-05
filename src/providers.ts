@@ -26,6 +26,17 @@ const openAiModelsSchema = z.object({
   ),
 })
 
+const gatewayEndpointsSchema = z.object({
+  data: z.looseObject({
+    endpoints: z.array(
+      z.looseObject({
+        provider_name: z.string(),
+        status: z.number().optional(),
+      }),
+    ),
+  }),
+})
+
 const ollamaTagsSchema = z.object({
   models: z.array(
     z.looseObject({
@@ -157,6 +168,32 @@ export async function listModels(provider: ResolvedProvider) {
   const key = provider.envKey ? await resolveKey(provider) : undefined
   const apiKey = key && key.source !== 'none' ? key.value : undefined
   return BEHAVIORS[provider.type].listModels(provider.baseURL, apiKey)
+}
+
+// Provider slugs are model-specific, so resolve them from the model endpoint
+// when the Gateway picker opens instead of treating the global provider list as
+// proof that a provider can serve this model.
+export async function listGatewayProviders(
+  provider: ResolvedProvider,
+  modelId: string,
+) {
+  if (provider.type !== 'vercel-gateway') {
+    throw new Error(`provider "${provider.name}" is not Vercel AI Gateway`)
+  }
+  const key = provider.envKey ? await resolveKey(provider) : undefined
+  const apiKey = key && key.source !== 'none' ? key.value : undefined
+  const modelPath = modelId.split('/').map(encodeURIComponent).join('/')
+  const body = await fetchJson(
+    `${withV1(provider.baseURL)}/models/${modelPath}/endpoints`,
+    apiKey,
+  )
+  const names = gatewayEndpointsSchema
+    .parse(body)
+    .data.endpoints.filter(
+      (endpoint) => endpoint.status === undefined || endpoint.status === 0,
+    )
+    .map((endpoint) => endpoint.provider_name)
+  return [...new Set(names)]
 }
 
 // The one copy of the cache flow: fresh cache → live fetch (write-through) →
