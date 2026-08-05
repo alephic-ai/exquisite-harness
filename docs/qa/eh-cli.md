@@ -35,8 +35,8 @@ Each prints env/args and exits 0 without launching.
 2. `eh --print-env codex ollama qwen3-coder` →
    `# plus args: codex -c model="qwen3-coder" ... wire_api="responses"`; no
    `env_key` line.
-3. `eh --print-env grok ollama qwen3-coder` → `GROK_BASE_URL=.../v1`,
-   `GROK_API_KEY='ollama'`, `--model qwen3-coder`. Repeat with `-e high` → args
+3. `eh --print-env grok ollama qwen3-coder` → `GROK_MODELS_BASE_URL=.../v1`,
+   `XAI_API_KEY='ollama'`, `--model qwen3-coder`. Repeat with `-e high` → args
    include `--reasoning-effort high`.
 4. `eh --print-env codex openrouter openai/gpt-5.1` (openrouter configured) →
    `wire_api="chat"`, `env_key="OPENROUTER_API_KEY"`.

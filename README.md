@@ -21,9 +21,10 @@
 **`eh` — pick a harness, pick a provider, go.**
 
 A small CLI that launches the agent harness you want (Claude Code, Codex, Grok
-CLI, opencode, pi) pointed at the model provider you want (Ollama, OpenRouter,
-Vercel AI Gateway) — with the right env vars, args, effort level, and keys wired
-up for you. Interactive when you want it, flags when you don't.
+[Build](https://x.ai/cli), opencode, pi) pointed at the model provider you want
+(Ollama, OpenRouter, Vercel AI Gateway) — with the right env vars, args, effort
+level, and keys wired up for you. Interactive when you want it, flags when you
+don't.
 
 ## Install
 

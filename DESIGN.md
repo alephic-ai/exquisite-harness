@@ -1,6 +1,6 @@
 # Exquisite Harness (`eh`) — Design
 
-A CLI that lets you choose a **harness** (Claude Code, Codex, Grok CLI,
+A CLI that lets you choose a **harness** (Claude Code, Codex, Grok Build,
 opencode, pi) and point it at a **provider** (Ollama, OpenRouter, Vercel AI
 Gateway), then launches it. Pick a cell in the matrix, `eh` wires it up.
 
@@ -13,7 +13,7 @@ them is the whole game, and the matrix is already mostly green natively:
 | ----------- | ----------------------- | -------------------------------------------------------------------------------- |
 | Claude Code | Anthropic Messages      | env: `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL`             |
 | Codex CLI   | OpenAI Responses / Chat | `-c` overrides (TOML): `model_providers.*`                                       |
-| Grok CLI    | OpenAI Chat Completions | env: `GROK_API_KEY`, `GROK_BASE_URL`, `--model`                                  |
+| Grok Build  | OpenAI Chat Completions | env: `XAI_API_KEY`, `GROK_MODELS_BASE_URL`, `--model`                            |
 | opencode    | OpenAI Chat (AI SDK)    | env: `OPENCODE_CONFIG_CONTENT` (inline provider def), `-m eh-<provider>/<model>` |
 | pi          | OpenAI Chat             | args: `--provider`/`--model`/`--thinking`; catalog + `~/.pi/agent/models.json`   |
 
@@ -180,7 +180,7 @@ Design follows the doc-backed patterns of the harnesses themselves:
 | ----------- | ----------------------------------------------------------------------------------------------- |
 | Claude Code | macOS Keychain (darwin) / `~/.claude/.credentials.json` 0600 (linux); `apiKeyHelper` shell hook |
 | Codex CLI   | `cli_auth_credentials_store=auto`: OS credential store, else `~/.codex/auth.json`               |
-| Grok CLI    | plaintext `~/.grok/user-settings.json`                                                          |
+| Grok Build  | OAuth in `~/.grok/auth.json` 0600; `XAI_API_KEY` fallback                                       |
 | gh / stripe | plaintext files in `$HOME`, env var wins                                                        |
 
 Two standard patterns adopted here:
@@ -245,11 +245,9 @@ resolve at launch time without eh storing anything.
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
   `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
   down). No writes to `~/.codex/config.toml`.
-- **grok**: env `GROK_API_KEY`, `GROK_BASE_URL`, args `--model <id>`, plus
-  `--reasoning-effort <level>` when explicitly set. Interactive selection
-  defaults to `auto` without showing the effort picker. (Flag shape follows
-  grok-cli's README; verify against installed version — `eh doctor` reports the
-  binary path.)
+- **grok**: env `XAI_API_KEY`, `GROK_MODELS_BASE_URL`, args `--model <id>` and
+  optional `--reasoning-effort <level>`. These are Grok Build's documented
+  custom-model and CLI interfaces; `eh doctor` reports the installed binary.
 - **opencode**: env `OPENCODE_CONFIG_CONTENT` — an inline JSON provider
   definition (`@ai-sdk/openai-compatible`, chat completions) that merges over
   the user's own config, so nothing is written to disk; `apiKey` uses
@@ -289,8 +287,8 @@ replicate: sessions in very deep paths don't list), codex
 id+cwd — files are date-organized, so the scan is bounded to 300 files / 25
 matches; title from the first `user_message` event, model from the first
 `turn_context`), grok
-`~/.grok/sessions/<encodeURIComponent(cwd)>/<id>/summary.json` (ready-made
-title/model/timestamps), pi
+`${GROK_HOME:-~/.grok}/sessions/<encodeURIComponent(cwd)>/<id>/summary.json`
+(ready-made title/model/timestamps), pi
 `~/.pi/agent/sessions/--<cwd, leading slash stripped, / \ : → ->--/<ts>_<id>.jsonl`
 (line-1 header gives the id — the cwd match comes from the directory name —
 first `model_change` the model, first user message the title; roots honor

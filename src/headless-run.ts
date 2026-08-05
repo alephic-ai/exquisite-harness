@@ -13,6 +13,8 @@ import { buildLaunchPlan } from './harnesses.js'
 import { EFFORT_LEVELS } from './types.js'
 
 const PROTOCOL_VERSION = 1
+const PROMPT_STDIN_HELP =
+  "eh run expects a prompt on stdin; pipe one in, for example: printf 'fix the parser' | eh run codex ollama qwen3-coder"
 const recordSchema = z.record(z.string(), z.unknown())
 
 export interface HeadlessRunOptions {
@@ -25,6 +27,7 @@ export interface HeadlessRunOptions {
 }
 
 interface NormalizerState {
+  pendingGrokText: string
   resultIsError: boolean
   sessionId: string | undefined
 }
@@ -39,6 +42,7 @@ interface ResolvedHeadlessRunOptions {
 }
 
 export async function runHeadless(options: HeadlessRunOptions) {
+  const prompt = readPrompt()
   let cleanup = async () => Promise.resolve()
 
   try {
@@ -59,9 +63,6 @@ export async function runHeadless(options: HeadlessRunOptions) {
       provider: options.provider,
       resumeSessionId: options.resumeSessionId,
     }
-    const prompt = readPrompt()
-    if (!prompt.trim()) throw new Error('eh run requires a prompt on stdin')
-
     const provider = getProvider(loadConfig(), resolved.provider)
     if (!provider) throw new Error(`unknown provider "${resolved.provider}"`)
     const plan = await buildLaunchPlan(
@@ -128,8 +129,7 @@ function emitGrokUsage(event: Record<string, unknown>, cumulative: boolean) {
 
 function emitNewSession(value: unknown, state: NormalizerState) {
   if (typeof value !== 'string' || value === state.sessionId) return state
-  emitSession(value)
-  return { ...state, sessionId: value }
+  return { ...state, sessionId: emitSession(value, state.sessionId) }
 }
 
 function emitRunError(event: Record<string, unknown>, fallback: string) {
@@ -145,10 +145,12 @@ function emitRunError(event: Record<string, unknown>, fallback: string) {
   emit({ message, type: 'run.error' })
 }
 
-function emitSession(value: unknown) {
-  if (typeof value === 'string') {
+function emitSession(value: unknown, current: string | undefined) {
+  if (typeof value === 'string' && value !== current) {
     emit({ sessionId: value, type: 'session.started' })
+    return value
   }
+  return current
 }
 
 function emitUsage(usage: {
@@ -210,6 +212,7 @@ async function executeHeadlessPlan(options: {
     child.stdin.end(options.stdin)
 
     let state: NormalizerState = {
+      pendingGrokText: '',
       resultIsError: false,
       sessionId: undefined,
     }
@@ -220,6 +223,7 @@ async function executeHeadlessPlan(options: {
         state,
       })
     }
+    if (options.harness === 'grok') state = flushGrokText(state)
 
     const completed = await completion
     if ('error' in completed) {
@@ -255,11 +259,26 @@ async function executeHeadlessPlan(options: {
   }
 }
 
+function flushGrokText(state: NormalizerState) {
+  if (!state.pendingGrokText) return state
+  emit({ text: state.pendingGrokText, type: 'assistant.text' })
+  return { ...state, pendingGrokText: '' }
+}
+
+function isGrokTextDelta(
+  event: Record<string, unknown>,
+): event is Record<string, unknown> & { data: string } {
+  return event.type === 'text' && typeof event.data === 'string'
+}
+
 function normalizeClaudeEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  if (event.type === 'system') emitSession(event.session_id)
+  let sessionId = state.sessionId
+  if (event.type === 'system') {
+    sessionId = emitSession(event.session_id, sessionId)
+  }
 
   if (event.type === 'assistant') {
     const message = asRecord(event.message)
@@ -273,8 +292,8 @@ function normalizeClaudeEvent(
     }
   }
 
-  if (event.type !== 'result') return state
-  emitSession(event.session_id)
+  if (event.type !== 'result') return { ...state, sessionId }
+  sessionId = emitSession(event.session_id, sessionId)
   const usage = asRecord(event.usage)
   if (usage) {
     emitUsage({
@@ -291,8 +310,9 @@ function normalizeClaudeEvent(
     (typeof event.subtype === 'string' && event.subtype !== 'success')
   if (resultIsError) emitRunError(event, 'Claude reported a failed result')
   return {
+    ...state,
     resultIsError: state.resultIsError || resultIsError,
-    sessionId: state.sessionId,
+    sessionId,
   }
 }
 
@@ -300,7 +320,10 @@ function normalizeCodexEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  if (event.type === 'thread.started') emitSession(event.thread_id)
+  const sessionId =
+    event.type === 'thread.started'
+      ? emitSession(event.thread_id, state.sessionId)
+      : state.sessionId
 
   if (event.type === 'item.completed') {
     const item = asRecord(event.item)
@@ -327,29 +350,33 @@ function normalizeCodexEvent(
 
   if (event.type === 'turn.failed' || event.type === 'error') {
     emitRunError(event, 'Codex reported a failed turn')
-    return { ...state, resultIsError: true }
+    return { ...state, resultIsError: true, sessionId }
   }
 
-  return state
+  return { ...state, sessionId }
 }
 
 function normalizeGrokEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  if (event.type === 'text' && typeof event.data === 'string') {
-    emit({ text: event.data, type: 'assistant.text' })
+  if (isGrokTextDelta(event)) {
+    return { ...state, pendingGrokText: state.pendingGrokText + event.data }
   }
+  let nextState = state
   if (event.type === 'usage') emitGrokUsage(event, false)
   if (event.type === 'end') {
-    emitSession(event.sessionId)
+    nextState = {
+      ...nextState,
+      sessionId: emitSession(event.sessionId, nextState.sessionId),
+    }
     emitGrokUsage(event, true)
   }
   if (event.type === 'error') {
     emitRunError(event, 'Grok reported an error')
-    return { ...state, resultIsError: true }
+    return { ...nextState, resultIsError: true }
   }
-  return state
+  return nextState
 }
 
 function normalizeHarnessLine(options: {
@@ -361,32 +388,40 @@ function normalizeHarnessLine(options: {
   try {
     decoded = JSON.parse(options.line)
   } catch {
+    const state =
+      options.harness === 'grok' ? flushGrokText(options.state) : options.state
     emit({ text: options.line, type: 'harness.output' })
-    return options.state
+    return state
   }
 
   const parsed = recordSchema.safeParse(decoded)
   if (!parsed.success) {
+    const state =
+      options.harness === 'grok' ? flushGrokText(options.state) : options.state
     emit({ text: options.line, type: 'harness.output' })
-    return options.state
+    return state
   }
 
   const event = parsed.data
+  const state =
+    options.harness === 'grok' && !isGrokTextDelta(event)
+      ? flushGrokText(options.state)
+      : options.state
   emit({ event, harness: options.harness, type: 'harness.event' })
 
   switch (options.harness) {
     case 'claude':
-      return normalizeClaudeEvent(event, options.state)
+      return normalizeClaudeEvent(event, state)
     case 'codex':
-      return normalizeCodexEvent(event, options.state)
+      return normalizeCodexEvent(event, state)
     case 'grok':
-      return normalizeGrokEvent(event, options.state)
+      return normalizeGrokEvent(event, state)
     case 'opencode':
-      return normalizeOpencodeEvent(event, options.state)
+      return normalizeOpencodeEvent(event, state)
     case 'pi':
-      return normalizePiEvent(event, options.state)
+      return normalizePiEvent(event, state)
     default:
-      return options.state
+      return state
   }
 }
 
@@ -598,5 +633,8 @@ async function prepareHeadlessPlan(options: {
 }
 
 function readPrompt() {
-  return readFileSync(0, 'utf8')
+  if (process.stdin.isTTY) throw new Error(PROMPT_STDIN_HELP)
+  const prompt = readFileSync(0, 'utf8')
+  if (!prompt.trim()) throw new Error(PROMPT_STDIN_HELP)
+  return prompt
 }

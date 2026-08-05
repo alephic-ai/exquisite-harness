@@ -180,15 +180,6 @@ describe('eh run', () => {
 
   test.each([
     [
-      'empty stdin',
-      'codex',
-      'ollama',
-      '',
-      [],
-      'none',
-      'eh run requires a prompt on stdin',
-    ],
-    [
       'malformed native args',
       'codex',
       'ollama',
@@ -360,11 +351,13 @@ describe('eh run', () => {
     const events = parseEvents(stdout)
 
     expect(exitCode).toBe(0)
-    expect(events).toContainEqual({
-      sessionId: 'claude-session',
-      type: 'session.started',
-      v: 1,
-    })
+    expect(events.filter((event) => event.type === 'session.started')).toEqual([
+      {
+        sessionId: 'claude-session',
+        type: 'session.started',
+        v: 1,
+      },
+    ])
     expect(events).toContainEqual({
       text: 'saw: review the change',
       type: 'assistant.text',
@@ -420,7 +413,11 @@ describe('eh run', () => {
         cwd: repoRoot,
         env: {
           ...process.env,
+          GROK_API_KEY: 'parent-grok-api-key',
+          GROK_BASE_URL: 'parent-grok-base-url',
+          GROK_MODELS_BASE_URL: 'parent-grok-models-base-url',
           PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XAI_API_KEY: 'parent-xai-api-key',
           XDG_CONFIG_HOME: fixture.configDir,
         },
       },
@@ -437,10 +434,14 @@ describe('eh run', () => {
       .object({
         event: z.object({
           args: z.array(z.string()),
+          grokApiKey: z.string(),
+          grokBaseUrl: z.string(),
+          grokModelsBaseUrl: z.string(),
           pid: z.number().int().positive(),
           prompt: z.string(),
           promptPath: z.string(),
           type: z.literal('fake.args'),
+          xaiApiKey: z.string(),
         }),
         type: z.literal('harness.event'),
       })
@@ -452,6 +453,10 @@ describe('eh run', () => {
     expect(fakeEvent.event.args).toContain('--permission-mode')
     expect(fakeEvent.event.args).toContain('plan')
     expect(fakeEvent.event.args).not.toContain('--always-approve')
+    expect(fakeEvent.event.grokModelsBaseUrl).toBe('http://localhost:11434/v1')
+    expect(fakeEvent.event.xaiApiKey).toBe('ollama')
+    expect(fakeEvent.event.grokBaseUrl).toBe('parent-grok-base-url')
+    expect(fakeEvent.event.grokApiKey).toBe('parent-grok-api-key')
     expect(existsSync(fakeEvent.event.promptPath)).toBe(false)
     expect(events).toContainEqual({
       sessionId: 'grok-session',
@@ -463,6 +468,27 @@ describe('eh run', () => {
       type: 'assistant.text',
       v: 1,
     })
+    expect(events.filter((event) => event.type === 'assistant.text')).toEqual([
+      {
+        text: 'saw: inspect the diff',
+        type: 'assistant.text',
+        v: 1,
+      },
+    ])
+    const assistantTextIndex = events.findIndex(
+      (event) => event.type === 'assistant.text',
+    )
+    const nativeUsageIndex = events.findIndex(
+      (event) =>
+        z
+          .object({
+            event: z.object({ type: z.literal('usage') }),
+            type: z.literal('harness.event'),
+          })
+          .safeParse(event).success,
+    )
+    expect(assistantTextIndex).toBeGreaterThan(-1)
+    expect(nativeUsageIndex).toBeGreaterThan(assistantTextIndex)
     expect(events).toContainEqual({
       cacheReadTokens: 1,
       cacheWriteTokens: 3,
@@ -700,6 +726,72 @@ describe('eh run', () => {
       })
     },
   )
+
+  test('flushes buffered Grok text when the stream ends', async () => {
+    const fixture = createFakeGrok()
+    const child = spawn(
+      process.execPath,
+      ['run', 'src/main.ts', 'run', 'grok', 'ollama', 'qwen3-coder'],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('text only')
+
+    const [exitCode, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stdout),
+      readStream(child.stderr),
+    ])
+    const events = parseEvents(stdout)
+    const assistantTextIndex = events.findIndex(
+      (event) => event.type === 'assistant.text',
+    )
+    const completedIndex = events.findIndex(
+      (event) => event.type === 'run.completed',
+    )
+
+    expect(exitCode).toBe(0)
+    expect(events.filter((event) => event.type === 'assistant.text')).toEqual([
+      { text: 'saw: text only', type: 'assistant.text', v: 1 },
+    ])
+    expect(assistantTextIndex).toBeGreaterThan(-1)
+    expect(completedIndex).toBeGreaterThan(assistantTextIndex)
+  })
+
+  test('explains how to provide a prompt when stdin is empty', async () => {
+    const fixture = createFakeCodex()
+    const child = spawn(
+      process.execPath,
+      ['run', 'src/main.ts', 'run', 'codex', 'ollama', 'qwen3-coder'],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end()
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+
+    expect(exitCode).toBe(1)
+    expect(stdout).toBe('')
+    expect(stderr).toBe(
+      "eh: eh run expects a prompt on stdin; pipe one in, for example: printf 'fix the parser' | eh run codex ollama qwen3-coder\n",
+    )
+  })
 
   test('converts a semantic Codex failure into a non-zero wrapper exit', async () => {
     const fixture = createFakeCodex()
@@ -939,11 +1031,25 @@ const args = process.argv.slice(2)
 const promptPath = args[args.indexOf('--prompt-file') + 1]
 const prompt = readFileSync(promptPath, 'utf8')
 const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
-emit({ type: 'fake.args', args, pid: process.pid, prompt, promptPath })
+emit({
+  type: 'fake.args',
+  args,
+  grokApiKey: process.env.GROK_API_KEY,
+  grokBaseUrl: process.env.GROK_BASE_URL,
+  grokModelsBaseUrl: process.env.GROK_MODELS_BASE_URL,
+  pid: process.pid,
+  prompt,
+  promptPath,
+  xaiApiKey: process.env.XAI_API_KEY,
+})
 if (prompt === 'wait for signal') {
   setInterval(() => {}, 1000)
+} else if (prompt === 'text only') {
+  emit({ type: 'text', data: 'saw: ' })
+  emit({ type: 'text', data: prompt })
 } else {
-emit({ type: 'text', data: 'saw: ' + prompt })
+emit({ type: 'text', data: 'saw: ' })
+emit({ type: 'text', data: prompt })
 emit({
   type: 'usage',
   usage: {
