@@ -311,8 +311,14 @@ Claude, request routing composes with exact cost capture as
   Anthropic SSE event payloads without modification and records
   `provider_metadata.gateway.{generationId,cost}` in a session ledger. Those
   unprefixed totals are the gateway's exact billed costs, deduplicated by
-  generation. A resumed session is only exact when its ledger already covers the
-  session; otherwise it shows `—`. Non-gateway paid sessions fall back to
+  generation. A request that finishes without cost metadata (e.g. an error or a
+  turn the gateway didn't tag) counts against the session's exactness but does
+  not null out the others: the sum of the priced generations is still shown,
+  prefixed with `~` to mark it partial, so one unpriced request can't hide the
+  whole session's cost. The session reads as `—` only when nothing is priced
+  or the session is resumed (its ledger is written with `complete: false` and
+  never flips, so a resumed session's total is never shown exact). Non-gateway
+  paid sessions fall back to
   transcript tokens × explicitly published rates and prefix the result with
   `~`; providers with published zero rates show exact `$0`. Missing cache rates make the estimate unavailable rather than inferred. Claude's `cost.total_cost_usd`
   is ignored because it applies Anthropic rates.

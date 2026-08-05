@@ -136,13 +136,14 @@ export function formatSessionCostUsd(amount: number) {
 }
 
 export function formatStatuslineCost(props: {
-  capturedCost: string | undefined
+  capturedCost: { exact: boolean; total: string } | undefined
   captureExpected: boolean
   estimatedCost: string | undefined
   rates: ModelRates | undefined
 }) {
   if (props.capturedCost != null) {
-    return formatExactSessionCostUsd(props.capturedCost)
+    const formatted = formatExactSessionCostUsd(props.capturedCost.total)
+    return props.capturedCost.exact ? formatted : `~${formatted}`
   }
   if (props.captureExpected || props.estimatedCost == null) return '—'
   if (ratesAreFree(props.rates)) return props.estimatedCost

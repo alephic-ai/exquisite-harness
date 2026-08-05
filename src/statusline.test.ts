@@ -134,15 +134,23 @@ describe('sessionCostUsd', () => {
 })
 
 describe('formatStatuslineCost', () => {
-  test('distinguishes exact, estimated, free, and unavailable costs', () => {
+  test('distinguishes exact, partial, estimated, free, and unavailable costs', () => {
     expect(
       formatStatuslineCost({
-        capturedCost: '0.0012300',
+        capturedCost: { exact: true, total: '0.0012300' },
         captureExpected: true,
         estimatedCost: '$9.99',
         rates: { inputPerMillion: 1, outputPerMillion: 2 },
       }),
     ).toBe('$0.0012300')
+    expect(
+      formatStatuslineCost({
+        capturedCost: { exact: false, total: '0.0012300' },
+        captureExpected: true,
+        estimatedCost: '$9.99',
+        rates: { inputPerMillion: 1, outputPerMillion: 2 },
+      }),
+    ).toBe('~$0.0012300')
     expect(
       formatStatuslineCost({
         capturedCost: undefined,
