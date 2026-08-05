@@ -15,9 +15,10 @@ directly; interactive clack flows run under a PTY harness.
   a **fake harness binary**; F.4 is the explicit real-Claude exception. OpenCode
   session enumeration shells out to the real binary (`opencode session list`),
   and pi launch steps need a real `~/.pi/agent/models.json` for ollama.
-- No real API keys are needed except for conditional step F.4. Other
-  OpenRouter/Vercel AI Gateway steps use `--print-env` and a fake
-  `secret-tool`/Keychain probe.
+- A real Gateway key is needed for D.11, F.4, and F.6. A real Firecrawl key is
+  needed for G.3 and G.5. Other provider/key steps use `--print-env`, loopback
+  fakes, and a fake `secret-tool`/Keychain probe; F.5, G.1, G.2, and G.4 use
+  loopback fakes.
 - PTY harness: `scripts/pty-drive.mjs` (node-pty if available, else `script(1)`
   on macOS / `python3 -c pty`) drives interactive flows.
 
@@ -69,6 +70,13 @@ Each prints env/args and exits 0 without launching.
 13. `eh -r --print-env pi ollama qwen3-coder` / `… opencode …` → args end with
     `--continue` (the --print-env path resolves no session id; `--session <id>`
     appears only via the interactive picker).
+14. `eh --print-env claude ollama qwen3-coder --search firecrawl` → actionable
+    error explaining that a process-scoped proxy requires a normal launch.
+15. `eh codex ollama qwen3-coder --search firecrawl` → "only supported by Claude
+    Code" before attempting search-key resolution.
+16. `AI_GATEWAY_API_KEY=test eh --print-env --gateway-provider bedrock codex vercel-ai-gateway anthropic/claude-sonnet-4.6`
+    → prints the normal Gateway launch plan plus `gateway provider: bedrock`; it
+    does not start a proxy in print-only mode.
 
 ## C. Config / error paths
 
@@ -97,20 +105,26 @@ Each prints env/args and exits 0 without launching.
 9. cd into a directory, delete it from another shell, then any `eh` command →
    the runtime refuses before eh's code runs ("The current working directory was
    deleted…"), non-zero exit — no raw `uv_cwd` stack trace.
+10. `eh --print-env --gateway-provider bedrock codex ollama qwen3-coder` → error
+    `--gateway-provider requires a Vercel AI Gateway provider`, non-zero exit.
+    An invalid slug such as `not valid` also fails before launch.
 
 ## D. Interactive flows (PTY harness)
 
 Drive each with the PTY; assert on screen text.
 
 1. **First-run wizard**: empty config dir, run `eh`. → intro banner, a
-   "detected" note listing harnesses + ollama status, then the built-ins
-   "nothing to write" success line and Home. The default config is written to
-   disk without a redundant confirmation prompt: empty `profiles`, `providers`,
-   and `recent`, plus `version: 1`.
+   "detected" note listing harnesses + ollama status, then either the generated
+   config or a built-ins-only note. The config is written to disk and home opens
+   without a redundant confirmation prompt.
 2. **Home**: with one recent entry present, run `eh`. → home select lists the
    recent combo with a relative-time hint, plus "new session →", "providers",
-   "doctor". Enter on the recent → launch-plan note with **redacted** secrets
-   (`ANTHROPIC_AUTH_TOKEN=•••`), and go/save/back options.
+   "doctor". Enter providers → one list with disabled "Model providers" and
+   "Search providers" headings; Native and Firecrawl appear in the latter, the
+   active default is labeled, and the other provider exposes a make-default
+   action. Firecrawl also exposes set/delete key actions. Enter on the recent →
+   launch-plan note with **redacted** secrets (`ANTHROPIC_AUTH_TOKEN=•••`), and
+   go/save/back options.
 3. **Pickers**: run `eh claude` → provider picker lists ollama (compatible) and,
    if configured, openrouter. Arrow down to focus openrouter → its hint reads
    "openai-chat · needs router" (clack only shows the focused row's hint);
@@ -147,6 +161,10 @@ Drive each with the PTY; assert on screen text.
     `eh -r opencode -p ollama -m qwen3-coder` → only the valid row appears with
     `unknown model`; selecting it launches with `--session <valid-id>` and the
     malformed rows do not crash or suppress it.
+12. **Gateway provider picker**: select Vercel AI Gateway and a model → the next
+    picker lists `automatic` first, then the model's active endpoint providers,
+    plus manual entry. Pick one → the confirm note shows `gateway: <slug>`; save
+    as a profile and relaunch → the pin is retained without another prompt.
 
 ## E. Key storage
 
@@ -163,6 +181,14 @@ Drive each with the PTY; assert on screen text.
    script; rerun only if keys.ts changed.)
 5. Non-TTY `eh provider key openrouter` → "storing a key needs an interactive
    terminal", non-zero exit.
+6. `eh search key firecrawl` follows the same masked-prompt and storage rules,
+   under the separate `search:firecrawl` account. `FIRECRAWL_API_KEY` overrides
+   that stored value; `--delete` removes only the search credential.
+7. Home → providers → Firecrawl → make default writes
+   `defaultSearchProvider: "firecrawl"`; the list labels Firecrawl as default.
+   Setting a new key first asks whether Firecrawl should become the default.
+   Making Native default reverses the config and retargets Claude recents; saved
+   profiles keep their explicit search choice.
 
 ## F. Launch / spawn
 
@@ -181,8 +207,45 @@ Drive each with the PTY; assert on screen text.
    predates its ledger → cost displays `—`, not a partial total. Raw SSE →
    ledger equality is covered by `src/gateway-costs.test.ts`, which sends the
    stream through the proxy and compares the unchanged response with the ledger.
+5. Run the `chains search, cost capture, and Gateway provider routing` case in
+   `src/search-proxy.test.ts`. → ordinary Messages traffic reaches the fake
+   gateway through all three proxies with the requested provider pin, hidden
+   search reaches fake Firecrawl only, and the Firecrawl credential is absent
+   from the child environment.
+6. **Conditional provider-routing check:** launch the same Gateway model with a
+   known endpoint slug via `--gateway-provider`, send one short prompt, and
+   confirm the Gateway trace used that provider. A deliberately unavailable slug
+   must fail rather than fall back. Request-body injection and unchanged
+   streamed responses are covered by `src/gateway-routing.test.ts` for Anthropic
+   Messages, OpenAI Responses, and Chat Completions; model discovery and
+   count-token requests are relayed unchanged.
 
-## G. Models cache
+## G. Claude WebSearch/WebFetch → Firecrawl shim
+
+1. `bun test src/search-proxy.test.ts` → the hidden Claude Code request with a
+   `web_search_20250305` tool calls fake Firecrawl `POST /v2/search` with the
+   expected bearer token, query, and allowed/blocked-domain constraints, returns
+   `server_tool_use` and `web_search_tool_result` SSE blocks with
+   `web_search_requests: 1`, and never reaches the model-provider upstream.
+2. The same test suite sends an ordinary streamed Messages request → headers and
+   body reach the fake upstream, its SSE body passes through byte-for-byte, and
+   Firecrawl is not contacted. A configured upstream path prefix and query
+   string are preserved.
+3. With a real Firecrawl key stored, launch real Claude Code through a
+   configured model provider and force exactly one `WebSearch` call → the UI
+   reports `Did 1 search`, the persisted tool result contains Firecrawl
+   links/descriptions, the final answer links a returned source, and the proxy
+   exits with the harness.
+4. The loopback tests send Claude Code `PostToolUse` and `PostToolUseFailure`
+   payloads for `WebFetch` → fake Firecrawl receives `POST /v2/scrape` with the
+   selected URL; success replaces the structured tool output with Firecrawl
+   markdown and updates HTTP code/status text together, while native failure
+   receives the markdown as recovery context.
+5. In a real Firecrawl-backed Claude session, force exactly one `WebFetch` → the
+   persisted tool result contains the `Firecrawl fetched` marker and page
+   content, and the final answer uses that content.
+
+## H. Models cache
 
 1. `eh models ollama` (fresh) → prints live models with size hints; writes
    `cache.json`.
@@ -195,11 +258,13 @@ Drive each with the PTY; assert on screen text.
    stale list remains selectable without a stack trace. Restore the endpoint
    after.
 
-## H. Doctor / providers
+## I. Doctor / providers
 
 1. `eh doctor` → per-harness installed/not-installed lines, per-provider status;
    ollama shows "N models"; configured key providers show "key from
-   env|keychain|file" or the "run eh provider key <name>" hint.
+   env|keychain|file" or the "run eh provider key <name>" hint; Firecrawl shows
+   the same key source or `eh search key firecrawl` hint without making a live
+   search request.
 
 ## I. Headless runs
 
@@ -250,7 +315,9 @@ Drive each with the PTY; assert on screen text.
 - Interactive launch/resume steps use fake binaries by default; the real Claude
   check in F.4 remains conditional on an installed binary and key. Headless
   steps I.2-I.3 deliberately run short real pi/opencode sessions against local
-  Ollama; other cloud-harness live runs remain conditional on credentials.
+  Ollama; other cloud-harness live runs remain conditional on credentials. Real
+  cloud-harness and Firecrawl checks remain conditional on their installed
+  binaries and credentials.
 - OpenRouter/Vercel AI Gateway live model-list fetches need real keys and are
   SKIPPED unless keys are present.
 - Linux Secret Service is verified against a simulated `secret-tool`; a real
@@ -259,11 +326,12 @@ Drive each with the PTY; assert on screen text.
 ## Automated coverage
 
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
-- `bun test` — exact gateway stream/cost capture, active-provider pricing
-  ranges, transcript usage/cost fallbacks, `src/headless-run.test.ts` (all five
-  native headless adapters, normalized NDJSON, prompt transport, session resume,
-  failure and signal semantics), `src/sessions.test.ts` (resume session-store
-  parsers), `src/pi.test.ts` (pi provider matching / baseURL normalization,
-  commented JSON, exact env references), and `src/opencode.test.ts` (inline
-  config payload). OpenCode session tests cover per-row isolation for both
-  positive and negative out-of-range timestamps.
+- `bun test` — `src/statusline.test.ts` (transcript usage),
+  `src/sessions.test.ts` (resume session-store parsers), `src/config.test.ts`
+  (search-default precedence and recent retargeting), and
+  `src/search-proxy.test.ts` (Firecrawl search/fetch interception + Anthropic
+  passthrough), plus exact Gateway stream/cost capture, provider routing and
+  model discovery, active-provider pricing ranges, transcript usage/cost
+  fallbacks, all five headless adapters and their normalized NDJSON/failure
+  contracts, Pi provider matching/config parsing, OpenCode inline config, and
+  per-row session isolation for out-of-range timestamps.

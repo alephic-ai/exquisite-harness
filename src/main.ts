@@ -1,7 +1,12 @@
 import { Command } from '@commander-js/extra-typings'
 
 import pkg from '../package.json' with { type: 'json' }
-import { getProvider, loadConfig, saveConfig } from './config.js'
+import {
+  getProvider,
+  loadConfig,
+  saveConfig,
+  searchProviderForSelection,
+} from './config.js'
 import { doctor } from './doctor.js'
 import { launchFlow } from './flow.js'
 import { runHeadless } from './headless-run.js'
@@ -13,6 +18,8 @@ import {
   providerKeyDelete,
   providerKeySet,
   providersCommand,
+  searchProviderKeyDelete,
+  searchProviderKeySet,
 } from './manage.js'
 import { listModelsCached } from './providers.js'
 import { runStatusline } from './statusline.js'
@@ -20,6 +27,7 @@ import { EFFORT_LEVELS } from './types.js'
 import { intro } from './ui/output.js'
 import { addProvider, wizard } from './ui/wizard.js'
 import { runUpdate } from './update.js'
+import { runWebFetchHook } from './web-fetch-hook.js'
 
 const program = new Command()
 
@@ -40,7 +48,12 @@ program
     '-p, --provider <name>',
     'provider: ollama, openrouter, vercel-ai-gateway, …',
   )
+  .option(
+    '--gateway-provider <slug>',
+    'pin Vercel AI Gateway to one upstream provider',
+  )
   .option('-m, --model <id>', 'model id')
+  .option('--search <provider>', 'web search/fetch: native, firecrawl')
   .option('-s, --save <name>', 'save the combo as a profile, then launch')
   .option(
     '-e, --effort <level>',
@@ -65,9 +78,11 @@ program
       opts.model ?? model,
       {
         effort,
+        gatewayProvider: opts.gatewayProvider,
         printEnvOnly: opts.printEnv === true,
         resume: opts.resume === true,
         saveAs: opts.save,
+        searchProvider: opts.search,
       },
     )
   })
@@ -84,14 +99,21 @@ Common workflows:
       save the combo as profile "cheap-local", then launch
   eh -r                               pick a session from this directory (all harnesses)
   eh -r codex -p ollama               only codex sessions; -p/-m/-e override the wiring
+  eh claude vercel-ai-gateway anthropic/claude-sonnet-4.6 --gateway-provider bedrock
+      pin this run to one Vercel AI Gateway upstream provider
   eh -r --print-env claude ollama qwen3-coder
       scripted resume: no picker, prints env + bare resume args
   eh --print-env claude ollama qwen3-coder
       print the export lines instead of launching
   printf 'fix the parser' | eh run codex ollama qwen3-coder
       headless run: versioned NDJSON on stdout, harness stderr preserved
+  printf 'summarize' | eh run claude vercel-ai-gateway anthropic/claude-sonnet-4.6 --gateway-provider bedrock
+      headless Gateway run pinned to one upstream provider
   eh doctor                           harnesses installed? providers reachable? keys set?
   eh provider key vercel-ai-gateway   store an API key (masked prompt → OS credential store)
+  eh search key firecrawl             store the Firecrawl search key the same way
+  eh claude ollama qwen3-coder --search firecrawl
+                                      route WebSearch/WebFetch through Firecrawl
   eh update                           self-update to the latest release
 `,
   )
@@ -108,10 +130,15 @@ program
     '--native-args-json <json>',
     'JSON string array of native harness args to prepend before machine-mode args',
   )
+  .option(
+    '--gateway-provider <slug>',
+    'pin Vercel AI Gateway to one upstream provider',
+  )
   .option('--resume-session <id>', 'resume an existing native session')
   .action(async (harness, provider, model, opts) => {
     process.exitCode = await runHeadless({
       effort: opts.reasoningEffort,
+      gatewayProvider: opts.gatewayProvider,
       harness,
       model,
       nativeArgsJson: opts.nativeArgsJson,
@@ -145,6 +172,15 @@ program
   .description('render the eh Claude statusline (stdin: Claude status JSON)')
   .action(async () => {
     await runStatusline()
+  })
+
+// Invoked by Claude Code's WebFetch hooks (stdin hook JSON → stdout decision).
+// Hidden because users configure the provider, not this bridge command.
+program
+  .command('web-fetch-hook', { hidden: true })
+  .description('route Claude WebFetch hook payloads through eh')
+  .action(async () => {
+    await runWebFetchHook()
   })
 
 program
@@ -187,6 +223,23 @@ providerCmd
     await providerKeySet(config, name)
   })
 
+const searchCmd = program.command('search').description('manage web search')
+searchCmd
+  .command('key <name>')
+  .description('store a search API key (Keychain or 0600 secrets file)')
+  .option('--delete', 'delete the stored key instead')
+  .action(async (name, opts) => {
+    const config = loadConfig()
+    if (opts.delete) {
+      await searchProviderKeyDelete(config, name)
+      return
+    }
+    if (!process.stdout.isTTY) {
+      throw new Error('storing a key needs an interactive terminal')
+    }
+    await searchProviderKeySet(config, name)
+  })
+
 const profileCmd = program.command('profile').description('manage profiles')
 profileCmd
   .command('save <name>')
@@ -197,9 +250,11 @@ profileCmd
     if (!last) throw new Error('no recent launch to save')
     profileSave(config, name, {
       effort: last.effort,
+      gatewayProvider: last.gatewayProvider,
       harness: last.harness,
       model: last.model,
       provider: last.provider,
+      searchProvider: searchProviderForSelection(config, last),
     })
   })
 profileCmd

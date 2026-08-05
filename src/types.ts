@@ -5,7 +5,12 @@ export interface LaunchPlan {
   gatewayCostCapture?: {
     resumed: boolean
   }
+  gatewayRouting?: {
+    provider: string
+    targetBaseURL: string
+  }
   notes: string[]
+  searchProxy?: SearchProxy
 }
 
 export interface ModelInfo {
@@ -22,11 +27,27 @@ export const PROVIDER_TYPES = [
 ] as const
 export type ProviderType = (typeof PROVIDER_TYPES)[number]
 
+export const SEARCH_PROVIDER_TYPES = ['firecrawl'] as const
+export interface SearchBackend {
+  apiKey: string
+  baseURL: string
+  envKey: string
+  type: SearchProviderType
+}
+
+export type SearchProviderType = (typeof SEARCH_PROVIDER_TYPES)[number]
+
+export interface SearchProxy extends SearchBackend {
+  upstreamBaseURL: string
+}
+
 export interface Selection {
   effort?: EffortLevel
+  gatewayProvider?: string
   harness: string
   model: string
   provider: string
+  searchProvider?: string
 }
 
 // Reasoning/effort levels, normalized across harnesses. `auto` means the

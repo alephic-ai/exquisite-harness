@@ -3,7 +3,12 @@ import { isCancel, select } from '@clack/prompts'
 import type { Config, RecentEntry } from '../config.js'
 import type { Selection } from '../types.js'
 
-import { canonicalProviderName, providerLabel } from '../config.js'
+import {
+  canonicalProviderName,
+  providerLabel,
+  searchProviderForSelection,
+  searchProviderLabel,
+} from '../config.js'
 import { timeAgo } from '../time-ago.js'
 import { bail } from './output.js'
 
@@ -24,7 +29,7 @@ export async function home(config: Config) {
     options: [
       ...recents.map((r, i) => ({
         hint: timeAgo(r.usedAt),
-        label: recentLabel(r),
+        label: recentLabel(config, r),
         value: `recent:${String(i)}`,
       })),
       {
@@ -33,7 +38,7 @@ export async function home(config: Config) {
         value: NEW,
       },
       {
-        hint: 'configured providers + status',
+        hint: 'model + search providers',
         label: 'providers',
         value: PROVIDERS,
       },
@@ -51,17 +56,25 @@ export async function home(config: Config) {
   return { kind: 'recent' as const, recent }
 }
 
-export function selectionFromRecent(r: RecentEntry) {
+export function selectionFromRecent(config: Config, r: RecentEntry) {
   const selection: Selection = {
     effort: r.effort,
+    gatewayProvider: r.gatewayProvider,
     harness: r.harness,
     model: r.model,
     provider: canonicalProviderName(r.provider),
+    searchProvider: searchProviderForSelection(config, r),
   }
   return selection
 }
 
-function recentLabel(r: RecentEntry) {
+function recentLabel(config: Config, r: RecentEntry) {
   const effort = r.effort && r.effort !== 'auto' ? ` @${r.effort}` : ''
-  return `${r.harness} · ${providerLabel(r.provider)} · ${r.model}${effort}`
+  const searchProvider = searchProviderForSelection(config, r)
+  const search =
+    searchProvider !== 'native'
+      ? ` · ${searchProviderLabel(searchProvider)} search`
+      : ''
+  const gateway = r.gatewayProvider ? ` via ${r.gatewayProvider}` : ''
+  return `${r.harness} · ${providerLabel(r.provider)}${gateway} · ${r.model}${effort}${search}`
 }

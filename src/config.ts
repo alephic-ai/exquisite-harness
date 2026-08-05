@@ -3,9 +3,13 @@ import os from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
 
-import type { ProviderType, Selection } from './types.js'
+import type { ProviderType, SearchProviderType, Selection } from './types.js'
 
-import { EFFORT_LEVELS, PROVIDER_TYPES } from './types.js'
+import {
+  EFFORT_LEVELS,
+  PROVIDER_TYPES,
+  SEARCH_PROVIDER_TYPES,
+} from './types.js'
 
 const providerConfigSchema = z.object({
   baseURL: z.string().optional(),
@@ -13,11 +17,19 @@ const providerConfigSchema = z.object({
   type: z.enum(PROVIDER_TYPES),
 })
 
+const searchProviderConfigSchema = z.object({
+  baseURL: z.string().optional(),
+  envKey: z.string().optional(),
+  type: z.enum(SEARCH_PROVIDER_TYPES),
+})
+
 const selectionSchema = z.object({
   effort: z.enum(EFFORT_LEVELS).optional(),
+  gatewayProvider: z.string().optional(),
   harness: z.string(),
   model: z.string(),
   provider: z.string(),
+  searchProvider: z.string().optional(),
 })
 
 // cwd is optional so recents written before `eh -r` existed still parse.
@@ -27,22 +39,32 @@ const recentEntrySchema = selectionSchema.extend({
 })
 
 const configSchema = z.object({
+  defaultSearchProvider: z.string().optional(),
   profiles: z.record(z.string(), selectionSchema).default({}),
   providers: z.record(z.string(), providerConfigSchema).default({}),
   recent: z.array(recentEntrySchema).default([]),
+  searchProviders: z.record(z.string(), searchProviderConfigSchema).default({}),
   version: z.literal(1),
 })
 
 export type Config = z.infer<typeof configSchema>
 export type ProviderConfig = z.infer<typeof providerConfigSchema>
 export type RecentEntry = z.infer<typeof recentEntrySchema>
-
 export interface ResolvedProvider {
   baseURL: string
   envKey?: string
   name: string
   type: ProviderType
 }
+
+export interface ResolvedSearchProvider {
+  baseURL: string
+  envKey: string
+  name: string
+  type: SearchProviderType
+}
+
+export type SearchProviderConfig = z.infer<typeof searchProviderConfigSchema>
 
 const MAX_RECENT = 10
 
@@ -54,6 +76,14 @@ const DEFAULT_BASE_URLS: Record<ProviderType, string> = {
 
 const DEFAULT_ENV_KEYS: Partial<Record<ProviderType, string>> = {
   'vercel-gateway': 'AI_GATEWAY_API_KEY',
+}
+
+const DEFAULT_SEARCH_BASE_URLS: Record<SearchProviderType, string> = {
+  firecrawl: 'https://api.firecrawl.dev',
+}
+
+const DEFAULT_SEARCH_ENV_KEYS: Record<SearchProviderType, string> = {
+  firecrawl: 'FIRECRAWL_API_KEY',
 }
 
 // All three matrix providers are built in — visible with no config file at
@@ -73,6 +103,10 @@ const BUILTIN_PROVIDERS: Record<string, ProviderConfig> = {
   },
 }
 
+const BUILTIN_SEARCH_PROVIDERS: Record<string, SearchProviderConfig> = {
+  firecrawl: { type: 'firecrawl' },
+}
+
 // Old short name still resolves so profiles/recents/keys keep working.
 const PROVIDER_NAME_ALIASES: Record<string, string> = {
   gateway: 'vercel-ai-gateway',
@@ -82,6 +116,11 @@ const BUILTIN_PROVIDER_LABELS: Record<string, string> = {
   'ollama': 'Ollama',
   'openrouter': 'OpenRouter',
   'vercel-ai-gateway': 'Vercel AI Gateway',
+}
+
+const BUILTIN_SEARCH_PROVIDER_LABELS: Record<string, string> = {
+  firecrawl: 'Firecrawl',
+  native: 'Native',
 }
 
 export function allProviders(config: Config) {
@@ -95,6 +134,19 @@ export function allProviders(config: Config) {
     envKey: p.envKey ?? DEFAULT_ENV_KEYS[p.type],
     name,
     type: p.type,
+  }))
+}
+
+export function allSearchProviders(config: Config) {
+  const merged: Record<string, SearchProviderConfig> = {
+    ...BUILTIN_SEARCH_PROVIDERS,
+    ...config.searchProviders,
+  }
+  return Object.entries(merged).map(([name, provider]) => ({
+    baseURL: provider.baseURL ?? DEFAULT_SEARCH_BASE_URLS[provider.type],
+    envKey: provider.envKey ?? DEFAULT_SEARCH_ENV_KEYS[provider.type],
+    name,
+    type: provider.type,
   }))
 }
 
@@ -133,6 +185,49 @@ export function providerLabel(name: string) {
   return BUILTIN_PROVIDER_LABELS[canonicalProviderName(name)] ?? name
 }
 
+export function searchProviderLabel(name: string) {
+  return BUILTIN_SEARCH_PROVIDER_LABELS[name] ?? name
+}
+
+// Keep search credentials separate from model-provider credentials even when
+// a user gives both providers the same config name.
+export function searchProviderForSelection(
+  config: Config,
+  selection: Partial<Selection>,
+) {
+  if (selection.searchProvider !== undefined) return selection.searchProvider
+  return selection.harness === 'claude'
+    ? (config.defaultSearchProvider ?? 'native')
+    : 'native'
+}
+
+export function searchProviderKeyAccount(name: string) {
+  return `search:${name}`
+}
+
+// Recents are home-screen shortcuts, so changing the global preference should
+// make those shortcuts honor it too. Profiles remain reproducible and keep the
+// search provider they were explicitly saved with.
+export function withDefaultSearchProvider(config: Config, name: string) {
+  const recent = config.recent.map((entry) =>
+    entry.harness === 'claude' ? { ...entry, searchProvider: name } : entry,
+  )
+  return {
+    ...config,
+    defaultSearchProvider: name,
+    // Retargeting native and external shortcuts can collapse two entries into
+    // the same launch. Keep only the newest one (recents are newest-first).
+    recent: recent.filter(
+      (entry, index) =>
+        recent.findIndex(
+          (candidate) =>
+            sameRecentSelection(config, candidate, entry) &&
+            candidate.cwd === entry.cwd,
+        ) === index,
+    ),
+  }
+}
+
 // Keychain/file account names to try for a provider (canonical first, then
 // legacy aliases so a key stored as "gateway" still resolves).
 export function providerKeyAccounts(name: string) {
@@ -152,14 +247,20 @@ const RESERVED_PROFILE_NAMES = [
   'provider',
   'providers',
   'run',
+  'search',
   'setup',
   'statusline',
   'update',
+  'web-fetch-hook',
 ]
 
 export function getProvider(config: Config, name: string) {
   const canon = canonicalProviderName(name)
   return allProviders(config).find((p) => p.name === canon)
+}
+
+export function getSearchProvider(config: Config, name: string) {
+  return allSearchProviders(config).find((provider) => provider.name === name)
 }
 
 export function loadConfig() {
@@ -200,13 +301,22 @@ export function pushRecent(config: Config, selection: Selection) {
   const rest = config.recent.filter(
     (r) =>
       !(
-        r.harness === selection.harness &&
-        r.provider === selection.provider &&
-        r.model === selection.model &&
+        sameRecentSelection(config, r, selection) &&
         (r.cwd === undefined || r.cwd === process.cwd())
       ),
   )
   return { ...config, recent: [entry, ...rest].slice(0, MAX_RECENT) }
+}
+
+function sameRecentSelection(config: Config, a: Selection, b: Selection) {
+  return (
+    a.harness === b.harness &&
+    a.provider === b.provider &&
+    a.model === b.model &&
+    a.gatewayProvider === b.gatewayProvider &&
+    searchProviderForSelection(config, a) ===
+      searchProviderForSelection(config, b)
+  )
 }
 
 // The one wording for a profile-name collision — returned for validators,

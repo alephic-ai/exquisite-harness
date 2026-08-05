@@ -160,14 +160,27 @@ export async function runStatusline() {
   process.stdout.write(`${renderPowerline(segments)}\n`)
 }
 
-// Write the session settings file Claude loads via --settings. Only sets
-// statusLine so user/project settings still apply for everything else.
+// Write the session settings file Claude loads via --settings. These additions
+// merge with user/project settings rather than mutating either file.
 export function writeClaudeStatuslineSettings() {
   mkdirSync(configDir(), { recursive: true })
   const settingsPath = path.join(configDir(), 'claude-statusline.json')
+  const webFetchHook = {
+    hooks: [
+      {
+        ...ehCommandHook('web-fetch-hook'),
+        timeout: 90,
+      },
+    ],
+    matcher: 'WebFetch',
+  }
   const settings = {
+    hooks: {
+      PostToolUse: [webFetchHook],
+      PostToolUseFailure: [webFetchHook],
+    },
     statusLine: {
-      command: ehStatuslineCommand(),
+      command: ehCommandString('statusline'),
       padding: 0,
       refreshInterval: 5,
       type: 'command',
@@ -265,16 +278,25 @@ function formatTokenCount(n: number) {
   return String(n)
 }
 
-// Re-invoke this binary (or tsx entry) so the statusline shares pricing logic.
-function ehStatuslineCommand() {
+// Re-invoke this binary (or tsx entry) for Claude's statusline and hooks.
+function ehCommandHook(subcommand: string) {
+  return { ...ehCommandParts(subcommand), type: 'command' }
+}
+
+function ehCommandParts(subcommand: string) {
   if (isStandaloneBinary()) {
-    return `${shellQuote(process.execPath)} statusline`
+    return { args: [subcommand], command: process.execPath }
   }
   // Dev: node/tsx + this entry file.
-  const parts = [process.execPath, ...process.execArgv]
-  if (process.argv[1]) parts.push(process.argv[1])
-  parts.push('statusline')
-  return parts.map(shellQuote).join(' ')
+  const args = [...process.execArgv]
+  if (process.argv[1]) args.push(process.argv[1])
+  args.push(subcommand)
+  return { args, command: process.execPath }
+}
+
+function ehCommandString(subcommand: string) {
+  const command = ehCommandParts(subcommand)
+  return [command.command, ...command.args].map(shellQuote).join(' ')
 }
 
 function num(value: unknown) {

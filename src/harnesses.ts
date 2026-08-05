@@ -1,5 +1,5 @@
 import type { ResolvedProvider } from './config.js'
-import type { LaunchPlan, Protocol } from './types.js'
+import type { LaunchPlan, Protocol, SearchBackend } from './types.js'
 
 import { opencodeConfigContent, opencodeProviderId } from './opencode.js'
 import { piModelsJsonHint, piProviderCompat, resolvePiProvider } from './pi.js'
@@ -21,7 +21,11 @@ export interface HarnessDef {
   plan: (
     provider: ResolvedProvider,
     model: string,
-    options: { effort?: string; statusline?: boolean },
+    options: {
+      effort?: string
+      gatewayProvider?: string
+      statusline?: boolean
+    },
   ) => Promise<LaunchPlan>
   protocols: Protocol[]
   // Instance-level gate beyond protocol intersection (pi: the provider must
@@ -52,7 +56,11 @@ async function authTokenFor(provider: ResolvedProvider) {
 async function planClaude(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; statusline?: boolean },
+  options: {
+    effort?: string
+    gatewayProvider?: string
+    statusline?: boolean
+  },
 ) {
   const { effort, statusline = true } = options
   const baseURL = anthropicBaseURLFor(provider)
@@ -65,7 +73,11 @@ async function planClaude(
   // doesn't pay two sequential round-trips.
   const [meta, authToken] = await Promise.all([
     statusline
-      ? fetchModelMeta(provider, model)
+      ? fetchModelMeta({
+          gatewayProvider: options.gatewayProvider,
+          modelId: model,
+          provider,
+        })
       : Promise.resolve({
           contextWindow: undefined,
           rateLabel: undefined,
@@ -115,6 +127,11 @@ async function planClaude(
           },
         }
       : {}),
+    gatewayRouting: gatewayRoutingFor(
+      provider,
+      options.gatewayProvider,
+      baseURL,
+    ),
     notes,
   }
 }
@@ -126,9 +143,10 @@ async function planClaude(
 async function planCodex(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string },
+  options: { effort?: string; gatewayProvider?: string },
 ) {
   const { effort } = options
+  const baseURL = openAIBaseURLFor(provider)
   const env: Record<string, string> = {}
   if (provider.envKey && !process.env[provider.envKey]) {
     // Throws an actionable error when no key resolves anywhere — codex would
@@ -143,7 +161,7 @@ async function planCodex(
     '-c',
     `model_providers.eh.name=${tomlString(`eh · ${provider.name}`)}`,
     '-c',
-    `model_providers.eh.base_url=${tomlString(openAIBaseURLFor(provider))}`,
+    `model_providers.eh.base_url=${tomlString(baseURL)}`,
     '-c',
     `model_providers.eh.wire_api=${tomlString(codexWireApiFor(provider))}`,
   ]
@@ -157,16 +175,27 @@ async function planCodex(
     args.push('-c', `model_reasoning_effort=${tomlString(level)}`)
     if (level !== effort) notes.push(`effort ${effort} → codex max is high`)
   }
-  return { args, bin: 'codex', env, notes }
+  return {
+    args,
+    bin: 'codex',
+    env,
+    gatewayRouting: gatewayRoutingFor(
+      provider,
+      options.gatewayProvider,
+      baseURL,
+    ),
+    notes,
+  }
 }
 
 // Grok Build discovers custom OpenAI-compatible models from their /v1 endpoint.
 async function planGrok(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string },
+  options: { effort?: string; gatewayProvider?: string },
 ) {
   const { effort } = options
+  const baseURL = openAIBaseURLFor(provider)
   const args = ['--model', model]
   if (effort && effort !== 'auto') {
     args.push('--reasoning-effort', effort)
@@ -175,9 +204,14 @@ async function planGrok(
     args,
     bin: 'grok',
     env: {
-      GROK_MODELS_BASE_URL: openAIBaseURLFor(provider),
+      GROK_MODELS_BASE_URL: baseURL,
       XAI_API_KEY: await authTokenFor(provider),
     },
+    gatewayRouting: gatewayRoutingFor(
+      provider,
+      options.gatewayProvider,
+      baseURL,
+    ),
     notes: [],
   }
 }
@@ -294,30 +328,50 @@ export async function buildLaunchPlan(
   model: string,
   options: {
     effort?: string
+    gatewayProvider?: string
     resume?: boolean
     resumeSessionId?: string
+    searchBackend?: SearchBackend
     statusline?: boolean
   } = {},
 ) {
   const def = getHarness(harness)
   if (!def) throw new Error(`unknown harness "${harness}"`)
-  const plan = await def.plan(provider, model, {
+  const planned = await def.plan(provider, model, {
     effort: options.effort,
+    gatewayProvider: options.gatewayProvider,
     statusline: options.statusline,
   })
-  return {
-    ...plan,
+  const plan = {
+    ...planned,
     args: options.resume
-      ? [...plan.args, ...def.resumeArgs(options.resumeSessionId)]
-      : plan.args,
-    ...(plan.gatewayCostCapture
+      ? [...planned.args, ...def.resumeArgs(options.resumeSessionId)]
+      : planned.args,
+    notes: planned.gatewayRouting
+      ? [
+          ...planned.notes,
+          `gateway provider pinned: ${planned.gatewayRouting.provider}`,
+        ]
+      : planned.notes,
+    ...(planned.gatewayCostCapture
       ? {
           gatewayCostCapture: {
-            ...plan.gatewayCostCapture,
+            ...planned.gatewayCostCapture,
             resumed: options.resume ?? false,
           },
         }
       : {}),
+  }
+  if (!options.searchBackend) return plan
+  const upstreamBaseURL = plan.env.ANTHROPIC_BASE_URL
+  if (!upstreamBaseURL) {
+    throw new Error(
+      `search provider "${options.searchBackend.type}" is only supported by Claude Code`,
+    )
+  }
+  return {
+    ...plan,
+    searchProxy: { ...options.searchBackend, upstreamBaseURL },
   }
 }
 
@@ -327,6 +381,23 @@ export function getHarness(name: string) {
 
 export function harnessNames() {
   return Object.keys(HARNESSES)
+}
+
+function gatewayRoutingFor(
+  provider: ResolvedProvider,
+  gatewayProvider: string | undefined,
+  targetBaseURL: string,
+) {
+  if (gatewayProvider === undefined) return undefined
+  if (provider.type !== 'vercel-gateway') {
+    throw new Error('--gateway-provider requires a Vercel AI Gateway provider')
+  }
+  if (!/^[A-Za-z0-9._-]+$/.test(gatewayProvider)) {
+    throw new Error(
+      `invalid gateway provider "${gatewayProvider}" (use its Vercel provider slug)`,
+    )
+  }
+  return { provider: gatewayProvider, targetBaseURL }
 }
 
 function isVercelGatewayURL(baseURL: string) {

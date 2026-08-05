@@ -5,6 +5,7 @@ import type { EffortLevel, Selection } from './types.js'
 
 import {
   allProviders,
+  allSearchProviders,
   canonicalProviderName,
   configExists,
   getProvider,
@@ -13,11 +14,14 @@ import {
   pushRecent,
   reservedProfileNameMessage,
   saveConfig,
+  searchProviderForSelection,
+  searchProviderLabel,
 } from './config.js'
 import { doctor } from './doctor.js'
 import { buildLaunchPlan, getHarness, harnessNames } from './harnesses.js'
 import { exec, printEnv } from './launch.js'
 import { canServeAny } from './providers.js'
+import { resolveSearchBackend } from './search-provider.js'
 import { listSessionsForCwd } from './sessions.js'
 import { home, selectionFromRecent } from './ui/home.js'
 import { intro, log, outro } from './ui/output.js'
@@ -25,9 +29,11 @@ import {
   askProfileName,
   confirmLaunch,
   pickEffort,
+  pickGatewayProvider,
   pickHarness,
   pickModel,
   pickProvider,
+  pickSearchProvider,
 } from './ui/prompts.js'
 import { providersScreen } from './ui/providers-screen.js'
 import { pickSession } from './ui/sessions.js'
@@ -37,9 +43,11 @@ const isTTY = process.stdout.isTTY
 
 export interface LaunchOptions {
   effort?: EffortLevel
+  gatewayProvider?: string
   printEnvOnly: boolean
   resume?: boolean
   saveAs?: string
+  searchProvider?: string
 }
 
 // Values that exist to be launched, not to be read off a screen.
@@ -62,6 +70,13 @@ export async function launchFlow(
   let selection: Partial<Selection> = profile
     ? {
         ...profile,
+        gatewayProvider:
+          (providerArg === undefined ||
+            canonicalProviderName(providerArg) ===
+              canonicalProviderName(profile.provider)) &&
+          (modelArg === undefined || modelArg === profile.model)
+            ? profile.gatewayProvider
+            : undefined,
         model: modelArg ?? profile.model,
         provider: providerArg ?? profile.provider,
       }
@@ -73,6 +88,12 @@ export async function launchFlow(
   // Effort: explicit flag wins, then a saved profile's, else interactive/default.
   // Applied before resume resolution so a recent's effort never masks -e.
   if (options.effort) selection.effort = options.effort
+  if (options.searchProvider !== undefined) {
+    selection.searchProvider = options.searchProvider
+  }
+  if (options.gatewayProvider !== undefined) {
+    selection.gatewayProvider = options.gatewayProvider
+  }
 
   // Before any session-store scanning: `eh -r bogus` should error, not scan.
   if (
@@ -111,11 +132,19 @@ export async function launchFlow(
       const sameProvider =
         canonicalProviderName(provider) ===
         canonicalProviderName(recent.provider)
+      const searchProvider = selection.searchProvider ?? recent.searchProvider
+      const model = selection.model ?? (sameProvider ? recent.model : undefined)
       selection = {
-        ...selectionFromRecent(recent),
+        ...selectionFromRecent(config, recent),
         effort: selection.effort ?? recent.effort,
-        model: selection.model ?? (sameProvider ? recent.model : undefined),
+        gatewayProvider:
+          selection.gatewayProvider ??
+          (sameProvider && model === recent.model
+            ? recent.gatewayProvider
+            : undefined),
+        model,
         provider,
+        ...(searchProvider === undefined ? {} : { searchProvider }),
       }
     }
   } else if (options.resume) {
@@ -174,11 +203,15 @@ export async function launchFlow(
           continue
         }
         if (choice.kind === 'providers') {
-          await providersScreen(config)
+          config = await providersScreen(config)
           continue
         }
         if (choice.kind === 'recent') {
-          selection = selectionFromRecent(choice.recent)
+          selection = {
+            ...selectionFromRecent(config, choice.recent),
+            gatewayProvider:
+              options.gatewayProvider ?? choice.recent.gatewayProvider,
+          }
         }
         break
       }
@@ -196,15 +229,32 @@ export async function launchFlow(
   // Persist the canonical id so recents/profiles don't store legacy aliases.
   const complete: Selection = {
     effort: selection.effort,
+    gatewayProvider: selection.gatewayProvider,
     harness,
     model,
     provider: provider.name,
+    searchProvider: searchProviderForSelection(config, selection),
   }
+
+  const searchProviderName = complete.searchProvider ?? 'native'
+  if (searchProviderName !== 'native' && harness !== 'claude') {
+    throw new Error(
+      `search provider "${searchProviderName}" is only supported by Claude Code`,
+    )
+  }
+  if (searchProviderName !== 'native' && options.printEnvOnly) {
+    throw new Error(
+      '--print-env cannot start the local search proxy — launch through eh instead',
+    )
+  }
+  const searchBackend = await resolveSearchBackend(config, searchProviderName)
 
   const plan = await buildLaunchPlan(harness, provider, model, {
     effort: complete.effort,
+    gatewayProvider: complete.gatewayProvider,
     resume: options.resume,
     resumeSessionId,
+    searchBackend,
   })
 
   if (options.printEnvOnly) {
@@ -251,12 +301,30 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
     ? mustGetProvider(config, partial.provider, def)
     : await pickProvider(def, allProviders(config))
   const model = partial.model ?? (await pickModel(provider))
-  // Only ask when the user is picking interactively and hasn't chosen one;
-  // harnesses with effort: false (currently opencode) skip the question; an
+  const gatewayProvider =
+    provider.type === 'vercel-gateway'
+      ? (partial.gatewayProvider ??
+        (await pickGatewayProvider(provider, model)))
+      : partial.gatewayProvider
+  // Harnesses with effort: false (currently opencode) skip the question; an
   // explicit effort still reaches the harness plan.
   const effort =
     partial.effort ?? (def.effort === false ? 'auto' : await pickEffort())
-  return { effort, harness, model, provider: provider.name }
+  return {
+    effort,
+    gatewayProvider,
+    harness,
+    model,
+    provider: provider.name,
+    searchProvider:
+      partial.searchProvider ??
+      (harness === 'claude'
+        ? await pickSearchProvider(
+            allSearchProviders(config),
+            config.defaultSearchProvider,
+          )
+        : 'native'),
+  }
 }
 
 function mustGetProvider(config: Config, name: string, def: HarnessDef) {
@@ -280,7 +348,11 @@ function planSummary(selection: Selection, env: Record<string, string>) {
   const lines = [
     `harness:  ${selection.harness}`,
     `provider: ${providerLabel(selection.provider)} (${selection.provider})`,
+    ...(selection.gatewayProvider
+      ? [`gateway:  ${selection.gatewayProvider}`]
+      : []),
     `model:    ${selection.model}`,
+    `search:   ${searchProviderLabel(selection.searchProvider ?? 'native')}`,
     '',
     ...Object.entries(env).map(
       ([k, v]) => `${k}=${SECRET_ENV.test(k) ? '•••' : v}`,
@@ -319,13 +391,21 @@ function resolveResumeWiring(args: {
   // onto different wiring than the session started on is supported.
   const sameProvider =
     canonicalProviderName(provider) === canonicalProviderName(recent.provider)
+  const searchProvider = selection.searchProvider ?? recent.searchProvider
+  const model =
+    selection.model ??
+    session.model ??
+    (sameProvider ? recent.model : undefined)
   return {
     ...selection,
     effort: selection.effort ?? recent.effort,
-    model:
-      selection.model ??
-      session.model ??
-      (sameProvider ? recent.model : undefined),
+    gatewayProvider:
+      selection.gatewayProvider ??
+      (sameProvider && model === recent.model
+        ? recent.gatewayProvider
+        : undefined),
+    model,
     provider,
+    ...(searchProvider === undefined ? {} : { searchProvider }),
   }
 }

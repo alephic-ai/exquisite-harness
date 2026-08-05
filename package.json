@@ -20,6 +20,7 @@
   "dependencies": {
     "@clack/prompts": "1.7.0",
     "@commander-js/extra-typings": "15.0.0",
+    "@mendable/firecrawl-js": "4.32.0",
     "commander": "15.0.0",
     "strip-json-comments": "5.0.3",
     "zod": "4.4.3"

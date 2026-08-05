@@ -46,7 +46,8 @@ self-updates to the latest public release.
 ![Claude Code launched via eh, with a powerline statusline showing Vercel AI Gateway, model, list rates, session cost, and context usage](docs/images/eh-statusline.jpg)
 
 When you launch Claude through `eh`, it injects a session statusline: provider,
-model, the active provider rate range
+model, the selected endpoint's rates when pinned (otherwise the active provider
+rate range)
 ($/1M), session cost, and context %
 against the provider’s published window. Vercel AI Gateway sessions use the
 gateway's exact billed cost metadata. Other totals are token-based estimates and
@@ -65,8 +66,12 @@ eh cheap-local                        # launch a saved profile
 eh claude -p ollama -s cheap-local    # save combo as a profile, then launch
 eh -r                                 # pick from this dir's sessions (all harnesses)
 eh -r codex -p ollama                 # only codex sessions; -p/-m/-e override the wiring
+eh claude vercel-ai-gateway anthropic/claude-sonnet-4.6 \
+  --gateway-provider bedrock          # pin this run to one Gateway provider
 eh --print-env claude ollama qwen3-coder
                                       # print the export lines, don't launch
+eh claude ollama qwen3-coder --search firecrawl
+                                      # keep Claude's web UX, use Firecrawl
 ```
 
 ### Effort
@@ -80,6 +85,14 @@ non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map 
 `high`); grok → `--reasoning-effort <level>` when explicitly set; pi →
 `--thinking <level>` (levels match 1:1); opencode has no knob and ignores it.
 Profiles and recents remember it.
+
+### AI Gateway provider routing
+
+For Vercel AI Gateway models, interactive launches offer an additional provider
+picker after the model. Leave it on `automatic` for normal Gateway routing, or
+pin one upstream with `--gateway-provider <slug>`. A pin is fail-closed for that
+run: Gateway will not fall back to another provider. The option works with
+Claude, Codex, Grok, and `eh run`; profiles and recents remember it.
 
 ### Resume
 
@@ -124,19 +137,61 @@ private temporary prompt file because its headless CLI exposes `--prompt-file`;
 for all five harnesses with `--resume-session <id>`. Orchestrators that must
 preserve harness-specific policy flags can pass a JSON string array with
 `--native-args-json`; those args are prepended before `eh`'s required
-machine-output flags.
+machine-output flags. Vercel AI Gateway runs may also use
+`--gateway-provider <slug>`.
 
 ### Keys
 
 ```bash
 eh provider key vercel-ai-gateway               # masked prompt → OS credential store
 eh provider key vercel-ai-gateway --delete
+eh search key firecrawl                         # same storage, separate account
+eh search key firecrawl --delete
 ```
 
 Keys resolve **env → OS credential store → file** (macOS Keychain, Linux Secret
 Service via `secret-tool`, `secrets.json` mode `0600` elsewhere). The config
 file only ever stores env-var _names_, never secrets. You can also set keys
 inline in the picker or via Home → providers.
+
+### Web search and fetch
+
+Claude Code normally fulfills `WebSearch` with an Anthropic server tool, which
+breaks when the selected model provider does not implement that tool. `eh` can
+keep Claude Code's native tool flow while fulfilling searches and page fetches
+through Firecrawl:
+
+```bash
+eh search key firecrawl
+eh claude vercel-ai-gateway deepseek/deepseek-v4-flash --search firecrawl
+```
+
+On an interactive Claude launch, the web-search picker offers Native (the
+fallback) and Firecrawl. Home → Providers shows both under Search providers;
+choose one and select **make default**. After storing a new Firecrawl key there,
+or with `eh search key firecrawl`, `eh` also asks whether to use it by default
+for new Claude sessions. Existing Claude recents follow the new default, saved
+profiles remain pinned to their saved choice, and `--search` still overrides
+everything. Firecrawl's key resolves from `FIRECRAWL_API_KEY` or the same secure
+stores used for model providers; `config.json` contains only its env-var name
+and endpoint.
+
+This is intentionally a harness-level hack, not MCP. For the life of the Claude
+process, `eh` runs a loopback proxy that forwards normal Anthropic traffic to
+the chosen model provider and intercepts Claude Code's hidden `web_search_*`
+server-tool request. The response uses Anthropic's structured server-tool blocks
+so Claude Code reports the real search count and retains the Firecrawl links.
+
+Claude Code executes `WebFetch` locally rather than through the Messages API, so
+`eh` also installs process-scoped `PostToolUse` and `PostToolUseFailure` hooks.
+They use Firecrawl's official Node SDK to call `POST /v2/scrape`; a successful
+native fetch has its model-visible result replaced with Firecrawl markdown,
+while a native failure receives the Firecrawl content as recovery context.
+Claude's built-in download still happens before the post-tool hook—the hook
+controls what the model reads, not the original network request. The SDK is
+bundled into the standalone `eh` binary, so users do not install another runtime
+or daemon. Both undocumented Claude Code boundaries are covered by loopback
+integration tests and may need updating if Claude Code changes them.
 
 ### Everything else
 
@@ -173,6 +228,9 @@ signal.
 `~/.config/eh/config.json` (`$XDG_CONFIG_HOME/eh`, `%APPDATA%\eh` on Windows) —
 providers, profiles, recents. `~/.config/eh/cache.json` — model lists. All three
 matrix providers are built in; config only overrides or adds custom ones.
+Firecrawl search is also built in; `searchProviders` can override its `baseURL`
+or `envKey`, and `defaultSearchProvider` controls new Claude launches. Saved
+profiles and recents also include an optional Gateway provider pin.
 
 ## Developing
 
