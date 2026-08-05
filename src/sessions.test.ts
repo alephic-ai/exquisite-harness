@@ -9,7 +9,18 @@ import {
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import type { ListSessionsOptions } from './sessions.js'
+
 import { listSessionsForCwd } from './sessions.js'
+
+// Stub opencode's runner everywhere but its own describe block, so tests
+// don't spawn the real binary (≈0.5s each on machines that have it).
+async function listSessions(cwd: string, options: ListSessionsOptions = {}) {
+  return listSessionsForCwd(cwd, {
+    opencodeRunner: async () => Promise.resolve([]),
+    ...options,
+  })
+}
 
 const tempDirs: string[] = []
 
@@ -26,6 +37,7 @@ function fakeHome() {
     claude: path.join(home, '.claude', 'projects'),
     codex: path.join(home, '.codex', 'sessions'),
     grok: path.join(home, '.grok', 'sessions'),
+    pi: path.join(home, '.pi', 'agent', 'sessions'),
   }
 }
 
@@ -86,6 +98,38 @@ function writeGrok(
   )
 }
 
+// pi's `--<cwd, leading slash stripped, / \\ : → ->--` flattening, mirrored.
+function writePi(
+  root: string,
+  cwd: string,
+  id: string,
+  lines: unknown[],
+  mtime: Date,
+) {
+  writeFile(
+    path.join(
+      root,
+      `--${cwd.replace(/^[/\\]/, '').replace(/[/\\:]/g, '-')}--`,
+      `2026-07-20T10-00-00-000Z_${id}.jsonl`,
+    ),
+    jsonl(lines),
+    mtime,
+  )
+}
+
+function writePiSessionDir(
+  root: string,
+  id: string,
+  lines: unknown[],
+  mtime: Date,
+) {
+  writeFile(
+    path.join(root, `2026-07-20T10-00-00-000Z_${id}.jsonl`),
+    jsonl(lines),
+    mtime,
+  )
+}
+
 const CWD = '/work/my-project'
 const T1 = new Date('2026-07-20T10:00:00Z')
 const T2 = new Date('2026-07-21T10:00:00Z')
@@ -122,7 +166,7 @@ describe('claude sessions', () => {
       T2,
     )
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions).toHaveLength(1)
     expect(sessions[0]).toEqual({
       harness: 'claude',
@@ -151,7 +195,7 @@ describe('claude sessions', () => {
       T1,
     )
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions.at(0)?.title).toBe('array prompt here')
     expect(sessions.at(0)?.model).toBeUndefined()
   })
@@ -169,7 +213,7 @@ describe('claude sessions', () => {
       T1,
     )
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions.at(0)?.title).toBe('Compacted session title')
   })
 
@@ -195,7 +239,7 @@ describe('claude sessions', () => {
       T2,
     )
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions.at(1)?.title).toBe('line one line two spaced')
     expect(sessions.at(0)?.title).toBe(`${'x'.repeat(79)}…`)
   })
@@ -226,7 +270,7 @@ describe('claude sessions', () => {
       T3,
     )
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions.map((s) => s.id)).toEqual(['session-6'])
   })
 
@@ -244,7 +288,7 @@ describe('claude sessions', () => {
       T1,
     )
 
-    const sessions = await listSessionsForCwd(cwd, { roots })
+    const sessions = await listSessions(cwd, { roots })
     expect(sessions.map((s) => s.id)).toEqual(['session-8'])
   })
 })
@@ -276,7 +320,7 @@ describe('codex sessions', () => {
     const roots = fakeHome()
     writeCodex(roots.codex, '2026-07-20', 'uuid-1', rollout(CWD), T2)
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions).toEqual([
       {
         harness: 'codex',
@@ -306,7 +350,7 @@ describe('codex sessions', () => {
       T3,
     )
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions).toEqual([])
   })
 
@@ -316,7 +360,7 @@ describe('codex sessions', () => {
     writeCodex(roots.codex, '2026-07-21', 'uuid-2', rollout(CWD), T2)
     writeCodex(roots.codex, '2026-07-22', 'uuid-3', rollout(CWD), T3)
 
-    const sessions = await listSessionsForCwd(CWD, {
+    const sessions = await listSessions(CWD, {
       codexMaxFiles: 2,
       roots,
     })
@@ -342,7 +386,7 @@ describe('grok sessions', () => {
       T1,
     )
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions).toEqual([
       {
         harness: 'grok',
@@ -375,7 +419,7 @@ describe('grok sessions', () => {
       T3,
     )
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions.at(1)).toMatchObject({
       id: 'uuid-2',
       title: 'summary only',
@@ -404,7 +448,7 @@ describe('grok sessions', () => {
       recursive: true,
     })
 
-    const sessions = await listSessionsForCwd(CWD, { roots })
+    const sessions = await listSessions(CWD, { roots })
     expect(sessions).toEqual([])
   })
 })
@@ -437,10 +481,10 @@ describe('listSessionsForCwd', () => {
       T2,
     )
 
-    const all = await listSessionsForCwd(CWD, { roots })
+    const all = await listSessions(CWD, { roots })
     expect(all.map((s) => s.harness)).toEqual(['grok', 'codex', 'claude'])
 
-    const codexOnly = await listSessionsForCwd(CWD, {
+    const codexOnly = await listSessions(CWD, {
       harness: 'codex',
       roots,
     })
@@ -449,7 +493,7 @@ describe('listSessionsForCwd', () => {
 
   test('returns nothing when the stores are empty or missing', async () => {
     const roots = fakeHome()
-    expect(await listSessionsForCwd(CWD, { roots })).toEqual([])
+    expect(await listSessions(CWD, { roots })).toEqual([])
   })
 
   test('caps the merged list', async () => {
@@ -481,10 +525,239 @@ describe('listSessionsForCwd', () => {
       )
     }
 
-    const sessions = await listSessionsForCwd(CWD, {
+    const sessions = await listSessions(CWD, {
       codexMaxMatches: 30,
       roots,
     })
     expect(sessions).toHaveLength(50)
+  })
+})
+
+describe('pi sessions', () => {
+  test('parses id, model, and title from the header and first records', async () => {
+    const roots = fakeHome()
+    writePi(
+      roots.pi,
+      CWD,
+      'uuid-1',
+      [
+        { cwd: CWD, id: 'uuid-1', type: 'session', version: 3 },
+        {
+          modelId: 'zai/glm-5.2',
+          provider: 'vercel-ai-gateway',
+          type: 'model_change',
+        },
+        {
+          message: {
+            content: [{ text: 'where are the forms?', type: 'text' }],
+            role: 'user',
+          },
+          type: 'message',
+        },
+      ],
+      T2,
+    )
+
+    const sessions = await listSessions(CWD, { roots })
+    expect(sessions).toEqual([
+      {
+        harness: 'pi',
+        id: 'uuid-1',
+        model: 'zai/glm-5.2',
+        title: 'where are the forms?',
+        updatedAt: T2.toISOString(),
+      },
+    ])
+  })
+
+  test('falls back to the filename when the header is missing', async () => {
+    const roots = fakeHome()
+    writePi(
+      roots.pi,
+      CWD,
+      'uuid-2',
+      [
+        {
+          message: { content: 'string prompt', role: 'user' },
+          type: 'message',
+        },
+      ],
+      T1,
+    )
+
+    const sessions = await listSessions(CWD, { roots })
+    expect(sessions.at(0)).toMatchObject({
+      // The resume arg is the uuid segment, not the <ts>_<uuid> basename.
+      id: 'uuid-2',
+      title: 'string prompt',
+    })
+    expect(sessions.at(0)?.model).toBeUndefined()
+  })
+
+  test('skips assistant messages and other project dirs', async () => {
+    const roots = fakeHome()
+    writePi(
+      roots.pi,
+      CWD,
+      'uuid-3',
+      [
+        { id: 'uuid-3', type: 'session' },
+        {
+          message: {
+            content: [{ text: 'assistant reply', type: 'text' }],
+            role: 'assistant',
+          },
+          type: 'message',
+        },
+        {
+          message: {
+            content: [{ text: 'real prompt', type: 'text' }],
+            role: 'user',
+          },
+          type: 'message',
+        },
+      ],
+      T1,
+    )
+    writePi(
+      roots.pi,
+      '/other/project',
+      'uuid-4',
+      [{ id: 'uuid-4', type: 'session' }],
+      T2,
+    )
+
+    const sessions = await listSessions(CWD, { roots })
+    expect(sessions.map((s) => s.id)).toEqual(['uuid-3'])
+    expect(sessions.at(0)?.title).toBe('real prompt')
+  })
+
+  // Regression: pi keeps underscores/dots and only maps / \ : to dashes,
+  // wrapped in `--` — a cwd with those chars must resolve exactly.
+  test('finds sessions for cwds with underscores and dots', async () => {
+    const roots = fakeHome()
+    const cwd = '/work/01_Projects/my.app'
+    writePi(roots.pi, cwd, 'uuid-5', [{ id: 'uuid-5', type: 'session' }], T1)
+
+    const sessions = await listSessions(cwd, { roots })
+    expect(sessions.map((s) => s.id)).toEqual(['uuid-5'])
+  })
+
+  test('honors a flat custom session directory and filters by header cwd', async () => {
+    const roots = fakeHome()
+    const piSessionDir = path.join(path.dirname(roots.pi), 'custom-sessions')
+    writePiSessionDir(
+      piSessionDir,
+      'uuid-6',
+      [
+        { cwd: CWD, id: 'uuid-6', type: 'session', version: 3 },
+        {
+          message: { content: 'custom directory prompt', role: 'user' },
+          type: 'message',
+        },
+      ],
+      T2,
+    )
+    writePiSessionDir(
+      piSessionDir,
+      'uuid-7',
+      [{ cwd: '/other/project', id: 'uuid-7', type: 'session', version: 3 }],
+      T3,
+    )
+
+    const sessions = await listSessions(CWD, {
+      roots: { ...roots, piSessionDir },
+    })
+
+    expect(sessions).toEqual([
+      {
+        harness: 'pi',
+        id: 'uuid-6',
+        title: 'custom directory prompt',
+        updatedAt: T2.toISOString(),
+      },
+    ])
+  })
+})
+
+describe('opencode sessions', () => {
+  // Rows in `session list --format json` shape (global scope, epoch ms).
+  function opencodeRunner(rows: unknown[]) {
+    return async () => Promise.resolve(rows)
+  }
+
+  test('filters rows to this directory and maps epoch-ms timestamps', async () => {
+    const roots = fakeHome()
+    const sessions = await listSessions(CWD, {
+      opencodeRunner: opencodeRunner([
+        {
+          directory: CWD,
+          id: 'ses_1',
+          title: 'fix the login bug',
+          updated: T2.getTime(),
+        },
+        {
+          directory: '/other/project',
+          id: 'ses_2',
+          title: 'not mine',
+          updated: T3.getTime(),
+        },
+        {
+          directory: CWD,
+          id: 'ses_3',
+          title: 'older one',
+          updated: T1.getTime(),
+        },
+      ]),
+      roots,
+    })
+
+    expect(sessions).toEqual([
+      {
+        harness: 'opencode',
+        id: 'ses_1',
+        title: 'fix the login bug',
+        updatedAt: T2.toISOString(),
+      },
+      {
+        harness: 'opencode',
+        id: 'ses_3',
+        title: 'older one',
+        updatedAt: T1.toISOString(),
+      },
+    ])
+  })
+
+  test('treats runner failures as no rows', async () => {
+    const roots = fakeHome()
+    expect(
+      await listSessions(CWD, {
+        opencodeRunner: async () => Promise.reject(new Error('spawn failed')),
+        roots,
+      }),
+    ).toEqual([])
+  })
+
+  test('drops malformed rows but keeps the good ones', async () => {
+    const roots = fakeHome()
+    const sessions = await listSessions(CWD, {
+      opencodeRunner: async () =>
+        Promise.resolve([
+          { directory: CWD, id: 'ses_1', title: 'good', updated: T2.getTime() },
+          { noId: true },
+          // Past the Date ceiling — must not throw through the whole store.
+          { directory: CWD, id: 'ses_2', title: 'bad clock', updated: 9e18 },
+          // Before the Date floor — the negative boundary must be isolated too.
+          { directory: CWD, id: 'ses_4', title: 'bad clock', updated: -9e18 },
+          {
+            directory: CWD,
+            id: 'ses_3',
+            title: 'also good',
+            updated: T1.getTime(),
+          },
+        ]),
+      roots,
+    })
+    expect(sessions.map((s) => s.id)).toEqual(['ses_1', 'ses_3'])
   })
 })

@@ -10,15 +10,17 @@ directly; interactive clack flows run under a PTY harness.
 - `pnpm install` done; `pnpm dev` runs `tsx src/main.ts`.
 - Ollama running locally (`ollama serve`) with ≥1 model pulled — steps that hit
   `localhost:11434` depend on it. If it's down, mark those steps BLOCKED.
-- Harness binaries (`claude`, `codex`, `grok`) only need to exist for doctor and
-  the conditional live steps F.4, G.3, and G.5. Launch steps F.1–F.3 use a
-  **fake harness binary**.
+- Harness binaries (`claude`, `codex`, `grok`, `opencode`, `pi`) only need to
+  exist for doctor, spawn, and conditional live steps. Launch steps F.1–F.3 use
+  a **fake harness binary**; F.4 is the explicit real-Claude exception. OpenCode
+  session enumeration shells out to the real binary (`opencode session list`),
+  and pi launch steps need a real `~/.pi/agent/models.json` for ollama.
 - A real Gateway key is needed for D.11, F.4, and F.6. A real Firecrawl key is
   needed for G.3 and G.5. Other provider/key steps use `--print-env`, loopback
   fakes, and a fake `secret-tool`/Keychain probe; F.5, G.1, G.2, and G.4 use
   loopback fakes.
-- A PTY-capable runner (`script(1)`, `expect`, or equivalent) drives interactive
-  flows.
+- PTY harness: use the runner's real PTY support when available, or `expect`,
+  `script(1)` on macOS, or Python's `pty` module to drive interactive flows.
 
 ## A. Static gates
 
@@ -35,7 +37,8 @@ Each prints env/args and exits 0 without launching.
    `# plus args: codex -c model="qwen3-coder" ... wire_api="responses"`; no
    `env_key` line.
 3. `eh --print-env grok ollama qwen3-coder` → `GROK_MODELS_BASE_URL=.../v1`,
-   `XAI_API_KEY='ollama'`, `--model qwen3-coder`.
+   `XAI_API_KEY='ollama'`, `--model qwen3-coder`. Repeat with `-e high` → args
+   include `--reasoning-effort high`.
 4. `eh --print-env codex openrouter openai/gpt-5.1` (openrouter configured) →
    `wire_api="chat"`, `env_key="OPENROUTER_API_KEY"`.
 5. `eh --print-env claude openrouter x` → error "cannot serve the Anthropic
@@ -47,11 +50,31 @@ Each prints env/args and exits 0 without launching.
 8. `eh -r --print-env codex ollama qwen3-coder` → args end with `resume` (after
    the `-c` overrides).
 9. `eh -r --print-env grok ollama qwen3-coder` → args end with `--resume`.
-10. `eh --print-env claude ollama qwen3-coder --search firecrawl` → actionable
+10. `eh --print-env pi ollama qwen3-coder` with a models.json entry
+    `{"providers":{"ollama":{"api":"openai-completions","apiKey":"ollama","baseUrl":"http://127.0.0.1:11434/v1","models":[{"id":"qwen3-coder"}]}}}`
+    in `~/.pi/agent/models.json` → args `--provider ollama --model qwen3-coder`,
+    no env (the provider name is the entry's key; a literal apiKey means no env,
+    and `ollama` is the dummy value Pi documents for this keyless server). A
+    file containing `//` or block comments and trailing commas is accepted like
+    Pi's own loader. With `apiKey: "$OLLAMA_TEST_KEY"` and that var unset → env
+    exports `OLLAMA_TEST_KEY='ollama'`. With a compound template such as
+    `${KEY_PREFIX}_${KEY_SUFFIX}` or an escaped dollar such as `$$literal`, no
+    partial env var is exported; Pi owns interpretation of those values. Without
+    a runnable entry → error "needs a runnable provider entry in
+    ~/.pi/agent/models.json".
+11. `eh --print-env pi ollama qwen3-coder -e high` → args end with
+    `--thinking high`.
+12. `eh --print-env opencode ollama qwen3-coder` → `OPENCODE_CONFIG_CONTENT`
+    inline JSON (provider `eh-ollama`, npm `@ai-sdk/openai-compatible`,
+    placeholder `apiKey`, baseURL `…/v1`), args `-m eh-ollama/qwen3-coder`.
+13. `eh -r --print-env pi ollama qwen3-coder` / `… opencode …` → args end with
+    `--continue` (the --print-env path resolves no session id; `--session <id>`
+    appears only via the interactive picker).
+14. `eh --print-env claude ollama qwen3-coder --search firecrawl` → actionable
     error explaining that a process-scoped proxy requires a normal launch.
-11. `eh codex ollama qwen3-coder --search firecrawl` → "only supported by Claude
+15. `eh codex ollama qwen3-coder --search firecrawl` → "only supported by Claude
     Code" before attempting search-key resolution.
-12. `AI_GATEWAY_API_KEY=test eh --print-env --gateway-provider bedrock codex vercel-ai-gateway anthropic/claude-sonnet-4.6`
+16. `AI_GATEWAY_API_KEY=test eh --print-env --gateway-provider bedrock codex vercel-ai-gateway anthropic/claude-sonnet-4.6`
     → prints the normal Gateway launch plan plus `gateway provider: bedrock`; it
     does not start a proxy in print-only mode.
 
@@ -61,9 +84,9 @@ Each prints env/args and exits 0 without launching.
    Run any command. → friendly "invalid config at <path> — not valid JSON", not
    a stack trace.
 2. Write a syntactically valid but schema-wrong config (e.g. `"version": 2`). →
-   "invalid config at <path> — version: Invalid literal…".
+   "invalid config at <path> — version: Invalid input: expected 1".
 3. `eh bogus` → "unknown harness or profile \"bogus\" (known: claude, codex,
-   grok)", non-zero exit.
+   grok, opencode, pi)", non-zero exit.
 4. `eh claude ollama` with stdout not a TTY → "incomplete arguments and stdout
    is not a TTY", non-zero exit.
 5. `eh -r` without a TTY → "eh -r opens a session picker — needs an interactive
@@ -92,8 +115,8 @@ Drive each with the PTY; assert on screen text.
 
 1. **First-run wizard**: empty config dir, run `eh`. → intro banner, a
    "detected" note listing harnesses + ollama status, then either the generated
-   config or a built-ins-only note. The config is written to disk and home
-   opens.
+   config or a built-ins-only note. The config is written to disk and home opens
+   without a redundant confirmation prompt.
 2. **Home**: with one recent entry present, run `eh`. → home select lists the
    recent combo with a relative-time hint, plus "new session →", "providers",
    "doctor". Enter providers → one list with disabled "Model providers" and
@@ -104,9 +127,14 @@ Drive each with the PTY; assert on screen text.
    go/save/back options.
 3. **Pickers**: run `eh claude` → provider picker lists ollama (compatible) and,
    if configured, openrouter. Arrow down to focus openrouter → its hint reads
-   "needs router" (clack only shows the focused row's hint). Pick ollama → model
-   picker lists live Ollama models with size hints, plus "other…". Select a
-   model → confirm screen.
+   "openai-chat · needs router" (clack only shows the focused row's hint);
+   picking it warns "…needs the phase-2 router" and re-prompts. Pick ollama →
+   model picker lists live Ollama models with size hints, plus "other…". Select
+   a model → confirm screen. 3b. **providerCompat gate**: with
+   `PI_CODING_AGENT_DIR` pointed at an empty dir (no models.json), run `eh pi` →
+   provider picker lists ollama last with hint "ollama · needs a runnable
+   provider entry in `<PI_CODING_AGENT_DIR>/models.json`"; picking it warns and
+   re-prompts.
 4. **Manual model entry**: in the model picker choose "other…" → text prompt
    appears; type a model id → accepted and shown in the confirm note.
 5. **Cancel**: at any picker, press Ctrl+C → "bye" and exit 0 (no stack).
@@ -126,7 +154,14 @@ Drive each with the PTY; assert on screen text.
 10. **Resume wiring**: with a recent for (claude, model X) in this directory,
     pick a claude session whose model is X → resumes on that recent's provider
     with no further prompts. `-p`/`-m` override.
-11. **Gateway provider picker**: select Vercel AI Gateway and a model → the next
+11. **OpenCode row isolation**: put a fake `opencode` first on `PATH`; its
+    `session list --format json` response contains one valid current-directory
+    row without model metadata plus rows whose `updated` values are above and
+    below JavaScript's supported Date range. Run
+    `eh -r opencode -p ollama -m qwen3-coder` → only the valid row appears with
+    `unknown model`; selecting it launches with `--session <valid-id>` and the
+    malformed rows do not crash or suppress it.
+12. **Gateway provider picker**: select Vercel AI Gateway and a model → the next
     picker lists `automatic` first, then the model's active endpoint providers,
     plus manual entry. Pick one → the confirm note shows `gateway: <slug>`; save
     as a profile and relaunch → the pin is retained without another prompt.
@@ -216,8 +251,12 @@ Drive each with the PTY; assert on screen text.
    `cache.json`.
 2. Immediately rerun → served from cache (same output, no refetch — check
    `fetchedAt` unchanged).
-3. Stop Ollama, `eh` → model picker → spinner fails, falls back to stale cache,
-   list still shown. Restart Ollama after.
+3. Age the cached Ollama entry beyond its five-minute TTL (or wait for expiry),
+   then make the provider unreachable (stop Ollama, or use an isolated config
+   override pointed at a closed local port). Run `eh claude -p ollama` → a live
+   fetch is attempted, the spinner resolves to the cached model count, and the
+   stale list remains selectable without a stack trace. Restore the endpoint
+   after.
 
 ## I. Doctor / providers
 
@@ -227,13 +266,58 @@ Drive each with the PTY; assert on screen text.
    the same key source or `eh search key firecrawl` hint without making a live
    search request.
 
+## I. Headless runs
+
+1. Run `bun test src/headless-run.test.ts`. → all five harness adapters pass
+   their normalized NDJSON contract tests. The pi and opencode cases assert the
+   prompt stays off argv, native policy args precede mandatory machine-mode
+   args, `--resume-session` reaches the native CLI, session/text/usage/cost are
+   normalized, and a native semantic error makes both completion and process
+   exits non-zero even if the fake child exits 0. Preflight cases cover empty
+   stdin, malformed native args, invalid effort, unknown harness/provider, pi
+   provider incompatibility, and missing keys; each must emit only versioned
+   `run.error` + failed `run.completed` records on stdout and exit non-zero.
+2. With Ollama running and a pulled model declared for the `ollama` provider in
+   pi's `models.json`, run a short real pi request (replace `<model>`):
+
+   ```bash
+   printf 'Reply with exactly EH_PI_OK' |
+     eh run pi ollama <model> \
+       --native-args-json '["--no-tools","--no-extensions","--no-skills","--no-context-files","--no-session"]'
+   ```
+
+   → every stdout line parses as JSON with `v: 1`; the stream contains
+   `run.started`, `session.started`, `assistant.text` containing `EH_PI_OK`,
+   `usage`, and a successful `run.completed`. Native pi events remain available
+   as `harness.event`; stderr contains no TUI.
+
+3. With the same local provider/model, run a short real opencode request:
+
+   ```bash
+   printf 'Reply with exactly EH_OPENCODE_OK' |
+     eh run opencode ollama <model> --native-args-json '["--pure"]'
+   ```
+
+   → every stdout line parses as JSON with `v: 1`; the stream contains
+   `run.started`, `session.started`, `assistant.text` containing
+   `EH_OPENCODE_OK`, `usage`, and a successful `run.completed`. Native opencode
+   events remain available as `harness.event`; stderr contains no TUI.
+
+4. Repeat the pi and opencode fake-binary cases with a nonexistent child binary
+   and with the real native error event shape. → each emits one `run.error`, a
+   failed `run.completed`, and a non-zero `eh` exit while preserving native
+   stderr separately.
+
 ## Known limitations
 
 - Interactive steps are driven by a PTY harness, not a human; rendering quirks
   of clack in a real terminal emulator are not fully covered.
-- Real `claude`/`codex`/`grok` sessions are conditional on installed binaries
-  and keys; fake harnesses cover the default spawn contract. Live Firecrawl QA
-  is conditional on a real search key.
+- Interactive launch/resume steps use fake binaries by default; the real Claude
+  check in F.4 remains conditional on an installed binary and key. Headless
+  steps I.2-I.3 deliberately run short real pi/opencode sessions against local
+  Ollama; other cloud-harness live runs remain conditional on credentials. Real
+  cloud-harness and Firecrawl checks remain conditional on their installed
+  binaries and credentials.
 - OpenRouter/Vercel AI Gateway live model-list fetches need real keys and are
   SKIPPED unless keys are present.
 - Linux Secret Service is verified against a simulated `secret-tool`; a real
@@ -248,4 +332,6 @@ Drive each with the PTY; assert on screen text.
   `src/search-proxy.test.ts` (Firecrawl search/fetch interception + Anthropic
   passthrough), plus exact Gateway stream/cost capture, provider routing and
   model discovery, active-provider pricing ranges, transcript usage/cost
-  fallbacks, headless-run contracts, and resume session-store parsers.
+  fallbacks, all five headless adapters and their normalized NDJSON/failure
+  contracts, Pi provider matching/config parsing, OpenCode inline config, and
+  per-row session isolation for out-of-range timestamps.

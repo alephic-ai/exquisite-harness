@@ -9,7 +9,7 @@ import {
 } from './config.js'
 import { doctor } from './doctor.js'
 import { launchFlow } from './flow.js'
-import { parseNativeArgsJson, runHeadless } from './headless-run.js'
+import { runHeadless } from './headless-run.js'
 import {
   modelsList,
   profileList,
@@ -43,7 +43,7 @@ program
   .argument('[harness-or-profile]', 'harness name or saved profile')
   .argument('[provider]', 'provider name')
   .argument('[model]', 'model id')
-  .option('--harness <name>', 'harness: claude, codex, grok')
+  .option('--harness <name>', 'harness: claude, codex, grok, opencode, pi')
   .option(
     '-p, --provider <name>',
     'provider: ollama, openrouter, vercel-ai-gateway, …',
@@ -136,21 +136,15 @@ program
   )
   .option('--resume-session <id>', 'resume an existing native session')
   .action(async (harness, provider, model, opts) => {
-    const effort = EFFORT_LEVELS.find((level) => level === opts.reasoningEffort)
-    if (effort === undefined) {
-      throw new Error(
-        `unknown effort "${opts.reasoningEffort}" (known: ${EFFORT_LEVELS.join(', ')})`,
-      )
-    }
     process.exitCode = await runHeadless({
-      effort,
-      gatewayProvider: opts.gatewayProvider,
+      effort: opts.reasoningEffort,
+      // The root command exposes the same option for interactive launches.
+      // Commander assigns an option after a subcommand to the root when both
+      // define it, so read both scopes instead of silently dropping the pin.
+      gatewayProvider: opts.gatewayProvider ?? rootGatewayProvider(),
       harness,
       model,
-      nativeArgs:
-        opts.nativeArgsJson === undefined
-          ? undefined
-          : parseNativeArgsJson(opts.nativeArgsJson),
+      nativeArgsJson: opts.nativeArgsJson,
       provider,
       resumeSessionId: opts.resumeSession,
     })
@@ -289,6 +283,11 @@ program
 
 async function main() {
   await program.parseAsync(process.argv)
+}
+
+function rootGatewayProvider() {
+  const value: unknown = program.getOptionValue('gatewayProvider')
+  return typeof value === 'string' ? value : undefined
 }
 
 main().catch((error: unknown) => {

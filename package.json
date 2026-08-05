@@ -1,6 +1,6 @@
 {
   "name": "exquisite-harness",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "description": "Choose a harness, choose a provider, go.",
   "type": "module",
@@ -22,6 +22,7 @@
     "@commander-js/extra-typings": "15.0.0",
     "@mendable/firecrawl-js": "4.32.0",
     "commander": "15.0.0",
+    "strip-json-comments": "5.0.3",
     "zod": "4.4.3"
   },
   "devDependencies": {

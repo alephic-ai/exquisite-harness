@@ -6,6 +6,8 @@ export interface LaunchPlan {
     resumed: boolean
   }
   gatewayRouting?: {
+    apiKeyEnvKey?: string
+    model: string
     provider: string
     targetBaseURL: string
   }
@@ -51,8 +53,8 @@ export interface Selection {
 }
 
 // Reasoning/effort levels, normalized across harnesses. `auto` means the
-// model default (no override sent). claude accepts xhigh/max; codex maps
-// max→high; grok accepts the normalized levels directly.
+// model default (no override sent). claude, grok, and pi accept xhigh/max;
+// codex maps xhigh/max→high; opencode has no knob.
 export const EFFORT_LEVELS = [
   'auto',
   'low',

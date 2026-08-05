@@ -12,6 +12,15 @@ describe('gateway provider routing', () => {
       let receivedBody = ''
       const responseBody = 'data: {"type":"response.completed"}\n\n'
       const upstream = await startUpstream(async (request, response) => {
+        if (request.url?.endsWith('/endpoints')) {
+          response.setHeader('content-type', 'application/json')
+          response.end(
+            JSON.stringify({
+              data: { endpoints: [{ provider_name: 'bedrock', status: 0 }] },
+            }),
+          )
+          return
+        }
         receivedBody = await readBody(request)
         response.setHeader('content-type', 'text/event-stream')
         response.end(responseBody)
@@ -24,7 +33,11 @@ describe('gateway provider routing', () => {
             args: [`base_url="${targetBaseURL}"`],
             bin: 'test-harness',
             env: { TEST_GATEWAY_BASE_URL: targetBaseURL },
-            gatewayRouting: { provider: 'bedrock', targetBaseURL },
+            gatewayRouting: {
+              model: 'anthropic/claude-sonnet-4.6',
+              provider: 'bedrock',
+              targetBaseURL,
+            },
             notes: [],
           },
           async (plan) => {
@@ -65,9 +78,114 @@ describe('gateway provider routing', () => {
     },
   )
 
+  test('fails closed before inference when the provider cannot serve the model', async () => {
+    let inferenceReached = false
+    let runReached = false
+    const upstream = await startUpstream((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        expect(request.url).toBe(
+          '/v1/models/anthropic/claude-sonnet-4.6/endpoints',
+        )
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [
+                { provider_name: 'anthropic', status: 0 },
+                { provider_name: 'bedrock', status: 1 },
+              ],
+            },
+          }),
+        )
+        return
+      }
+      inferenceReached = true
+      response.end('unexpected')
+    })
+
+    try {
+      let message = ''
+      try {
+        await withGatewayRouting(
+          {
+            args: [],
+            bin: 'test-harness',
+            env: { TEST_GATEWAY_BASE_URL: upstream.baseURL },
+            gatewayRouting: {
+              model: 'anthropic/claude-sonnet-4.6',
+              provider: 'bedrock',
+              targetBaseURL: upstream.baseURL,
+            },
+            notes: [],
+          },
+          async () => {
+            runReached = true
+            return Promise.resolve()
+          },
+        )
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      expect(message).toContain(
+        'gateway provider "bedrock" is unavailable for model "anthropic/claude-sonnet-4.6" (available: anthropic)',
+      )
+      expect(inferenceReached).toBeFalse()
+      expect(runReached).toBeFalse()
+    } finally {
+      await upstream.close()
+    }
+  })
+
+  test('uses a non-empty auth token when the provider key variable is deliberately blank', async () => {
+    let validationAuthorization = ''
+    const upstream = await startUpstream((request, response) => {
+      validationAuthorization = request.headers.authorization ?? ''
+      response.setHeader('content-type', 'application/json')
+      response.end(
+        JSON.stringify({
+          data: { endpoints: [{ provider_name: 'bedrock', status: 0 }] },
+        }),
+      )
+    })
+
+    try {
+      await withGatewayRouting(
+        {
+          args: [],
+          bin: 'test-harness',
+          env: {
+            ANTHROPIC_API_KEY: '',
+            ANTHROPIC_AUTH_TOKEN: 'qa-auth-token',
+            TEST_GATEWAY_BASE_URL: upstream.baseURL,
+          },
+          gatewayRouting: {
+            apiKeyEnvKey: 'ANTHROPIC_API_KEY',
+            model: 'anthropic/claude-sonnet-4.6',
+            provider: 'bedrock',
+            targetBaseURL: upstream.baseURL,
+          },
+          notes: [],
+        },
+        async () => Promise.resolve(),
+      )
+      expect(validationAuthorization).toBe('Bearer qa-auth-token')
+    } finally {
+      await upstream.close()
+    }
+  })
+
   test('leaves count-tokens requests unchanged', async () => {
     let receivedBody = ''
     const upstream = await startUpstream(async (request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: { endpoints: [{ provider_name: 'bedrock', status: 0 }] },
+          }),
+        )
+        return
+      }
       receivedBody = await readBody(request)
       response.end('{"input_tokens":42}')
     })
@@ -83,6 +201,7 @@ describe('gateway provider routing', () => {
           bin: 'test-harness',
           env: { TEST_GATEWAY_BASE_URL: upstream.baseURL },
           gatewayRouting: {
+            model: 'anthropic/claude-sonnet-4.6',
             provider: 'bedrock',
             targetBaseURL: upstream.baseURL,
           },
@@ -113,6 +232,15 @@ describe('gateway provider routing', () => {
     let receivedMethod = ''
     let receivedURL = ''
     const upstream = await startUpstream((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: { endpoints: [{ provider_name: 'bedrock', status: 0 }] },
+          }),
+        )
+        return
+      }
       receivedAuthorization = request.headers.authorization ?? ''
       receivedMethod = request.method ?? ''
       receivedURL = request.url ?? ''
@@ -126,7 +254,11 @@ describe('gateway provider routing', () => {
           args: [],
           bin: 'test-harness',
           env: { TEST_GATEWAY_BASE_URL: targetBaseURL },
-          gatewayRouting: { provider: 'bedrock', targetBaseURL },
+          gatewayRouting: {
+            model: 'test/model',
+            provider: 'bedrock',
+            targetBaseURL,
+          },
           notes: [],
         },
         async (plan) => {
@@ -153,7 +285,16 @@ describe('gateway provider routing', () => {
       hostileOriginReached = true
       response.end('unexpected')
     })
-    const intendedUpstream = await startUpstream((_request, response) => {
+    const intendedUpstream = await startUpstream((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: { endpoints: [{ provider_name: 'bedrock', status: 0 }] },
+          }),
+        )
+        return
+      }
       response.end('intended')
     })
 
@@ -164,6 +305,7 @@ describe('gateway provider routing', () => {
           bin: 'test-harness',
           env: { TEST_GATEWAY_BASE_URL: intendedUpstream.baseURL },
           gatewayRouting: {
+            model: 'test/model',
             provider: 'bedrock',
             targetBaseURL: intendedUpstream.baseURL,
           },
@@ -186,6 +328,15 @@ describe('gateway provider routing', () => {
 
   test('closes promptly after a harness disconnects mid-stream', async () => {
     const upstream = await startUpstream((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: { endpoints: [{ provider_name: 'bedrock', status: 0 }] },
+          }),
+        )
+        return
+      }
       const interval = setInterval(() => {
         response.write('event: ping\ndata: {}\n\n')
       }, 10)
@@ -206,6 +357,7 @@ describe('gateway provider routing', () => {
             bin: 'test-harness',
             env: { TEST_GATEWAY_BASE_URL: upstream.baseURL },
             gatewayRouting: {
+              model: 'test/model',
               provider: 'bedrock',
               targetBaseURL: upstream.baseURL,
             },

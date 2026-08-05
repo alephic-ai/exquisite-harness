@@ -20,10 +20,11 @@
 
 **`eh` — pick a harness, pick a provider, go.**
 
-A small CLI that launches the agent harness you want (Claude Code, Codex,
-[Grok Build](https://x.ai/cli)) pointed at the model provider you want (Ollama,
-OpenRouter, Vercel AI Gateway) — with the right env vars, args, effort level,
-and keys wired up for you. Interactive when you want it, flags when you don't.
+A small CLI that launches the agent harness you want (Claude Code, Codex, Grok
+[Build](https://x.ai/cli), opencode, pi) pointed at the model provider you want
+(Ollama, OpenRouter, Vercel AI Gateway) — with the right env vars, args, effort
+level, and keys wired up for you. Interactive when you want it, flags when you
+don't.
 
 ## Install
 
@@ -81,7 +82,9 @@ eh claude ollama qwen3-coder -e high  # low|medium|high|xhigh|max (default auto)
 
 claude → `CLAUDE_CODE_EFFORT_LEVEL` (+ `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT` for
 non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map to
-`high`); grok → `--reasoning-effort`. Profiles and recents remember it.
+`high`); grok → `--reasoning-effort <level>` when explicitly set; pi →
+`--thinking <level>` (levels match 1:1); opencode has no knob and ignores it.
+Profiles and recents remember it.
 
 ### AI Gateway provider routing
 
@@ -89,14 +92,17 @@ For Vercel AI Gateway models, interactive launches offer an additional provider
 picker after the model. Leave it on `automatic` for normal Gateway routing, or
 pin one upstream with `--gateway-provider <slug>`. A pin is fail-closed for that
 run: Gateway will not fall back to another provider. The option works with
-Claude, Codex, Grok, and `eh run`; profiles and recents remember it.
+Claude, Codex, and Grok, including their `eh run` forms; profiles and recents
+remember it. Pi and opencode reject the option instead of silently falling back
+to automatic Gateway routing.
 
 ### Resume
 
 `eh -r` shows a filterable list of the current directory's sessions across all
-harnesses — claude, codex, and grok — newest first, each with its model and age,
-and resumes your pick by session id. Sessions show up whether or not eh launched
-them; the list comes from the harnesses' own session stores.
+harnesses — claude, codex, grok, opencode, and pi — newest first, and resumes
+your pick by session id. Each row shows its harness, age, and model when the
+store exposes one. Sessions show up whether or not eh launched them; the list
+comes from the harnesses' own session stores.
 
 The wiring comes from your recents: the provider that last ran that
 harness+model wins, falling back to the latest combo for the harness, then to
@@ -126,13 +132,15 @@ failed native result makes both `run.completed.exitCode` and the `eh` process
 exit code non-zero, even when the child process exits zero.
 
 The fully specified command never opens UI, updates recents, or installs a
-statusline. Claude and Codex receive the prompt over stdin. Grok receives a
+statusline. Claude, Codex, pi, and opencode receive the prompt over stdin; pi
+runs with `--mode json`, and opencode uses `run --format json`. Grok receives a
 private temporary prompt file because its headless CLI exposes `--prompt-file`;
 `eh` removes that file after the child exits. Native session resume is available
-with `--resume-session <id>`. Orchestrators that must preserve harness-specific
-policy flags can pass a JSON string array with `--native-args-json`; those args
-are prepended before `eh`'s required machine-output flags. Vercel AI Gateway
-runs may also use `--gateway-provider <slug>`.
+for all five harnesses with `--resume-session <id>`. Orchestrators that must
+preserve harness-specific policy flags can pass a JSON string array with
+`--native-args-json`; those args are prepended before `eh`'s required
+machine-output flags. Vercel AI Gateway runs through Claude, Codex, or Grok may
+also use `--gateway-provider <slug>`; Pi and opencode reject it.
 
 ### Keys
 
@@ -201,14 +209,21 @@ eh update                             # self-update to the latest release
 
 ## The matrix
 
-|             | Ollama | OpenRouter | Vercel AI Gateway |
-| ----------- | ------ | ---------- | ----------------- |
-| Claude Code | ✅     | ⚠️ router  | ✅                |
-| Codex       | ✅     | ✅         | ✅                |
-| Grok        | ✅     | ✅         | ✅                |
+|             | Ollama         | OpenRouter | Vercel AI Gateway |
+| ----------- | -------------- | ---------- | ----------------- |
+| Claude Code | ✅             | ⚠️ router  | ✅                |
+| Codex       | ✅             | ✅         | ✅                |
+| Grok        | ✅             | ✅         | ✅                |
+| opencode    | ✅             | ✅         | ✅                |
+| pi          | ⚠️ models.json | ✅         | ✅                |
 
-✅ = native protocol match, launched with env/args only. ⚠️ = needs the phase-2
-protocol router (see [DESIGN.md](DESIGN.md)).
+✅ = native protocol match, launched with env/args only. ⚠️ router = needs the
+phase-2 protocol router (see [DESIGN.md](DESIGN.md)). pi only talks to providers
+in its own catalog or declared in `~/.pi/agent/models.json` — ollama needs an
+entry with an API type, API key configuration, base URL, and at least one model
+there (eh never writes that file; the picker shows a hint). Keyless local
+servers still need a dummy `apiKey` value because Pi uses it as its auth-ready
+signal.
 
 ## Config
 

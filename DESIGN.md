@@ -1,19 +1,21 @@
 # Exquisite Harness (`eh`) — Design
 
-A CLI that lets you choose a **harness** (Claude Code, Codex, Grok Build) and
-point it at a **provider** (Ollama, OpenRouter, Vercel AI Gateway), then
-launches it. Pick a cell in the matrix, `eh` wires it up.
+A CLI that lets you choose a **harness** (Claude Code, Codex, Grok Build,
+opencode, pi) and point it at a **provider** (Ollama, OpenRouter, Vercel AI
+Gateway), then launches it. Pick a cell in the matrix, `eh` wires it up.
 
 ## Core insight
 
 Harnesses speak a wire protocol; providers expose protocol endpoints. Matching
 them is the whole game, and the matrix is already mostly green natively:
 
-| Harness     | Speaks                  | Configured via                                                       |
-| ----------- | ----------------------- | -------------------------------------------------------------------- |
-| Claude Code | Anthropic Messages      | env: `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL` |
-| Codex CLI   | OpenAI Responses / Chat | `-c` overrides (TOML): `model_providers.*`                           |
-| Grok Build  | OpenAI Chat Completions | env: `XAI_API_KEY`, `GROK_MODELS_BASE_URL`, `--model`                |
+| Harness     | Speaks                  | Configured via                                                                   |
+| ----------- | ----------------------- | -------------------------------------------------------------------------------- |
+| Claude Code | Anthropic Messages      | env: `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL`             |
+| Codex CLI   | OpenAI Responses / Chat | `-c` overrides (TOML): `model_providers.*`                                       |
+| Grok Build  | OpenAI Chat Completions | env: `XAI_API_KEY`, `GROK_MODELS_BASE_URL`, `--model`                            |
+| opencode    | OpenAI Chat (AI SDK)    | env: `OPENCODE_CONFIG_CONTENT` (inline provider def), `-m eh-<provider>/<model>` |
+| pi          | OpenAI Chat             | args: `--provider`/`--model`/`--thinking`; catalog + `~/.pi/agent/models.json`   |
 
 | Provider          | Endpoints                                       |
 | ----------------- | ----------------------------------------------- |
@@ -21,13 +23,24 @@ them is the whole game, and the matrix is already mostly green natively:
 | OpenRouter        | OpenAI chat (normalized across upstreams)       |
 | Vercel AI Gateway | OpenAI chat + responses, **Anthropic Messages** |
 
-Resulting compatibility (✅ = native, ⚠️ = needs protocol translation):
+Resulting compatibility (✅ = native, ⚠️ router = needs protocol translation, ⚠️
+models.json = harness-level provider gate):
 
-|             | Ollama | OpenRouter | Vercel AI Gateway |
-| ----------- | ------ | ---------- | ----------------- |
-| Claude Code | ✅     | ⚠️ router  | ✅                |
-| Codex       | ✅     | ✅         | ✅                |
-| Grok        | ✅     | ✅         | ✅                |
+|             | Ollama         | OpenRouter | Vercel AI Gateway |
+| ----------- | -------------- | ---------- | ----------------- |
+| Claude Code | ✅             | ⚠️ router  | ✅                |
+| Codex       | ✅             | ✅         | ✅                |
+| Grok        | ✅             | ✅         | ✅                |
+| opencode    | ✅             | ✅         | ✅                |
+| pi          | ⚠️ models.json | ✅         | ✅                |
+
+pi's ⚠️ is not a protocol gap — pi only talks to providers in its own catalog
+(models.dev-derived; openrouter and vercel-ai-gateway are in it) or declared in
+`~/.pi/agent/models.json`. eh never writes that file (phase-1 no-mutation rule);
+a provider pi doesn't know needs a runnable entry with a base URL, API type, API
+key configuration, and at least one model. The picker hint names the active
+models.json path via the harness's `providerCompat` hook, an instance-level gate
+on top of the protocol-set intersection.
 
 ## Architecture
 
@@ -78,7 +91,10 @@ Claude statusline. The caller owns cwd, scratch/config roots, process timeouts,
 and lifecycle policy; `eh` owns provider wiring and harness protocol parsing.
 Callers can preserve harness-specific policy with a validated JSON string array
 of native arguments, which `eh` prepends before its mandatory machine-mode
-arguments.
+arguments. The five native adapters are Claude `stream-json`, Codex `--json`,
+Grok `streaming-json`, pi `--mode json`, and opencode `run --format json`; pi
+and opencode keep prompt input on stdin and expose their native session IDs,
+text, usage, cost, and semantic errors through the same normalized contract.
 
 **Phase 2 (later): local router.** An opt-in localhost proxy that receives
 Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
@@ -125,15 +141,17 @@ Picker flow (via `@clack/prompts`, skipped per already-specified args):
 1. **Home** — recent combos (Enter relaunches last), or new session.
 2. **Harness** — installed status in the hint.
 3. **Provider** — filtered to protocol-compatible; incompatible rows shown with
-   a `needs router` hint. Status hints: `● running`, `✓ key set`,
-   `✗ KEY not set`. Providers with a key set sort first, then no-key-needed
-   ones, then rows missing a key (with a `✗` label marker), then incompatible
-   rows last. Selecting a provider that needs a key but has none prompts for it
-   inline (masked, Esc to go back) — no separate command needed. Home →
-   providers is one management screen split into visible Model providers and
-   Search providers sections, with per-provider key status (same ordering, `⚠`
-   marker on keyless rows), a visible search default, and set/delete/default
-   actions. Storing a new search key offers to make that provider the default.
+   a `needs router` hint or the harness's own providerCompat reason (pi:
+   `needs a runnable provider entry in <active agent dir>/models.json`). Status
+   hints: `● running`, `✓ key set`, `✗ KEY not set`. Providers with a key set
+   sort first, then no-key-needed ones, then rows missing a key (with a `✗`
+   label marker), then incompatible rows last. Selecting a provider that needs a
+   key but has none prompts for it inline (masked, Esc to go back) — no separate
+   command needed. Home → providers is one management screen split into visible
+   Model providers and Search providers sections, with per-provider key status
+   (same ordering, `⚠` marker on keyless rows), a visible search default, and
+   set/delete/default actions. Storing a new search key offers to make that
+   provider the default.
 4. **Model** — live list from the provider (cached 5 min, stale fallback),
    scrollable, with a manual-entry escape hatch.
 5. **Gateway provider** — only for Vercel AI Gateway: live endpoint providers
@@ -199,10 +217,12 @@ prompts.
 Provider `type` implies: protocols served, default base URL, default API-key env
 var, model-listing strategy, Codex `wire_api`. Each harness declares the set of
 protocols it can speak (`claude: [anthropic]`,
-`codex: [openai-responses, openai-chat]`, `grok: [openai-chat]`); a
-harness/provider pair is compatible when the sets intersect. All three matrix
-providers are built in, so the full 3×3 is visible with no config file at all:
-Ollama works zero-config (no key needed; token value `ollama` is sent where
+`codex: [openai-responses, openai-chat]`, `grok: [openai-chat]`,
+`opencode: [openai-chat]`, `pi: [openai-chat]`); a harness/provider pair is
+compatible when the sets intersect — plus any instance-level `providerCompat`
+gate the harness declares (pi's catalog/models.json membership). All three
+matrix providers are built in, so the full 5×3 is visible with no config file at
+all: Ollama works zero-config (no key needed; token value `ollama` is sent where
 required but ignored), while openrouter and vercel-ai-gateway appear with a "key
 not set" hint until a key is stored or their env var is set. The config file
 only overrides built-ins or adds custom providers. Profiles and recents may
@@ -264,12 +284,13 @@ resolve at launch time without eh storing anything.
 ## Launch plans
 
 For a Vercel AI Gateway selection, `--gateway-provider <slug>` adds a
-process-scoped loopback proxy to any harness plan. The proxy preserves the
-harness's native Anthropic Messages, OpenAI Responses, or Chat Completions
-protocol and only merges `providerOptions.gateway.only: [slug]` into JSON
-inference bodies. Existing provider options are preserved; count-token bodies
-are relayed unchanged. With Claude, request routing composes with exact cost
-capture as `harness → cost proxy → routing proxy → Gateway`.
+process-scoped loopback proxy to Claude, Codex, and Grok launch plans. Pi and
+opencode reject the option. The proxy preserves the harness's native Anthropic
+Messages, OpenAI Responses, or Chat Completions protocol and only merges
+`providerOptions.gateway.only: [slug]` into JSON inference bodies. Existing
+provider options are preserved; count-token bodies are relayed unchanged. With
+Claude, request routing composes with exact cost capture as
+`harness → cost proxy → routing proxy → Gateway`.
 
 - **claude**: env `ANTHROPIC_BASE_URL` (provider's Anthropic endpoint),
   `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL`, `ANTHROPIC_SMALL_FAST_MODEL`.
@@ -312,6 +333,24 @@ capture as `harness → cost proxy → routing proxy → Gateway`.
 - **grok**: env `XAI_API_KEY`, `GROK_MODELS_BASE_URL`, args `--model <id>` and
   optional `--reasoning-effort <level>`. These are Grok Build's documented
   custom-model and CLI interfaces; `eh doctor` reports the installed binary.
+- **opencode**: env `OPENCODE_CONFIG_CONTENT` — an inline JSON provider
+  definition (`@ai-sdk/openai-compatible`, chat completions) that merges over
+  the user's own config, so nothing is written to disk; `apiKey` uses
+  `{env:VAR}` indirection so the payload stays key-free (print-env safe). No
+  `limit` on the model entry: opencode requires context and output together, and
+  the output limit isn't knowable. Args `-m eh-<provider>/<model>`. No CLI
+  effort knob; an explicit effort is noted and ignored.
+- **pi**: args `--provider <pi name> --model <id>`, plus `--thinking <level>`
+  for effort (pi's levels are eh's 1:1). The pi provider name resolves from pi's
+  native catalog (openrouter, vercel-ai-gateway — both read the same key env
+  vars eh uses, matched on canonical upstream) or from `~/.pi/agent/models.json`
+  by baseUrl (loopback- and `/v1`-insensitive) when the entry also defines an
+  API type, API key configuration, and at least one model; an exact
+  provider-name match wins, while multiple fallback entries for one base URL are
+  rejected as ambiguous. eh never writes that file. Keys ride via env injection
+  only (never `--api-key` argv): a models.json entry's `apiKey: "$VAR"` names
+  the var to inject, while keyless local servers use a dummy literal. Unknown
+  model ids pass through — pi prints its own generic-limits warning.
 
 **Effort** is an optional part of a selection (`auto`, `low`, `medium`, `high`,
 `xhigh`, `max`), resolved flag → profile → interactive default (`auto` = model
@@ -320,9 +359,11 @@ default, sends nothing). Vercel AI Gateway also exposes the OpenAI
 Gateway–backed codex/OpenAI models.
 
 **Resume** (`-r`): an eh-owned picker over this directory's sessions across all
-three harnesses, then resume the pick by session id — claude `--resume <id>`,
-codex `resume <id>` (a subcommand; the global `-c` overrides precede it), grok
-`--resume <id>`. Sessions come from the harnesses' own stores, read best-effort
+harnesses, then resume the pick by session id — claude `--resume <id>`, codex
+`resume <id>` (a subcommand; the global `-c` overrides precede it), grok
+`--resume <id>`, opencode `--session <id>`, pi `--session <id>` (opencode and pi
+fall back to `--continue` when no id is resolved — the `--print-env` path).
+Sessions come from the harnesses' own stores, read best-effort
 (`src/sessions.ts`; roots honor `$CLAUDE_CONFIG_DIR` / `$CODEX_HOME` when set):
 claude
 `~/.claude/projects/<cwd with every non-alphanumeric char → - >/<id>.jsonl`
@@ -335,10 +376,19 @@ id+cwd — files are date-organized, so the scan is bounded to 300 files / 25
 matches; title from the first `user_message` event, model from the first
 `turn_context`), grok
 `${GROK_HOME:-~/.grok}/sessions/<encodeURIComponent(cwd)>/<id>/summary.json`
-(ready-made title/model/timestamps). Subagent sessions are filtered (grok
-`session_kind`, codex `thread_source`). The list shows sessions whether or not
-eh launched them, each with harness, model, and age — never provider, which
-transcripts don't record.
+(ready-made title/model/timestamps), pi
+`~/.pi/agent/sessions/--<cwd, leading slash stripped, / \ : → ->--/<ts>_<id>.jsonl`
+(line-1 header gives the id — the cwd match comes from the directory name —
+first `model_change` the model, first user message the title; roots honor
+`$PI_CODING_AGENT_DIR`; `$PI_CODING_AGENT_SESSION_DIR` is treated as one flat
+directory and filtered by the header cwd), opencode via
+`opencode session list --format json` (its 1.x store is a sqlite db — eh asks
+the CLI rather than linking a driver; the list is global but root-sessions-only,
+matched to cwd by `directory`). Subagent sessions are filtered (grok
+`session_kind`, codex `thread_source`; opencode's list excludes them itself).
+The list shows sessions whether or not eh launched them, each with harness, age,
+and model when the store exposes one — never provider, which transcripts don't
+record.
 
 Wiring: explicit positionals/flags win. Otherwise the recents supply it,
 preferring the combo that last ran that harness+model (a provider is only known
@@ -370,6 +420,8 @@ src/gateway-costs.ts transparent Vercel stream proxy + exact session ledger
 src/gateway-routing.ts process-scoped request rewriter for Gateway provider pins
 src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
+src/pi.ts         pi provider resolution: native catalog map + models.json matching
+src/opencode.ts   opencode inline-config builder (OPENCODE_CONFIG_CONTENT)
 src/sessions.ts   cross-harness session enumeration for -r (read-only store scans)
 src/launch.ts     spawn / print-env
 src/search-provider.ts  web config/key resolution + Firecrawl v2 client

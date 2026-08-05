@@ -11,6 +11,16 @@ import { z } from 'zod'
 import type { LaunchPlan } from './types.js'
 
 const requestBodySchema = z.record(z.string(), z.unknown())
+const gatewayEndpointsSchema = z.object({
+  data: z.looseObject({
+    endpoints: z.array(
+      z.looseObject({
+        provider_name: z.string(),
+        status: z.number().optional(),
+      }),
+    ),
+  }),
+})
 const INFERENCE_PATHS = [
   '/chat/completions',
   '/messages',
@@ -24,9 +34,18 @@ export async function withGatewayRouting<T>(
 ) {
   if (!plan.gatewayRouting) return run(plan)
 
+  const validatedModels = new Map<string, Promise<void>>()
+  await validateGatewayProvider({
+    headers: gatewayValidationHeaders(plan),
+    model: plan.gatewayRouting.model,
+    provider: plan.gatewayRouting.provider,
+    target: validateTargetBaseURL(plan.gatewayRouting.targetBaseURL),
+    validatedModels,
+  })
   const proxy = await startGatewayRoutingProxy({
     provider: plan.gatewayRouting.provider,
     targetBaseURL: plan.gatewayRouting.targetBaseURL,
+    validatedModels,
   })
   try {
     return await run(routePlanThroughProxy(plan, proxy.baseURL))
@@ -53,12 +72,48 @@ function asRecord(value: unknown) {
   return parsed.success ? parsed.data : undefined
 }
 
+async function fetchGatewayProviders(props: {
+  headers: Headers
+  model: string
+  target: URL
+}) {
+  const apiBasePath = props.target.pathname.endsWith('/v1')
+    ? props.target.pathname
+    : `${props.target.pathname}/v1`.replace('//', '/')
+  const modelPath = props.model.split('/').map(encodeURIComponent).join('/')
+  const url = new URL(
+    `${apiBasePath}/models/${modelPath}/endpoints`,
+    props.target.origin,
+  )
+  const response = await fetch(url, {
+    headers: props.headers,
+    redirect: 'manual',
+  })
+  if (!response.ok) {
+    throw new Error(
+      `could not validate gateway provider: HTTP ${String(response.status)} from ${url.toString()}`,
+    )
+  }
+  const body: unknown = await response.json()
+  const endpoints = gatewayEndpointsSchema.parse(body).data.endpoints
+  return [
+    ...new Set(
+      endpoints
+        .filter(
+          (endpoint) => endpoint.status === undefined || endpoint.status === 0,
+        )
+        .map((endpoint) => endpoint.provider_name),
+    ),
+  ]
+}
+
 async function forwardRequest(props: {
   activeRequests: Set<AbortController>
   provider: string
   request: IncomingMessage
   response: ServerResponse
   target: URL
+  validatedModels: Map<string, Promise<void>>
 }) {
   const controller = new AbortController()
   const abortUpstream = () => {
@@ -80,12 +135,21 @@ async function forwardRequest(props: {
     }
     const rawBody =
       method === 'POST' ? await readRequestBody(props.request) : undefined
-    const body = isInferencePath(upstreamURL.pathname)
-      ? routeRequestBody(rawBody ?? Buffer.alloc(0), props.provider)
-      : rawBody
     const headers = requestHeaders(props.request.headers)
+    const routed = isInferencePath(upstreamURL.pathname)
+      ? routeRequestBody(rawBody ?? Buffer.alloc(0), props.provider)
+      : undefined
+    if (routed) {
+      await validateGatewayProvider({
+        headers,
+        model: routed.model,
+        provider: props.provider,
+        target: props.target,
+        validatedModels: props.validatedModels,
+      })
+    }
     const upstream = await fetch(upstreamURL, {
-      body,
+      body: routed?.body ?? rawBody,
       headers,
       method,
       redirect: 'manual',
@@ -144,6 +208,20 @@ function gatewayUpstreamURL(requestPath: string, target: URL) {
   )
 }
 
+function gatewayValidationHeaders(plan: LaunchPlan) {
+  const headers = new Headers()
+  const routing = plan.gatewayRouting
+  if (!routing) return headers
+  const apiKey = [
+    planEnvValue(plan, routing.apiKeyEnvKey),
+    routing.apiKeyEnvKey ? process.env[routing.apiKeyEnvKey] : undefined,
+    planEnvValue(plan, 'ANTHROPIC_AUTH_TOKEN'),
+    planEnvValue(plan, 'XAI_API_KEY'),
+  ].find((value) => value !== undefined && value.trim().length > 0)
+  if (apiKey) headers.set('authorization', `Bearer ${apiKey}`)
+  return headers
+}
+
 function isInferencePath(pathname: string) {
   return INFERENCE_PATHS.some((path) => pathname.endsWith(path))
 }
@@ -156,6 +234,10 @@ function isResponseTransportHeader(name: string) {
     'keep-alive',
     'transfer-encoding',
   ].includes(name.toLowerCase())
+}
+
+function planEnvValue(plan: LaunchPlan, key: string | undefined) {
+  return key && Object.hasOwn(plan.env, key) ? plan.env[key] : undefined
 }
 
 async function readRequestBody(request: IncomingMessage) {
@@ -224,23 +306,32 @@ function routePlanThroughProxy(plan: LaunchPlan, proxyBaseURL: string) {
 
 function routeRequestBody(body: Buffer, provider: string) {
   const parsed = requestBodySchema.parse(JSON.parse(body.toString('utf8')))
+  if (typeof parsed.model !== 'string' || parsed.model.length === 0) {
+    throw new Error('gateway routing request is missing a model')
+  }
   const providerOptions = asRecord(parsed.providerOptions) ?? {}
   const gateway = asRecord(providerOptions.gateway) ?? {}
-  return JSON.stringify({
-    ...parsed,
-    providerOptions: {
-      ...providerOptions,
-      gateway: { ...gateway, only: [provider] },
-    },
-  })
+  return {
+    body: JSON.stringify({
+      ...parsed,
+      providerOptions: {
+        ...providerOptions,
+        gateway: { ...gateway, only: [provider] },
+      },
+    }),
+    model: parsed.model,
+  }
 }
 
 async function startGatewayRoutingProxy(props: {
   provider: string
   targetBaseURL: string
+  validatedModels?: Map<string, Promise<void>>
 }) {
   const target = validateTargetBaseURL(props.targetBaseURL)
   const activeRequests = new Set<AbortController>()
+  const validatedModels =
+    props.validatedModels ?? new Map<string, Promise<void>>()
   const server = createServer((request, response) => {
     void forwardRequest({
       activeRequests,
@@ -248,6 +339,7 @@ async function startGatewayRoutingProxy(props: {
       request,
       response,
       target,
+      validatedModels,
     })
   })
 
@@ -277,6 +369,34 @@ async function startGatewayRoutingProxy(props: {
       server.closeAllConnections()
       await closed
     },
+  }
+}
+
+async function validateGatewayProvider(props: {
+  headers: Headers
+  model: string
+  provider: string
+  target: URL
+  validatedModels: Map<string, Promise<void>>
+}) {
+  const cacheKey = `${props.model}\0${props.provider}`
+  let validation = props.validatedModels.get(cacheKey)
+  if (!validation) {
+    validation = fetchGatewayProviders(props).then((providers) => {
+      if (!providers.includes(props.provider)) {
+        const available = providers.length > 0 ? providers.join(', ') : 'none'
+        throw new Error(
+          `gateway provider "${props.provider}" is unavailable for model "${props.model}" (available: ${available})`,
+        )
+      }
+    })
+    props.validatedModels.set(cacheKey, validation)
+  }
+  try {
+    await validation
+  } catch (error) {
+    props.validatedModels.delete(cacheKey)
+    throw error
   }
 }
 
