@@ -50,15 +50,17 @@ Each prints env/args and exits 0 without launching.
    the `-c` overrides).
 9. `eh -r --print-env grok ollama qwen3-coder` → args end with `--resume`.
 10. `eh --print-env pi ollama qwen3-coder` with a models.json entry
-    `{"providers":{"ollama":{"baseUrl":"http://127.0.0.1:11434/v1"}}}` in
-    `~/.pi/agent/models.json` → args `--provider ollama --model qwen3-coder`, no
-    env (the provider name is the entry's key; a literal/absent apiKey means no
-    env). A file containing `//` or block comments is accepted like Pi's own
-    loader. With `apiKey: "$OLLAMA_TEST_KEY"` and that var unset → env exports
-    `OLLAMA_TEST_KEY='ollama'`. With a compound template such as
+    `{"providers":{"ollama":{"api":"openai-completions","apiKey":"ollama","baseUrl":"http://127.0.0.1:11434/v1","models":[{"id":"qwen3-coder"}]}}}`
+    in `~/.pi/agent/models.json` → args `--provider ollama --model qwen3-coder`,
+    no env (the provider name is the entry's key; a literal apiKey means no env,
+    and `ollama` is the dummy value Pi documents for this keyless server). A
+    file containing `//` or block comments and trailing commas is accepted like
+    Pi's own loader. With `apiKey: "$OLLAMA_TEST_KEY"` and that var unset → env
+    exports `OLLAMA_TEST_KEY='ollama'`. With a compound template such as
     `${KEY_PREFIX}_${KEY_SUFFIX}` or an escaped dollar such as `$$literal`, no
     partial env var is exported; Pi owns interpretation of those values. Without
-    any entry → error "needs an entry in ~/.pi/agent/models.json".
+    a runnable entry → error "needs a runnable provider entry in
+    ~/.pi/agent/models.json".
 11. `eh --print-env pi ollama qwen3-coder -e high` → args end with
     `--thinking high`.
 12. `eh --print-env opencode ollama qwen3-coder` → `OPENCODE_CONFIG_CONTENT`
@@ -116,8 +118,9 @@ Drive each with the PTY; assert on screen text.
    model picker lists live Ollama models with size hints, plus "other…". Select
    a model → confirm screen. 3b. **providerCompat gate**: with
    `PI_CODING_AGENT_DIR` pointed at an empty dir (no models.json), run `eh pi` →
-   provider picker lists ollama last with hint "ollama · needs an entry in
-   ~/.pi/agent/models.json"; picking it warns and re-prompts.
+   provider picker lists ollama last with hint "ollama · needs a runnable
+   provider entry in `<PI_CODING_AGENT_DIR>/models.json`"; picking it warns and
+   re-prompts.
 4. **Manual model entry**: in the model picker choose "other…" → text prompt
    appears; type a model id → accepted and shown in the confirm note.
 5. **Cancel**: at any picker, press Ctrl+C → "bye" and exit 0 (no stack).

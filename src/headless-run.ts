@@ -42,10 +42,10 @@ interface ResolvedHeadlessRunOptions {
 }
 
 export async function runHeadless(options: HeadlessRunOptions) {
-  const prompt = readPrompt()
   let cleanup = async () => Promise.resolve()
 
   try {
+    const prompt = readPrompt()
     const effort = EFFORT_LEVELS.find((level) => level === options.effort)
     if (effort === undefined) {
       throw new Error(

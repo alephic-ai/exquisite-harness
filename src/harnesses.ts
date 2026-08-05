@@ -2,11 +2,7 @@ import type { ResolvedProvider } from './config.js'
 import type { LaunchPlan, Protocol } from './types.js'
 
 import { opencodeConfigContent, opencodeProviderId } from './opencode.js'
-import {
-  PI_MODELS_JSON_HINT,
-  piProviderCompat,
-  resolvePiProvider,
-} from './pi.js'
+import { piModelsJsonHint, piProviderCompat, resolvePiProvider } from './pi.js'
 import { fetchModelMeta } from './pricing.js'
 import {
   anthropicBaseURLFor,
@@ -203,7 +199,7 @@ async function planPi(
   const match = resolvePiProvider(provider)
   if (!match) {
     throw new Error(
-      `pi can't serve provider "${provider.name}" — ${PI_MODELS_JSON_HINT}`,
+      `pi can't serve provider "${provider.name}" — ${piModelsJsonHint()}`,
     )
   }
   const env: Record<string, string> = {}

@@ -9,7 +9,13 @@ import { parsePiModelsJson } from './pi-models-json.js'
 
 // Where picker rows and launch-time errors send the user when pi can't serve
 // a provider.
-export const PI_MODELS_JSON_HINT = 'needs an entry in ~/.pi/agent/models.json'
+export function piModelsJsonHint() {
+  const configuredDir = process.env.PI_CODING_AGENT_DIR
+  const agentDir = configuredDir
+    ? expandHomePath(configuredDir, os.homedir())
+    : '~/.pi/agent'
+  return `needs a runnable provider entry in ${path.join(agentDir, 'models.json')}`
+}
 
 // pi can only talk to providers it knows: natively (openrouter,
 // vercel-ai-gateway) or declared in the user's models.json, matched by
@@ -17,34 +23,56 @@ export const PI_MODELS_JSON_HINT = 'needs an entry in ~/.pi/agent/models.json'
 // gate, not a fixup. Returns the pi provider id plus the env var eh should
 // inject with the resolved key — native providers read fixed names (models.dev
 // convention), a models.json entry's apiKey "$VAR" names its own; undefined
-// keyEnvVar = pi already has what it needs (literal/absent apiKey).
+// keyEnvVar = pi resolves a native, literal, or compound config value itself.
 export function matchPiProvider(
   modelsJson: PiModelsJson,
   provider: ResolvedProvider,
 ) {
   const native = NATIVE_PI_PROVIDERS.get(provider.name)
+  const nativeOverride = Object.hasOwn(modelsJson.providers, provider.name)
+    ? modelsJson.providers[provider.name]
+    : undefined
+  if (native && nativeOverride) {
+    const effectiveBaseURL = nativeOverride.baseUrl ?? native.baseURL
+    if (!samePiBaseURL(effectiveBaseURL, provider.baseURL)) return undefined
+    return {
+      keyEnvVar:
+        nativeOverride.apiKey === undefined
+          ? native.envVar
+          : envVarRef(nativeOverride.apiKey),
+      piName: native.piName,
+    }
+  }
   if (native && samePiBaseURL(native.baseURL, provider.baseURL)) {
     return { keyEnvVar: native.envVar, piName: native.piName }
   }
-  for (const [piName, entry] of Object.entries(modelsJson.providers)) {
-    if (
-      entry.baseUrl !== undefined &&
-      samePiBaseURL(entry.baseUrl, provider.baseURL)
-    ) {
-      return {
-        keyEnvVar:
-          entry.apiKey === undefined ? undefined : envVarRef(entry.apiKey),
-        piName,
-      }
-    }
+
+  const exact = Object.hasOwn(modelsJson.providers, provider.name)
+    ? modelsJson.providers[provider.name]
+    : undefined
+  if (
+    !native &&
+    exact !== undefined &&
+    isRunnableCustomPiProvider(exact) &&
+    samePiBaseURL(exact.baseUrl, provider.baseURL)
+  ) {
+    return piProviderMatch(provider.name, exact)
   }
-  return undefined
+
+  const matches = Object.entries(modelsJson.providers).filter(
+    ([piName, entry]) =>
+      piName !== provider.name &&
+      isRunnableCustomPiProvider(entry) &&
+      samePiBaseURL(entry.baseUrl, provider.baseURL),
+  )
+  const match = matches.length === 1 ? matches.at(0) : undefined
+  return match ? piProviderMatch(...match) : undefined
 }
 
 // HarnessDef.providerCompat for pi.
 export function piProviderCompat(provider: ResolvedProvider) {
   if (resolvePiProvider(provider)) return { ok: true as const }
-  return { hint: PI_MODELS_JSON_HINT, ok: false as const }
+  return { hint: piModelsJsonHint(), ok: false as const }
 }
 
 // models.json read is memoized for the process — picker and launch plan both
@@ -94,6 +122,26 @@ function envVarRef(apiKey: string) {
   return match?.at(1) ?? match?.at(2)
 }
 
+function expandHomePath(value: string, home: string) {
+  if (value === '~') return home
+  return /^~[/\\]/.test(value) ? path.join(home, value.slice(2)) : value
+}
+
+function isRunnableCustomPiProvider(
+  entry: PiModelsJson['providers'][string],
+): entry is PiModelsJson['providers'][string] & {
+  apiKey: string
+  baseUrl: string
+} {
+  return (
+    entry.baseUrl !== undefined &&
+    Boolean(entry.apiKey?.trim()) &&
+    entry.models !== undefined &&
+    entry.models.length > 0 &&
+    entry.models.every((model) => Boolean((model.api ?? entry.api)?.trim()))
+  )
+}
+
 function loadPiModelsJson() {
   if (cachedModelsJson) return cachedModelsJson
   cachedModelsJson = { providers: {} }
@@ -121,7 +169,20 @@ function normalizeBaseURL(raw: string) {
 }
 
 function piModelsJsonPath() {
-  const agentDir =
-    process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), '.pi', 'agent')
+  const home = os.homedir()
+  const agentDir = expandHomePath(
+    process.env.PI_CODING_AGENT_DIR ?? path.join(home, '.pi', 'agent'),
+    home,
+  )
   return path.join(agentDir, 'models.json')
+}
+
+function piProviderMatch(
+  piName: string,
+  entry: PiModelsJson['providers'][string],
+) {
+  return {
+    keyEnvVar: entry.apiKey === undefined ? undefined : envVarRef(entry.apiKey),
+    piName,
+  }
 }

@@ -37,9 +37,10 @@ models.json = harness-level provider gate):
 pi's ⚠️ is not a protocol gap — pi only talks to providers in its own catalog
 (models.dev-derived; openrouter and vercel-ai-gateway are in it) or declared in
 `~/.pi/agent/models.json`. eh never writes that file (phase-1 no-mutation rule);
-a provider pi doesn't know shows a `needs an entry in ~/.pi/agent/models.json`
-picker hint via the harness's `providerCompat` hook, an instance-level gate on
-top of the protocol-set intersection.
+a provider pi doesn't know needs a runnable entry with a base URL, API type, API
+key configuration, and at least one model. The picker hint names the active
+models.json path via the harness's `providerCompat` hook, an instance-level gate
+on top of the protocol-set intersection.
 
 ## Architecture
 
@@ -106,13 +107,14 @@ Picker flow (via `@clack/prompts`, skipped per already-specified args):
 2. **Harness** — installed status in the hint.
 3. **Provider** — filtered to protocol-compatible; incompatible rows shown with
    a `needs router` hint or the harness's own providerCompat reason (pi:
-   `needs an entry in ~/.pi/agent/models.json`). Status hints: `● running`,
-   `✓ key set`, `✗ KEY not set`. Providers with a key set sort first, then
-   no-key-needed ones, then rows missing a key (with a `✗` label marker), then
-   incompatible rows last. Selecting a provider that needs a key but has none
-   prompts for it inline (masked, Esc to go back) — no separate command needed.
-   Home → providers is a management screen: per-provider key status (same
-   ordering, `⚠` marker on keyless rows) with set/delete-key actions.
+   `needs a runnable provider entry in <active agent dir>/models.json`). Status
+   hints: `● running`, `✓ key set`, `✗ KEY not set`. Providers with a key set
+   sort first, then no-key-needed ones, then rows missing a key (with a `✗`
+   label marker), then incompatible rows last. Selecting a provider that needs a
+   key but has none prompts for it inline (masked, Esc to go back) — no separate
+   command needed. Home → providers is a management screen: per-provider key
+   status (same ordering, `⚠` marker on keyless rows) with set/delete-key
+   actions.
 4. **Model** — live list from the provider (cached 5 min, stale fallback),
    scrollable, with a manual-entry escape hatch.
 5. **Confirm** — `note()` with resolved env/args → go / save as profile / back.
@@ -259,10 +261,13 @@ resolve at launch time without eh storing anything.
   for effort (pi's levels are eh's 1:1). The pi provider name resolves from pi's
   native catalog (openrouter, vercel-ai-gateway — both read the same key env
   vars eh uses, matched on canonical upstream) or from `~/.pi/agent/models.json`
-  by baseUrl (loopback- and `/v1`-insensitive); eh never writes that file. Keys
-  ride via env injection only (never `--api-key` argv): a models.json entry's
-  `apiKey: "$VAR"` names the var to inject. Unknown model ids pass through — pi
-  prints its own generic-limits warning.
+  by baseUrl (loopback- and `/v1`-insensitive) when the entry also defines an
+  API type, API key configuration, and at least one model; an exact
+  provider-name match wins, while multiple fallback entries for one base URL are
+  rejected as ambiguous. eh never writes that file. Keys ride via env injection
+  only (never `--api-key` argv): a models.json entry's `apiKey: "$VAR"` names
+  the var to inject, while keyless local servers use a dummy literal. Unknown
+  model ids pass through — pi prints its own generic-limits warning.
 
 **Effort** is an optional part of a selection (`auto`, `low`, `medium`, `high`,
 `xhigh`, `max`), resolved flag → profile → interactive default (`auto` = model
@@ -292,13 +297,15 @@ matches; title from the first `user_message` event, model from the first
 `~/.pi/agent/sessions/--<cwd, leading slash stripped, / \ : → ->--/<ts>_<id>.jsonl`
 (line-1 header gives the id — the cwd match comes from the directory name —
 first `model_change` the model, first user message the title; roots honor
-`$PI_CODING_AGENT_DIR`), opencode via `opencode session list --format json` (its
-1.x store is a sqlite db — eh asks the CLI rather than linking a driver; the
-list is global but root-sessions-only, matched to cwd by `directory`). Subagent
-sessions are filtered (grok `session_kind`, codex `thread_source`; opencode's
-list excludes them itself). The list shows sessions whether or not eh launched
-them, each with harness, age, and model when the store exposes one — never
-provider, which transcripts don't record.
+`$PI_CODING_AGENT_DIR`; `$PI_CODING_AGENT_SESSION_DIR` is treated as one flat
+directory and filtered by the header cwd), opencode via
+`opencode session list --format json` (its 1.x store is a sqlite db — eh asks
+the CLI rather than linking a driver; the list is global but root-sessions-only,
+matched to cwd by `directory`). Subagent sessions are filtered (grok
+`session_kind`, codex `thread_source`; opencode's list excludes them itself).
+The list shows sessions whether or not eh launched them, each with harness, age,
+and model when the store exposes one — never provider, which transcripts don't
+record.
 
 Wiring: explicit positionals/flags win. Otherwise the recents supply it,
 preferring the combo that last ran that harness+model (a provider is only known

@@ -163,7 +163,10 @@ eh update                             # self-update to the latest release
 ✅ = native protocol match, launched with env/args only. ⚠️ router = needs the
 phase-2 protocol router (see [DESIGN.md](DESIGN.md)). pi only talks to providers
 in its own catalog or declared in `~/.pi/agent/models.json` — ollama needs an
-entry there (eh never writes that file; the picker shows a hint).
+entry with an API type, API key configuration, base URL, and at least one model
+there (eh never writes that file; the picker shows a hint). Keyless local
+servers still need a dummy `apiKey` value because Pi uses it as its auth-ready
+signal.
 
 ## Config
 

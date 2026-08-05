@@ -180,6 +180,15 @@ describe('eh run', () => {
 
   test.each([
     [
+      'empty stdin',
+      'codex',
+      'ollama',
+      '',
+      [],
+      'none',
+      'eh run expects a prompt on stdin',
+    ],
+    [
       'malformed native args',
       'codex',
       'ollama',
@@ -304,7 +313,11 @@ describe('eh run', () => {
       expect(exitCode).toBe(1)
       expect(parseEvents(stdout)).toEqual([
         {
-          message: expect.stringContaining(expectedMessage),
+          message: expect.stringContaining(
+            setup === 'missing-pi-provider'
+              ? path.join(piDir, 'models.json')
+              : expectedMessage,
+          ),
           type: 'run.error',
           v: 1,
         },
@@ -764,35 +777,6 @@ describe('eh run', () => {
     expect(completedIndex).toBeGreaterThan(assistantTextIndex)
   })
 
-  test('explains how to provide a prompt when stdin is empty', async () => {
-    const fixture = createFakeCodex()
-    const child = spawn(
-      process.execPath,
-      ['run', 'src/main.ts', 'run', 'codex', 'ollama', 'qwen3-coder'],
-      {
-        cwd: repoRoot,
-        env: {
-          ...process.env,
-          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
-          XDG_CONFIG_HOME: fixture.configDir,
-        },
-      },
-    )
-    child.stdin.end()
-
-    const [exitCode, stderr, stdout] = await Promise.all([
-      childExitCode(child),
-      readStream(child.stderr),
-      readStream(child.stdout),
-    ])
-
-    expect(exitCode).toBe(1)
-    expect(stdout).toBe('')
-    expect(stderr).toBe(
-      "eh: eh run expects a prompt on stdin; pipe one in, for example: printf 'fix the parser' | eh run codex ollama qwen3-coder\n",
-    )
-  })
-
   test('converts a semantic Codex failure into a non-zero wrapper exit', async () => {
     const fixture = createFakeCodex()
     const child = spawn(
@@ -1183,7 +1167,12 @@ emit({
     path.join(fixture.configDir, 'models.json'),
     JSON.stringify({
       providers: {
-        ollama: { baseUrl: 'http://127.0.0.1:11434/v1' },
+        ollama: {
+          api: 'openai-completions',
+          apiKey: 'ollama',
+          baseUrl: 'http://127.0.0.1:11434/v1',
+          models: [{ id: 'qwen3-coder' }],
+        },
       },
     }),
   )

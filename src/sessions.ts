@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { createReadStream, readdirSync, readFileSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -33,6 +33,8 @@ export interface SessionRoots {
   codex?: string
   grok?: string
   pi?: string
+  // Unlike pi's default per-cwd store, this override is one flat directory.
+  piSessionDir?: string
 }
 
 // Boundary seam for opencode enumeration (parallels roots): production spawns
@@ -80,6 +82,11 @@ export async function listSessionsForCwd(
       path.join(process.env.GROK_HOME ?? path.join(home, '.grok'), 'sessions'),
     pi: options.roots?.pi ?? piSessionsRoot(home),
   }
+  const piSessionDir =
+    options.roots?.piSessionDir ??
+    (options.roots?.pi === undefined
+      ? process.env.PI_CODING_AGENT_SESSION_DIR
+      : undefined)
   const wanted = options.harness
   const jobs: Promise<SessionInfo[]>[] = []
   if (wanted === undefined || wanted === 'claude') {
@@ -102,7 +109,14 @@ export async function listSessionsForCwd(
     )
   }
   if (wanted === undefined || wanted === 'pi') {
-    jobs.push(piSessions(cwd, roots.pi))
+    jobs.push(
+      piSessions(
+        cwd,
+        piSessionDir
+          ? { flat: true, root: expandHomePath(piSessionDir, home) }
+          : { flat: false, root: roots.pi },
+      ),
+    )
   }
   const groups = await Promise.all(jobs)
   return groups
@@ -335,7 +349,6 @@ function grokSummary(file: string, dirId: string, mtime: Date) {
 // the CLI itself — `session list --format json` prints root sessions
 // (subagents pre-filtered) across all projects, newest first, and eh filters
 // by cwd. Best-effort like every store: no binary / bad output → no rows.
-const OPENCODE_LIST_LIMIT = 400
 const OPENCODE_LIST_TIMEOUT_MS = 5000
 
 const opencodeSessionRowSchema = z.looseObject({
@@ -381,30 +394,41 @@ async function opencodeListRows(run: OpencodeListRunner) {
 async function opencodeSessionList() {
   const bin = findBin('opencode')
   if (!bin) return []
-  return new Promise((resolve) => {
-    execFile(
-      bin,
-      [
-        'session',
-        'list',
-        '--format',
-        'json',
-        '-n',
-        String(OPENCODE_LIST_LIMIT),
-      ],
-      { timeout: OPENCODE_LIST_TIMEOUT_MS },
-      (error, stdout) => {
-        if (error) {
-          resolve([])
-          return
-        }
-        try {
-          resolve(JSON.parse(stdout) as unknown)
-        } catch {
-          resolve([])
-        }
-      },
-    )
+  return new Promise<unknown>((resolve) => {
+    const child = spawn(bin, ['session', 'list', '--format', 'json'], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    const chunks: Buffer[] = []
+    let settled = false
+    const timeout = setTimeout(() => {
+      child.kill()
+      finish([])
+    }, OPENCODE_LIST_TIMEOUT_MS)
+
+    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk))
+    child.stdout.on('error', () => {
+      child.kill()
+      finish([])
+    })
+    child.on('error', () => finish([]))
+    child.on('close', (code) => {
+      if (code !== 0) {
+        finish([])
+        return
+      }
+      try {
+        finish(JSON.parse(Buffer.concat(chunks).toString('utf8')))
+      } catch {
+        finish([])
+      }
+    })
+
+    function finish(value: unknown) {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
+      resolve(value)
+    }
   })
 }
 
@@ -422,6 +446,7 @@ function piFileId(file: string) {
 }
 
 async function piMeta(file: string) {
+  let cwd: string | undefined
   let id: string | undefined
   let model: string | undefined
   let title = ''
@@ -432,6 +457,7 @@ async function piMeta(file: string) {
       const row = parseRow(line)
       if (!row) continue
       if (!id && row.type === 'session') {
+        cwd = str(row.cwd)
         id = str(row.id)
       } else if (!model && row.type === 'model_change') {
         model = str(row.modelId)
@@ -443,14 +469,16 @@ async function piMeta(file: string) {
   } catch {
     // Unreadable mid-scan — keep whatever parsed.
   }
-  return { id, model, title }
+  return { cwd, id, model, title }
 }
 
-async function piSessions(cwd: string, root: string) {
-  const dir = path.join(
-    root,
-    `--${cwd.replace(/^[/\\]/, '').replace(/[/\\:]/g, '-')}--`,
-  )
+async function piSessions(cwd: string, store: { flat: boolean; root: string }) {
+  const dir = store.flat
+    ? store.root
+    : path.join(
+        store.root,
+        `--${cwd.replace(/^[/\\]/, '').replace(/[/\\:]/g, '-')}--`,
+      )
   const files: { file: string; mtime: Date }[] = []
   for (const entry of readdirOrEmpty(dir)) {
     if (!entry.endsWith('.jsonl')) continue
@@ -460,8 +488,15 @@ async function piSessions(cwd: string, root: string) {
   }
   files.sort((a, b) => b.mtime.getTime() - a.mtime.getTime())
   const sessions: SessionInfo[] = []
-  for (const { file, mtime } of files.slice(0, MAX_PER_STORE)) {
+  const candidates = store.flat ? files : files.slice(0, MAX_PER_STORE)
+  for (const { file, mtime } of candidates) {
     const meta = await piMeta(file)
+    if (
+      store.flat &&
+      (meta.cwd === undefined || path.resolve(meta.cwd) !== path.resolve(cwd))
+    ) {
+      continue
+    }
     sessions.push({
       harness: 'pi',
       id: meta.id ?? piFileId(file),
@@ -469,6 +504,7 @@ async function piSessions(cwd: string, root: string) {
       title: meta.title,
       updatedAt: mtime.toISOString(),
     })
+    if (sessions.length >= MAX_PER_STORE) break
   }
   return sessions
 }
@@ -491,6 +527,11 @@ function piUserText(row: Record<string, unknown>) {
 }
 
 // --- shared helpers ---
+
+function expandHomePath(value: string, home: string) {
+  if (value === '~') return home
+  return /^~[/\\]/.test(value) ? path.join(home, value.slice(2)) : value
+}
 
 function oneLine(text: string) {
   const flat = text.replaceAll(/\s+/g, ' ').trim()
@@ -562,13 +603,13 @@ function statFile(file: string) {
   }
 }
 
-// pi honors an agent-dir override (its sessions/ subdirectory), then the
-// default ~/.pi/agent/sessions. PI_CODING_AGENT_SESSION_DIR is deliberately
-// not honored: pi treats an explicit session dir as one flat directory (no
-// per-cwd subdirs), which this encoding can't express.
+// Without an explicit flat session directory, pi honors an agent-dir override
+// (its sessions/ subdirectory), then the default ~/.pi/agent/sessions.
 function piSessionsRoot(home: string) {
-  const agentDir =
-    process.env.PI_CODING_AGENT_DIR ?? path.join(home, '.pi', 'agent')
+  const agentDir = expandHomePath(
+    process.env.PI_CODING_AGENT_DIR ?? path.join(home, '.pi', 'agent'),
+    home,
+  )
   return path.join(agentDir, 'sessions')
 }
 

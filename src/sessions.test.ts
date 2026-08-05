@@ -117,6 +117,19 @@ function writePi(
   )
 }
 
+function writePiSessionDir(
+  root: string,
+  id: string,
+  lines: unknown[],
+  mtime: Date,
+) {
+  writeFile(
+    path.join(root, `2026-07-20T10-00-00-000Z_${id}.jsonl`),
+    jsonl(lines),
+    mtime,
+  )
+}
+
 const CWD = '/work/my-project'
 const T1 = new Date('2026-07-20T10:00:00Z')
 const T2 = new Date('2026-07-21T10:00:00Z')
@@ -628,6 +641,42 @@ describe('pi sessions', () => {
 
     const sessions = await listSessions(cwd, { roots })
     expect(sessions.map((s) => s.id)).toEqual(['uuid-5'])
+  })
+
+  test('honors a flat custom session directory and filters by header cwd', async () => {
+    const roots = fakeHome()
+    const piSessionDir = path.join(path.dirname(roots.pi), 'custom-sessions')
+    writePiSessionDir(
+      piSessionDir,
+      'uuid-6',
+      [
+        { cwd: CWD, id: 'uuid-6', type: 'session', version: 3 },
+        {
+          message: { content: 'custom directory prompt', role: 'user' },
+          type: 'message',
+        },
+      ],
+      T2,
+    )
+    writePiSessionDir(
+      piSessionDir,
+      'uuid-7',
+      [{ cwd: '/other/project', id: 'uuid-7', type: 'session', version: 3 }],
+      T3,
+    )
+
+    const sessions = await listSessions(CWD, {
+      roots: { ...roots, piSessionDir },
+    })
+
+    expect(sessions).toEqual([
+      {
+        harness: 'pi',
+        id: 'uuid-6',
+        title: 'custom directory prompt',
+        updatedAt: T2.toISOString(),
+      },
+    ])
   })
 })
 
