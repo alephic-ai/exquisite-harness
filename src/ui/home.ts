@@ -6,6 +6,7 @@ import type { Selection } from '../types.js'
 import {
   canonicalProviderName,
   providerLabel,
+  searchProviderForSelection,
   searchProviderLabel,
 } from '../config.js'
 import { timeAgo } from '../time-ago.js'
@@ -28,7 +29,7 @@ export async function home(config: Config) {
     options: [
       ...recents.map((r, i) => ({
         hint: timeAgo(r.usedAt),
-        label: recentLabel(r),
+        label: recentLabel(config, r),
         value: `recent:${String(i)}`,
       })),
       {
@@ -55,22 +56,23 @@ export async function home(config: Config) {
   return { kind: 'recent' as const, recent }
 }
 
-export function selectionFromRecent(r: RecentEntry) {
+export function selectionFromRecent(config: Config, r: RecentEntry) {
   const selection: Selection = {
     effort: r.effort,
     harness: r.harness,
     model: r.model,
     provider: canonicalProviderName(r.provider),
-    searchProvider: r.searchProvider ?? 'native',
+    searchProvider: searchProviderForSelection(config, r),
   }
   return selection
 }
 
-function recentLabel(r: RecentEntry) {
+function recentLabel(config: Config, r: RecentEntry) {
   const effort = r.effort && r.effort !== 'auto' ? ` @${r.effort}` : ''
+  const searchProvider = searchProviderForSelection(config, r)
   const search =
-    r.searchProvider && r.searchProvider !== 'native'
-      ? ` · ${searchProviderLabel(r.searchProvider)} search`
+    searchProvider !== 'native'
+      ? ` · ${searchProviderLabel(searchProvider)} search`
       : ''
   return `${r.harness} · ${providerLabel(r.provider)} · ${r.model}${effort}${search}`
 }

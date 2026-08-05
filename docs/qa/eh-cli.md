@@ -11,11 +11,11 @@ directly; interactive clack flows run under a PTY harness.
 - Ollama running locally (`ollama serve`) with ≥1 model pulled — steps that hit
   `localhost:11434` depend on it. If it's down, mark those steps BLOCKED.
 - Harness binaries (`claude`, `codex`, `grok`) only need to exist for doctor and
-  the conditional live step. Launch steps F.1–F.3 use a **fake harness binary**;
-  F.4 is the explicit real-Claude exception.
-- No real API keys are needed except for conditional step F.4. Other
-  OpenRouter/Vercel AI Gateway steps use `--print-env` and a fake
-  `secret-tool`/Keychain probe.
+  the conditional live steps F.4, G.3, and G.5. Launch steps F.1–F.3 use a
+  **fake harness binary**.
+- Real provider keys are needed only for conditional live steps F.4, G.3, and
+  G.5. Other OpenRouter/Vercel AI Gateway steps use `--print-env` and a fake
+  `secret-tool`/Keychain probe; F.5 and G.1, G.2, and G.4 use loopback fakes.
 - PTY harness: `scripts/pty-drive.mjs` (node-pty if available, else `script(1)`
   on macOS / `python3 -c pty`) drives interactive flows.
 
@@ -90,10 +90,10 @@ Drive each with the PTY; assert on screen text.
    recent combo with a relative-time hint, plus "new session →", "providers",
    "doctor". Enter providers → one list with disabled "Model providers" and
    "Search providers" headings; Native and Firecrawl appear in the latter, the
-   active default is labeled, and both expose make-default actions. Firecrawl
-   also exposes set/delete key actions. Enter on the recent → launch-plan note
-   with **redacted** secrets (`ANTHROPIC_AUTH_TOKEN=•••`), and go/save/back
-   options.
+   active default is labeled, and the other provider exposes a make-default
+   action. Firecrawl also exposes set/delete key actions. Enter on the recent →
+   launch-plan note with **redacted** secrets (`ANTHROPIC_AUTH_TOKEN=•••`), and
+   go/save/back options.
 3. **Pickers**: run `eh claude` → provider picker lists ollama (compatible) and,
    if configured, openrouter. Arrow down to focus openrouter → its hint reads
    "needs router (phase 2)" (clack only shows the focused row's hint). Pick
@@ -160,10 +160,10 @@ Drive each with the PTY; assert on screen text.
    predates its ledger → cost displays `—`, not a partial total. Raw SSE →
    ledger equality is covered by `src/gateway-costs.test.ts`, which sends the
    stream through the proxy and compares the unchanged response with the ledger.
-5. Launch with both Vercel Gateway cost capture and Firecrawl search enabled →
-   ordinary Messages traffic reaches the gateway through both proxies, hidden
-   search reaches Firecrawl only, and the Firecrawl credential is absent from
-   the child environment.
+5. Run the `chains search interception ahead of gateway cost capture` case in
+   `src/search-proxy.test.ts`. → ordinary Messages traffic reaches the fake
+   gateway through both proxies, hidden search reaches fake Firecrawl only, and
+   the Firecrawl credential is absent from the child environment.
 
 ## G. Claude WebSearch/WebFetch → Firecrawl shim
 

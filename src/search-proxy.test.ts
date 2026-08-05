@@ -314,6 +314,136 @@ describe('search proxy', () => {
     }
   })
 
+  test('aborts the upstream request when the downstream client disconnects', async () => {
+    let destroyUpstream: (() => void) | undefined
+    let markUpstreamClosed: (() => void) | undefined
+    const upstreamClosed = new Promise<void>((resolve) => {
+      markUpstreamClosed = resolve
+    })
+    const upstreamBaseURL = await listen((request, response) => {
+      const interval = setInterval(() => {
+        response.write('event: ping\ndata: {}\n\n')
+      }, 10)
+      destroyUpstream = () => {
+        clearInterval(interval)
+        response.destroy()
+      }
+      request.once('aborted', () => {
+        clearInterval(interval)
+        markUpstreamClosed?.()
+      })
+      response.writeHead(200, { 'Content-Type': 'text/event-stream' })
+      response.write('event: ping\ndata: {}\n\n')
+    })
+    const proxy = await startSearchProxy({
+      apiKey: 'fc-test',
+      baseURL: 'http://127.0.0.1:1',
+      envKey: 'FIRECRAWL_API_KEY',
+      type: 'firecrawl',
+      upstreamBaseURL,
+    })
+    let proxyClosed = false
+
+    try {
+      const body = JSON.stringify({
+        messages: [{ content: 'hello', role: 'user' }],
+        model: 'test-model',
+        stream: true,
+        tools: [],
+      })
+      const proxyURL = new URL(proxy.baseURL)
+      await settleWithin(
+        new Promise<void>((resolve, reject) => {
+          const socket = connect(
+            Number(proxyURL.port),
+            proxyURL.hostname,
+            () => {
+              socket.write(
+                [
+                  'POST /v1/messages HTTP/1.1',
+                  `Host: ${proxyURL.host}`,
+                  'Content-Type: application/json',
+                  `Content-Length: ${String(Buffer.byteLength(body))}`,
+                  '',
+                  body,
+                ].join('\r\n'),
+              )
+            },
+          )
+          socket.once('data', () => {
+            socket.destroy()
+            resolve()
+          })
+          socket.once('error', reject)
+        }),
+        'downstream disconnect',
+      )
+      await settleWithin(proxy.close(), 'abort-test proxy close')
+      proxyClosed = true
+      await settleWithin(upstreamClosed, 'upstream cancellation')
+    } finally {
+      destroyUpstream?.()
+      if (!proxyClosed) {
+        await settleWithin(proxy.close(), 'abort-test proxy close')
+      }
+    }
+  })
+
+  test('aborts an active upstream request when the proxy closes', async () => {
+    let destroyUpstream: (() => void) | undefined
+    let markUpstreamClosed: (() => void) | undefined
+    const upstreamClosed = new Promise<void>((resolve) => {
+      markUpstreamClosed = resolve
+    })
+    const upstreamBaseURL = await listen((request, response) => {
+      const interval = setInterval(() => {
+        response.write('event: ping\ndata: {}\n\n')
+      }, 10)
+      destroyUpstream = () => {
+        clearInterval(interval)
+        response.destroy()
+      }
+      request.once('aborted', () => {
+        clearInterval(interval)
+        markUpstreamClosed?.()
+      })
+      response.writeHead(200, { 'Content-Type': 'text/event-stream' })
+      response.write('event: ping\ndata: {}\n\n')
+    })
+    const proxy = await startSearchProxy({
+      apiKey: 'fc-test',
+      baseURL: 'http://127.0.0.1:1',
+      envKey: 'FIRECRAWL_API_KEY',
+      type: 'firecrawl',
+      upstreamBaseURL,
+    })
+    let proxyClosed = false
+
+    try {
+      const response = await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: JSON.stringify({
+          messages: [{ content: 'hello', role: 'user' }],
+          model: 'test-model',
+          stream: true,
+          tools: [],
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      })
+
+      expect(response.status).toBe(200)
+      await settleWithin(proxy.close(), 'active-stream proxy close')
+      proxyClosed = true
+      await settleWithin(upstreamClosed, 'proxy-close upstream cancellation')
+      await response.body?.cancel()
+    } finally {
+      destroyUpstream?.()
+      if (!proxyClosed) {
+        await settleWithin(proxy.close(), 'active-stream proxy close')
+      }
+    }
+  })
+
   test('preserves a configured upstream path prefix', async () => {
     let upstreamPath: string | undefined
     const upstreamOrigin = await listen((request, response) => {
@@ -1305,6 +1435,23 @@ async function search(baseURL: string, query: string) {
     method: 'POST',
   })
   return { body: await response.text(), status: response.status }
+}
+
+async function settleWithin<T>(promise: Promise<T>, label: string) {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_resolve, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error(`timed out waiting for ${label}`)),
+          1_000,
+        )
+      }),
+    ])
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
 }
 
 async function webFetch(

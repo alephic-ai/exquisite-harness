@@ -8,6 +8,7 @@ import {
   providerLabel,
   reservedProfileNameMessage,
   saveConfig,
+  searchProviderForSelection,
   searchProviderKeyAccount,
   searchProviderLabel,
   withDefaultSearchProvider,
@@ -32,9 +33,10 @@ export function profileList(config: Config) {
     return
   }
   for (const [name, p] of entries) {
+    const searchProvider = searchProviderForSelection(config, p)
     const search =
-      p.searchProvider && p.searchProvider !== 'native'
-        ? ` · ${searchProviderLabel(p.searchProvider)} search`
+      searchProvider !== 'native'
+        ? ` · ${searchProviderLabel(searchProvider)} search`
         : ''
     console.log(
       `${name}  ${p.harness} · ${providerLabel(p.provider)} · ${p.model}${search}`,

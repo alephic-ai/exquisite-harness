@@ -119,13 +119,13 @@ export async function launchFlow(
       const sameProvider =
         canonicalProviderName(provider) ===
         canonicalProviderName(recent.provider)
+      const searchProvider = selection.searchProvider ?? recent.searchProvider
       selection = {
-        ...selectionFromRecent(recent),
+        ...selectionFromRecent(config, recent),
         effort: selection.effort ?? recent.effort,
         model: selection.model ?? (sameProvider ? recent.model : undefined),
         provider,
-        searchProvider:
-          selection.searchProvider ?? recent.searchProvider ?? 'native',
+        ...(searchProvider === undefined ? {} : { searchProvider }),
       }
     }
   } else if (options.resume) {
@@ -188,7 +188,7 @@ export async function launchFlow(
           continue
         }
         if (choice.kind === 'recent') {
-          selection = selectionFromRecent(choice.recent)
+          selection = selectionFromRecent(config, choice.recent)
         }
         break
       }
@@ -349,6 +349,7 @@ function resolveResumeWiring(args: {
   // onto different wiring than the session started on is supported.
   const sameProvider =
     canonicalProviderName(provider) === canonicalProviderName(recent.provider)
+  const searchProvider = selection.searchProvider ?? recent.searchProvider
   return {
     ...selection,
     effort: selection.effort ?? recent.effort,
@@ -357,7 +358,6 @@ function resolveResumeWiring(args: {
       session.model ??
       (sameProvider ? recent.model : undefined),
     provider,
-    searchProvider:
-      selection.searchProvider ?? recent.searchProvider ?? 'native',
+    ...(searchProvider === undefined ? {} : { searchProvider }),
   }
 }

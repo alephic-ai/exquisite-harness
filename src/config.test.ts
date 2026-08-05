@@ -1,16 +1,25 @@
 import { describe, expect, test } from 'bun:test'
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import type { Config } from './config.js'
 
 import {
+  pushRecent,
   reservedProfileNameMessage,
   searchProviderForSelection,
   withDefaultSearchProvider,
 } from './config.js'
+import { selectionFromRecent } from './ui/home.js'
 
 describe('search provider defaults', () => {
   test('resolves explicit selection, Claude default, and non-Claude fallback', () => {
@@ -79,6 +88,41 @@ describe('search provider defaults', () => {
     expect(next.recent[0]?.searchProvider).toBe('firecrawl')
   })
 
+  test('legacy recent inherits the configured search default', () => {
+    const config = buildConfig('firecrawl')
+    const recent = {
+      harness: 'claude',
+      model: 'qwen3-coder',
+      provider: 'ollama',
+      usedAt: '2026-07-31T20:09:24.220Z',
+    }
+
+    const provider = selectionFromRecent(config, recent).searchProvider
+
+    expect(provider).toBe('firecrawl')
+  })
+
+  test('new launch replaces a legacy shortcut using the configured default', () => {
+    const config = buildConfig('firecrawl')
+    config.recent = [
+      {
+        harness: 'claude',
+        model: 'qwen3-coder',
+        provider: 'ollama',
+        usedAt: '2026-07-31T20:09:24.220Z',
+      },
+    ]
+
+    const next = pushRecent(config, {
+      harness: 'claude',
+      model: 'qwen3-coder',
+      provider: 'ollama',
+      searchProvider: 'firecrawl',
+    })
+
+    expect(next.recent).toHaveLength(1)
+  })
+
   test('loading config preserves an explicit recent search choice', () => {
     const directory = mkdtempSync(path.join(os.tmpdir(), 'eh-config-test-'))
     try {
@@ -114,6 +158,48 @@ describe('search provider defaults', () => {
 
       expect(result.status).toBe(0)
       expect(result.stdout.trim()).toBe('native')
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
+  test('profile save pins the effective provider from a legacy recent', () => {
+    const directory = mkdtempSync(path.join(os.tmpdir(), 'eh-profile-test-'))
+    try {
+      const config = buildConfig('firecrawl')
+      config.recent = [
+        {
+          harness: 'claude',
+          model: 'qwen3-coder',
+          provider: 'ollama',
+          usedAt: '2026-07-31T20:09:24.220Z',
+        },
+      ]
+      const configDirectory = path.join(directory, 'eh')
+      const configFile = path.join(configDirectory, 'config.json')
+      mkdirSync(configDirectory)
+      writeFileSync(configFile, `${JSON.stringify(config)}\n`)
+
+      const result = spawnSync(
+        process.execPath,
+        [
+          fileURLToPath(new URL('./main.ts', import.meta.url)),
+          'profile',
+          'save',
+          'legacy',
+        ],
+        {
+          encoding: 'utf8',
+          env: { ...process.env, XDG_CONFIG_HOME: directory },
+        },
+      )
+      const saved: unknown = JSON.parse(readFileSync(configFile, 'utf8'))
+
+      expect(result.status).toBe(0)
+      expect(saved).toHaveProperty(
+        'profiles.legacy.searchProvider',
+        'firecrawl',
+      )
     } finally {
       rmSync(directory, { force: true, recursive: true })
     }

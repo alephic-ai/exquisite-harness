@@ -17,7 +17,7 @@ import {
   withDefaultSearchProvider,
 } from '../config.js'
 import { deleteApiKey, resolveApiKey, storeApiKey } from '../keys.js'
-import { keyStoredText, log, note } from './output.js'
+import { bail, keyStoredText, log, note } from './output.js'
 import { askApiKeyOptional, confirmSearchProviderDefault } from './prompts.js'
 
 type ProviderRowState = 'key-missing' | 'key-set' | 'no-key'
@@ -123,7 +123,8 @@ export async function providersScreen(config: Config) {
         { hint: 'home', label: '← back', value: BACK },
       ],
     })
-    if (isCancel(value) || value === BACK) return currentConfig
+    if (isCancel(value)) bail()
+    if (value === BACK) return currentConfig
     if (value.startsWith(MODEL_PREFIX)) {
       const name = value.slice(MODEL_PREFIX.length)
       const provider = modelProviders.find((item) => item.name === name)
@@ -171,7 +172,8 @@ async function modelProviderActions(provider: ResolvedProvider) {
   options.push({ label: '← back', value: BACK })
 
   const action = await select({ message: provider.name, options })
-  if (isCancel(action) || action === BACK) return
+  if (isCancel(action)) bail()
+  if (action === BACK) return
   if (action === 'set') {
     const value = await askApiKeyOptional(provider.name)
     if (value) {
@@ -201,7 +203,8 @@ async function nativeSearchProviderActions(config: Config) {
     { label: '← back', value: BACK },
   ]
   const action = await select({ message: 'native', options })
-  if (isCancel(action) || action === BACK) return config
+  if (isCancel(action)) bail()
+  if (action === BACK) return config
   return setDefaultSearchProvider(config, 'native')
 }
 
@@ -232,7 +235,8 @@ async function searchProviderActions(
   options.push({ label: '← back', value: BACK })
 
   const action = await select({ message: provider.name, options })
-  if (isCancel(action) || action === BACK) return config
+  if (isCancel(action)) bail()
+  if (action === BACK) return config
   if (action === 'default') {
     if (key.source === 'none') {
       const value = await askApiKeyOptional(`${provider.name} search`)

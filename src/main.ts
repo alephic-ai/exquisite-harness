@@ -1,7 +1,12 @@
 import { Command } from '@commander-js/extra-typings'
 
 import pkg from '../package.json' with { type: 'json' }
-import { getProvider, loadConfig, saveConfig } from './config.js'
+import {
+  getProvider,
+  loadConfig,
+  saveConfig,
+  searchProviderForSelection,
+} from './config.js'
 import { doctor } from './doctor.js'
 import { launchFlow } from './flow.js'
 import { parseNativeArgsJson, runHeadless } from './headless-run.js'
@@ -243,7 +248,7 @@ profileCmd
       harness: last.harness,
       model: last.model,
       provider: last.provider,
-      searchProvider: last.searchProvider,
+      searchProvider: searchProviderForSelection(config, last),
     })
   })
 profileCmd

@@ -220,7 +220,7 @@ export function withDefaultSearchProvider(config: Config, name: string) {
       (entry, index) =>
         recent.findIndex(
           (candidate) =>
-            sameRecentSelection(candidate, entry) &&
+            sameRecentSelection(config, candidate, entry) &&
             candidate.cwd === entry.cwd,
         ) === index,
     ),
@@ -300,19 +300,20 @@ export function pushRecent(config: Config, selection: Selection) {
   const rest = config.recent.filter(
     (r) =>
       !(
-        sameRecentSelection(r, selection) &&
+        sameRecentSelection(config, r, selection) &&
         (r.cwd === undefined || r.cwd === process.cwd())
       ),
   )
   return { ...config, recent: [entry, ...rest].slice(0, MAX_RECENT) }
 }
 
-function sameRecentSelection(a: Selection, b: Selection) {
+function sameRecentSelection(config: Config, a: Selection, b: Selection) {
   return (
     a.harness === b.harness &&
     a.provider === b.provider &&
     a.model === b.model &&
-    (a.searchProvider ?? 'native') === (b.searchProvider ?? 'native')
+    searchProviderForSelection(config, a) ===
+      searchProviderForSelection(config, b)
   )
 }
 

@@ -1,10 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import {
   createServer,
+  request as httpRequest,
+  type IncomingHttpHeaders,
   type IncomingMessage,
+  type OutgoingHttpHeaders,
   type ServerResponse,
   STATUS_CODES,
 } from 'node:http'
+import { request as httpsRequest } from 'node:https'
+import { pipeline } from 'node:stream/promises'
 import { z } from 'zod'
 
 import type { SearchProxy } from './types.js'
@@ -63,10 +68,13 @@ const webFetchHookSchema = z.discriminatedUnion('hook_event_name', [
 const SEARCH_PROMPT_PREFIX = 'Perform a web search for the query: '
 
 export async function startSearchProxy(config: SearchProxy) {
+  const abortUpstreams = new Set<() => void>()
   const server = createServer((request, response) => {
-    void handleRequest(request, response, config).catch((error: unknown) => {
-      sendError(response, error)
-    })
+    void handleRequest(request, response, config, abortUpstreams).catch(
+      (error: unknown) => {
+        sendError(response, error)
+      },
+    )
   })
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject)
@@ -79,13 +87,23 @@ export async function startSearchProxy(config: SearchProxy) {
   }
   return {
     baseURL: `http://127.0.0.1:${String(address.port)}`,
-    close: async () =>
-      new Promise<void>((resolve, reject) => {
+    close: async () => {
+      for (const abort of abortUpstreams) abort()
+      server.closeAllConnections()
+      if (!server.listening) return
+      return new Promise<void>((resolve, reject) => {
         server.close((error) => {
-          if (error) reject(error)
-          else resolve()
+          if (
+            !error ||
+            ('code' in error && error.code === 'ERR_SERVER_NOT_RUNNING')
+          ) {
+            resolve()
+          } else {
+            reject(error)
+          }
         })
-      }),
+      })
+    },
   }
 }
 
@@ -97,33 +115,57 @@ function firecrawlFetchResult(props: {
   return `Firecrawl fetched ${props.url} for the WebFetch prompt ${JSON.stringify(props.prompt)}:\n\n${props.markdown}`
 }
 
+const hopByHopHeaders = new Set([
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+])
+
+function excludedProxyHeaders(headers: IncomingHttpHeaders) {
+  const excluded = new Set(hopByHopHeaders)
+  const connection: unknown = headers.connection
+  const values = Array.isArray(connection) ? connection : [connection]
+  for (const value of values) {
+    if (typeof value !== 'string') continue
+    for (const name of value.split(',')) {
+      excluded.add(name.trim().toLowerCase())
+    }
+  }
+  return excluded
+}
+
 function forwardedRequestHeaders(request: IncomingMessage) {
-  const headers = new Headers()
+  const headers: OutgoingHttpHeaders = {}
+  const excluded = excludedProxyHeaders(request.headers)
   for (const [name, value] of Object.entries(request.headers)) {
     if (
       value === undefined ||
-      name === 'connection' ||
+      excluded.has(name) ||
       name === 'content-length' ||
       name === 'host'
     ) {
       continue
     }
-    if (Array.isArray(value)) {
-      for (const item of value) headers.append(name, item)
-    } else {
-      headers.set(name, value)
-    }
+    headers[name] = value
   }
   return headers
 }
 
-function forwardedResponseHeaders(response: Response) {
-  const headers = new Headers(response.headers)
-  headers.delete('connection')
-  headers.delete('content-encoding')
-  headers.delete('content-length')
-  headers.delete('transfer-encoding')
-  return Object.fromEntries(headers.entries())
+function forwardedResponseHeaders(headers: IncomingHttpHeaders) {
+  const forwarded: OutgoingHttpHeaders = {}
+  const excluded = excludedProxyHeaders(headers)
+  for (const [name, value] of Object.entries(headers)) {
+    if (value === undefined || excluded.has(name)) {
+      continue
+    }
+    forwarded[name] = value
+  }
+  return forwarded
 }
 
 async function forwardRequest(
@@ -131,31 +173,67 @@ async function forwardRequest(
   response: ServerResponse,
   upstreamBaseURL: string,
   body: Buffer,
+  abortUpstreams: Set<() => void>,
 ) {
-  const upstream = await fetch(upstreamURL(upstreamBaseURL, request.url), {
-    body:
-      request.method === 'GET' || request.method === 'HEAD' ? undefined : body,
-    headers: forwardedRequestHeaders(request),
-    method: request.method,
-  })
-  response.writeHead(upstream.status, forwardedResponseHeaders(upstream))
-  if (!upstream.body) {
-    response.end()
-    return
+  const target = upstreamURL(upstreamBaseURL, request.url)
+  if (target.protocol !== 'http:' && target.protocol !== 'https:') {
+    throw new Error(
+      `unsupported search proxy upstream protocol ${target.protocol}`,
+    )
   }
-  const reader = upstream.body.getReader()
-  for (;;) {
-    const chunk = await reader.read()
-    if (chunk.done) break
-    response.write(chunk.value)
+  let upstreamResponse: IncomingMessage | undefined
+  const upstreamRequest =
+    target.protocol === 'https:'
+      ? httpsRequest(target, {
+          headers: forwardedRequestHeaders(request),
+          method: request.method,
+        })
+      : httpRequest(target, {
+          headers: forwardedRequestHeaders(request),
+          method: request.method,
+        })
+  const abortUpstream = () => {
+    const error = new Error('downstream disconnected')
+    upstreamRequest.destroy(error)
+    upstreamResponse?.destroy(error)
   }
-  response.end()
+  const abortOnDisconnect = () => {
+    if (!response.writableEnded) abortUpstream()
+  }
+  request.once('aborted', abortOnDisconnect)
+  response.once('close', abortOnDisconnect)
+  request.socket.once('close', abortOnDisconnect)
+  abortUpstreams.add(abortUpstream)
+  try {
+    await new Promise<void>((resolve, reject) => {
+      upstreamRequest.once('error', reject)
+      upstreamRequest.once('response', (incoming) => {
+        upstreamResponse = incoming
+        response.writeHead(
+          incoming.statusCode ?? 502,
+          forwardedResponseHeaders(incoming.headers),
+        )
+        void pipeline(incoming, response).then(resolve, reject)
+      })
+      upstreamRequest.end(
+        request.method === 'GET' || request.method === 'HEAD'
+          ? undefined
+          : body,
+      )
+    })
+  } finally {
+    request.off('aborted', abortOnDisconnect)
+    response.off('close', abortOnDisconnect)
+    request.socket.off('close', abortOnDisconnect)
+    abortUpstreams.delete(abortUpstream)
+  }
 }
 
 async function handleRequest(
   request: IncomingMessage,
   response: ServerResponse,
   config: SearchProxy,
+  abortUpstreams: Set<() => void>,
 ) {
   const body = await readBody(request)
   if (request.method === 'POST' && request.url === '/hooks/web-fetch') {
@@ -185,7 +263,13 @@ async function handleRequest(
     })
     return
   }
-  await forwardRequest(request, response, config.upstreamBaseURL, body)
+  await forwardRequest(
+    request,
+    response,
+    config.upstreamBaseURL,
+    body,
+    abortUpstreams,
+  )
 }
 
 async function handleWebFetchHook(

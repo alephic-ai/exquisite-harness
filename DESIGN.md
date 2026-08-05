@@ -276,9 +276,18 @@ resolve at launch time without eh storing anything.
   generation. A resumed session is only exact when its ledger already covers the
   session; otherwise it shows `—`. Non-gateway paid sessions fall back to
   transcript tokens × explicitly published rates and prefix the result with
-  `~`; providers with published zero rates show exact `$0`. Missing cache rates make the estimate unavailable rather than inferred. Claude's `cost.total_cost_usd`is ignored because it applies Anthropic rates. **External web access:** when selected, the launch plan retains the real upstream base URL and Firecrawl credential, starts the search proxy, and gives the child its Messages base URL plus a non-secret hook endpoint. The credential remains in the parent and is removed from the child environment. On Vercel Gateway the search proxy forwards ordinary traffic through the cost proxy, preserving both features. Both proxies close when Claude exits.`--print-env`
-  rejects external web access because the process-scoped proxy cannot be
-  represented as static exports.
+  `~`; providers with published zero rates show exact `$0`. Missing cache rates make the estimate unavailable rather than inferred. Claude's `cost.total_cost_usd`
+  is ignored because it applies Anthropic rates.
+
+  **External web access:** when selected, the launch plan retains the real
+  upstream base URL and Firecrawl credential, starts the search proxy, and gives
+  the child its Messages base URL plus a non-secret hook endpoint. The
+  credential remains in the parent and is removed from the child environment. On
+  Vercel Gateway the search proxy forwards ordinary traffic through the cost
+  proxy, preserving both features. Both proxies close when Claude exits.
+  `--print-env` rejects external web access because the process-scoped proxy
+  cannot be represented as static exports.
+
 - **codex**: `-c` TOML overrides — `model`, `model_provider=eh`,
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
   `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
