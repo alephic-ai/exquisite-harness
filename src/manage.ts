@@ -4,14 +4,19 @@ import type { ModelInfo, Selection } from './types.js'
 import {
   allProviders,
   getProvider,
+  getSearchProvider,
   providerLabel,
   reservedProfileNameMessage,
   saveConfig,
+  searchProviderForSelection,
+  searchProviderKeyAccount,
+  searchProviderLabel,
+  withDefaultSearchProvider,
 } from './config.js'
-import { deleteApiKey, storeApiKey } from './keys.js'
+import { deleteApiKey, resolveApiKey, storeApiKey } from './keys.js'
 import { checkProvider } from './providers.js'
 import { keyStoredText, log } from './ui/output.js'
-import { askApiKey } from './ui/prompts.js'
+import { askApiKey, confirmSearchProviderDefault } from './ui/prompts.js'
 
 export function modelsList(models: ModelInfo[]) {
   for (const m of models) {
@@ -28,8 +33,13 @@ export function profileList(config: Config) {
     return
   }
   for (const [name, p] of entries) {
+    const searchProvider = searchProviderForSelection(config, p)
+    const search =
+      searchProvider !== 'native'
+        ? ` · ${searchProviderLabel(searchProvider)} search`
+        : ''
     console.log(
-      `${name}  ${p.harness} · ${providerLabel(p.provider)} · ${p.model}`,
+      `${name}  ${p.harness} · ${providerLabel(p.provider)} · ${p.model}${search}`,
     )
   }
 }
@@ -93,5 +103,43 @@ export async function providersCommand(config: Config) {
     } else {
       log.warn(line)
     }
+  }
+}
+
+export async function searchProviderKeyDelete(config: Config, name: string) {
+  const provider = getSearchProvider(config, name)
+  if (!provider) throw new Error(`unknown search provider "${name}"`)
+  const removed = await deleteApiKey(searchProviderKeyAccount(provider.name))
+  if (removed) {
+    log.success(`key for search provider "${name}" deleted`)
+  } else {
+    log.warn(`no stored key for search provider "${name}"`)
+  }
+  if (config.defaultSearchProvider === provider.name) {
+    const remaining = await resolveApiKey(
+      provider.envKey,
+      searchProviderKeyAccount(provider.name),
+    )
+    if (remaining.source === 'none') {
+      saveConfig(withDefaultSearchProvider(config, 'native'))
+      log.success('Native is the default for new Claude sessions')
+    }
+  }
+}
+
+export async function searchProviderKeySet(config: Config, name: string) {
+  const provider = getSearchProvider(config, name)
+  if (!provider) throw new Error(`unknown search provider "${name}"`)
+  const key = await askApiKey(name)
+  const where = await storeApiKey(searchProviderKeyAccount(provider.name), key)
+  log.success(`key for search provider "${name}" ${keyStoredText(where)}`)
+  if (
+    config.defaultSearchProvider !== provider.name &&
+    (await confirmSearchProviderDefault(provider.name))
+  ) {
+    saveConfig(withDefaultSearchProvider(config, provider.name))
+    log.success(
+      `${searchProviderLabel(provider.name)} is the default for new Claude sessions`,
+    )
   }
 }

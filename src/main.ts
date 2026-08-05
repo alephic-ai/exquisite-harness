@@ -1,7 +1,12 @@
 import { Command } from '@commander-js/extra-typings'
 
 import pkg from '../package.json' with { type: 'json' }
-import { getProvider, loadConfig, saveConfig } from './config.js'
+import {
+  getProvider,
+  loadConfig,
+  saveConfig,
+  searchProviderForSelection,
+} from './config.js'
 import { doctor } from './doctor.js'
 import { launchFlow } from './flow.js'
 import { parseNativeArgsJson, runHeadless } from './headless-run.js'
@@ -13,6 +18,8 @@ import {
   providerKeyDelete,
   providerKeySet,
   providersCommand,
+  searchProviderKeyDelete,
+  searchProviderKeySet,
 } from './manage.js'
 import { listModelsCached } from './providers.js'
 import { runStatusline } from './statusline.js'
@@ -20,6 +27,7 @@ import { EFFORT_LEVELS } from './types.js'
 import { intro } from './ui/output.js'
 import { addProvider, wizard } from './ui/wizard.js'
 import { runUpdate } from './update.js'
+import { runWebFetchHook } from './web-fetch-hook.js'
 
 const program = new Command()
 
@@ -41,6 +49,7 @@ program
     'provider: ollama, openrouter, vercel-ai-gateway, …',
   )
   .option('-m, --model <id>', 'model id')
+  .option('--search <provider>', 'web search/fetch: native, firecrawl')
   .option('-s, --save <name>', 'save the combo as a profile, then launch')
   .option(
     '-e, --effort <level>',
@@ -68,6 +77,7 @@ program
         printEnvOnly: opts.printEnv === true,
         resume: opts.resume === true,
         saveAs: opts.save,
+        searchProvider: opts.search,
       },
     )
   })
@@ -92,6 +102,9 @@ Common workflows:
       headless run: versioned NDJSON on stdout, harness stderr preserved
   eh doctor                           harnesses installed? providers reachable? keys set?
   eh provider key vercel-ai-gateway   store an API key (masked prompt → OS credential store)
+  eh search key firecrawl             store the Firecrawl search key the same way
+  eh claude ollama qwen3-coder --search firecrawl
+                                      route WebSearch/WebFetch through Firecrawl
   eh update                           self-update to the latest release
 `,
   )
@@ -156,6 +169,15 @@ program
     await runStatusline()
   })
 
+// Invoked by Claude Code's WebFetch hooks (stdin hook JSON → stdout decision).
+// Hidden because users configure the provider, not this bridge command.
+program
+  .command('web-fetch-hook', { hidden: true })
+  .description('route Claude WebFetch hook payloads through eh')
+  .action(async () => {
+    await runWebFetchHook()
+  })
+
 program
   .command('providers')
   .description('list configured providers with status')
@@ -196,6 +218,23 @@ providerCmd
     await providerKeySet(config, name)
   })
 
+const searchCmd = program.command('search').description('manage web search')
+searchCmd
+  .command('key <name>')
+  .description('store a search API key (Keychain or 0600 secrets file)')
+  .option('--delete', 'delete the stored key instead')
+  .action(async (name, opts) => {
+    const config = loadConfig()
+    if (opts.delete) {
+      await searchProviderKeyDelete(config, name)
+      return
+    }
+    if (!process.stdout.isTTY) {
+      throw new Error('storing a key needs an interactive terminal')
+    }
+    await searchProviderKeySet(config, name)
+  })
+
 const profileCmd = program.command('profile').description('manage profiles')
 profileCmd
   .command('save <name>')
@@ -209,6 +248,7 @@ profileCmd
       harness: last.harness,
       model: last.model,
       provider: last.provider,
+      searchProvider: searchProviderForSelection(config, last),
     })
   })
 profileCmd

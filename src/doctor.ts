@@ -1,7 +1,15 @@
 import type { Config } from './config.js'
 
-import { allProviders, configPath, providerLabel } from './config.js'
+import {
+  allProviders,
+  allSearchProviders,
+  configPath,
+  providerLabel,
+  searchProviderKeyAccount,
+  searchProviderLabel,
+} from './config.js'
 import { HARNESSES } from './harnesses.js'
+import { resolveApiKey } from './keys.js'
 import { checkProvider } from './providers.js'
 import { log } from './ui/output.js'
 import { findBin } from './which.js'
@@ -34,6 +42,26 @@ export async function doctor(config: Config) {
       log.warn(line)
     } else {
       log.error(line)
+    }
+  }
+
+  const searchStatuses = await Promise.all(
+    allSearchProviders(config).map(async (provider) => ({
+      key: await resolveApiKey(
+        provider.envKey,
+        searchProviderKeyAccount(provider.name),
+      ),
+      provider,
+    })),
+  )
+  for (const { key, provider } of searchStatuses) {
+    const prefix = `${searchProviderLabel(provider.name)} search (${provider.name}) — ${provider.baseURL}`
+    if (key.source === 'none') {
+      log.warn(
+        `${prefix} · ${provider.envKey} not set — run eh search key ${provider.name}`,
+      )
+    } else {
+      log.success(`${prefix} · key from ${key.source}`)
     }
   }
 }
