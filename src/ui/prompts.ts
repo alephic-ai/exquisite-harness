@@ -335,8 +335,8 @@ export async function pickGatewayProvider(
         value: GATEWAY_ZDR,
       },
       ...providers.map((info) => ({
-        hint: gatewayProviderHint(info),
-        label: info.name,
+        hint: 'pin every request; no provider fallback',
+        label: gatewayProviderLabel(info),
         value: info.name,
       })),
       { hint: 'type a provider slug', label: 'other…', value: MANUAL },
@@ -389,7 +389,9 @@ export async function pickModel(provider: ResolvedProvider) {
   return value
 }
 
-function gatewayProviderHint(info: GatewayProviderInfo) {
+// Cost/throughput go in the label so they're visible across the whole list
+// (clack only shows the hint on the focused row).
+function gatewayProviderLabel(info: GatewayProviderInfo) {
   const cost =
     info.costInputPerMillion != null && info.costOutputPerMillion != null
       ? `${formatUsd(info.costInputPerMillion)}/${formatUsd(info.costOutputPerMillion)}`
@@ -399,9 +401,7 @@ function gatewayProviderHint(info: GatewayProviderInfo) {
       ? `${Math.round(info.throughputTokensPerSec)} tps`
       : undefined
   const parts = [cost, throughput].filter((part) => part != null)
-  return parts.length > 0
-    ? parts.join(' · ')
-    : 'pin every request; no provider fallback'
+  return parts.length > 0 ? `${info.name} — ${parts.join(' · ')}` : info.name
 }
 
 async function loadModels(provider: ResolvedProvider) {
