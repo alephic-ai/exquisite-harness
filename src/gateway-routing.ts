@@ -17,11 +17,6 @@ const INFERENCE_PATHS = [
   '/responses',
 ] as const
 const MODEL_DISCOVERY_PATH = '/models'
-const ALLOWED_PATHS = [
-  ...INFERENCE_PATHS,
-  '/messages/count_tokens',
-  MODEL_DISCOVERY_PATH,
-] as const
 
 export async function withGatewayRouting<T>(
   plan: LaunchPlan,
@@ -38,6 +33,19 @@ export async function withGatewayRouting<T>(
   } finally {
     await proxy.close()
   }
+}
+
+function allowedGatewayPath(pathname: string, apiBasePath: string) {
+  if (pathname === `${apiBasePath}/chat/completions`) {
+    return '/chat/completions'
+  }
+  if (pathname === `${apiBasePath}/messages`) return '/messages'
+  if (pathname === `${apiBasePath}/responses`) return '/responses'
+  if (pathname === `${apiBasePath}/messages/count_tokens`) {
+    return '/messages/count_tokens'
+  }
+  if (pathname === `${apiBasePath}/models`) return '/models'
+  throw new Error('unsupported request path')
 }
 
 function asRecord(value: unknown) {
@@ -119,15 +127,21 @@ function gatewayUpstreamURL(requestPath: string, target: URL) {
   if (!requestPath.startsWith('/') || requestPath.startsWith('//')) {
     throw new Error('unsupported request path')
   }
-  const incoming = new URL(requestPath, target.origin)
+  const incoming = new URL(requestPath, 'http://gateway-routing.local')
   const apiBasePath = target.pathname.endsWith('/v1')
     ? target.pathname
     : `${target.pathname}/v1`.replace('//', '/')
-  const allowed = ALLOWED_PATHS.map((path) => `${apiBasePath}${path}`)
-  if (!allowed.includes(incoming.pathname)) {
-    throw new Error('unsupported request path')
-  }
-  return incoming
+  const allowedPath = allowedGatewayPath(incoming.pathname, apiBasePath)
+  const query = [...incoming.searchParams]
+    .map(
+      ([name, value]) =>
+        `${encodeURIComponent(name)}=${encodeURIComponent(value)}`,
+    )
+    .join('&')
+  return new URL(
+    `${apiBasePath}${allowedPath}${query ? `?${query}` : ''}`,
+    target.origin,
+  )
 }
 
 function isInferencePath(pathname: string) {

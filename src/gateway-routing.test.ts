@@ -147,6 +147,43 @@ describe('gateway provider routing', () => {
     }
   })
 
+  test('rejects protocol-relative paths without changing the upstream origin', async () => {
+    let hostileOriginReached = false
+    const hostileOrigin = await startUpstream((_request, response) => {
+      hostileOriginReached = true
+      response.end('unexpected')
+    })
+    const intendedUpstream = await startUpstream((_request, response) => {
+      response.end('intended')
+    })
+
+    try {
+      await withGatewayRouting(
+        {
+          args: [],
+          bin: 'test-harness',
+          env: { TEST_GATEWAY_BASE_URL: intendedUpstream.baseURL },
+          gatewayRouting: {
+            provider: 'bedrock',
+            targetBaseURL: intendedUpstream.baseURL,
+          },
+          notes: [],
+        },
+        async (plan) => {
+          const hostileURL = new URL(hostileOrigin.baseURL)
+          const response = await fetch(
+            `${plan.env.TEST_GATEWAY_BASE_URL}//${hostileURL.host}/v1/models`,
+          )
+          expect(response.status).toBe(502)
+        },
+      )
+      expect(hostileOriginReached).toBeFalse()
+    } finally {
+      await hostileOrigin.close()
+      await intendedUpstream.close()
+    }
+  })
+
   test('closes promptly after a harness disconnects mid-stream', async () => {
     const upstream = await startUpstream((request, response) => {
       const interval = setInterval(() => {
