@@ -48,6 +48,10 @@ program
     '-p, --provider <name>',
     'provider: ollama, openrouter, vercel-ai-gateway, …',
   )
+  .option(
+    '--gateway-provider <slug>',
+    'pin Vercel AI Gateway to one upstream provider',
+  )
   .option('-m, --model <id>', 'model id')
   .option('--search <provider>', 'web search/fetch: native, firecrawl')
   .option('-s, --save <name>', 'save the combo as a profile, then launch')
@@ -74,6 +78,7 @@ program
       opts.model ?? model,
       {
         effort,
+        gatewayProvider: opts.gatewayProvider,
         printEnvOnly: opts.printEnv === true,
         resume: opts.resume === true,
         saveAs: opts.save,
@@ -94,12 +99,16 @@ Common workflows:
       save the combo as profile "cheap-local", then launch
   eh -r                               pick a session from this directory (all harnesses)
   eh -r codex -p ollama               only codex sessions; -p/-m/-e override the wiring
+  eh claude vercel-ai-gateway anthropic/claude-sonnet-4.6 --gateway-provider bedrock
+      pin this run to one Vercel AI Gateway upstream provider
   eh -r --print-env claude ollama qwen3-coder
       scripted resume: no picker, prints env + bare resume args
   eh --print-env claude ollama qwen3-coder
       print the export lines instead of launching
   printf 'fix the parser' | eh run codex ollama qwen3-coder
       headless run: versioned NDJSON on stdout, harness stderr preserved
+  printf 'summarize' | eh run claude vercel-ai-gateway anthropic/claude-sonnet-4.6 --gateway-provider bedrock
+      headless Gateway run pinned to one upstream provider
   eh doctor                           harnesses installed? providers reachable? keys set?
   eh provider key vercel-ai-gateway   store an API key (masked prompt → OS credential store)
   eh search key firecrawl             store the Firecrawl search key the same way
@@ -121,6 +130,10 @@ program
     '--native-args-json <json>',
     'JSON string array of native harness args to prepend before machine-mode args',
   )
+  .option(
+    '--gateway-provider <slug>',
+    'pin Vercel AI Gateway to one upstream provider',
+  )
   .option('--resume-session <id>', 'resume an existing native session')
   .action(async (harness, provider, model, opts) => {
     const effort = EFFORT_LEVELS.find((level) => level === opts.reasoningEffort)
@@ -131,6 +144,7 @@ program
     }
     process.exitCode = await runHeadless({
       effort,
+      gatewayProvider: opts.gatewayProvider,
       harness,
       model,
       nativeArgs:
@@ -245,6 +259,7 @@ profileCmd
     if (!last) throw new Error('no recent launch to save')
     profileSave(config, name, {
       effort: last.effort,
+      gatewayProvider: last.gatewayProvider,
       harness: last.harness,
       model: last.model,
       provider: last.provider,

@@ -4,9 +4,28 @@ import os from 'node:os'
 import type { LaunchPlan } from './types.js'
 
 import { gatewayCostsDir, startGatewayCostProxy } from './gateway-costs.js'
+import { withGatewayRouting } from './gateway-routing.js'
 import { startSearchProxy } from './search-proxy.js'
 
 export async function exec(plan: LaunchPlan) {
+  return withGatewayRouting(plan, execWithAuxiliaryProxies)
+}
+
+export function printEnv(plan: LaunchPlan) {
+  for (const [key, value] of Object.entries(plan.env)) {
+    console.log(`export ${key}='${value.replaceAll("'", "'\\''")}'`)
+  }
+  if (plan.args.length > 0) {
+    console.log(`# plus args: ${plan.bin} ${plan.args.join(' ')}`)
+  }
+  if (plan.gatewayRouting) {
+    console.log(
+      `# gateway provider: ${plan.gatewayRouting.provider} (pinned by an eh loopback proxy on launch)`,
+    )
+  }
+}
+
+async function execWithAuxiliaryProxies(plan: LaunchPlan) {
   const costProxy = plan.gatewayCostCapture
     ? await startGatewayCostProxy({
         costDir: gatewayCostsDir(),
@@ -32,15 +51,6 @@ export async function exec(plan: LaunchPlan) {
     }
   } finally {
     await costProxy?.close()
-  }
-}
-
-export function printEnv(plan: LaunchPlan) {
-  for (const [key, value] of Object.entries(plan.env)) {
-    console.log(`export ${key}='${value.replaceAll("'", "'\\''")}'`)
-  }
-  if (plan.args.length > 0) {
-    console.log(`# plus args: ${plan.bin} ${plan.args.join(' ')}`)
   }
 }
 

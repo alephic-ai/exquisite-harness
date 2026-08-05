@@ -38,8 +38,9 @@ export function profileList(config: Config) {
       searchProvider !== 'native'
         ? ` · ${searchProviderLabel(searchProvider)} search`
         : ''
+    const gateway = p.gatewayProvider ? ` via ${p.gatewayProvider}` : ''
     console.log(
-      `${name}  ${p.harness} · ${providerLabel(p.provider)} · ${p.model}${search}`,
+      `${name}  ${p.harness} · ${providerLabel(p.provider)}${gateway} · ${p.model}${search}`,
     )
   }
 }
@@ -62,7 +63,7 @@ export function profileSave(
   if (taken) throw new Error(taken)
   saveConfig({ ...config, profiles: { ...config.profiles, [name]: selection } })
   log.success(
-    `profile "${name}" saved — ${selection.harness} · ${selection.provider} · ${selection.model}`,
+    `profile "${name}" saved — ${selection.harness} · ${selection.provider}${selection.gatewayProvider ? ` via ${selection.gatewayProvider}` : ''} · ${selection.model}`,
   )
 }
 

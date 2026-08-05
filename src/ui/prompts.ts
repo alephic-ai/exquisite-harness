@@ -19,7 +19,11 @@ import {
 } from '../config.js'
 import { HARNESSES } from '../harnesses.js'
 import { resolveApiKey, storeApiKey } from '../keys.js'
-import { canServeAny, listModelsCached } from '../providers.js'
+import {
+  canServeAny,
+  listGatewayProviders,
+  listModelsCached,
+} from '../providers.js'
 import { EFFORT_LEVELS } from '../types.js'
 import { findBin } from '../which.js'
 import { bail, keyStoredText, log, note, spinner } from './output.js'
@@ -214,6 +218,7 @@ async function ensureKey(provider: {
 }
 
 const MANUAL = '__manual__'
+const GATEWAY_AUTO = '__gateway_auto__'
 
 // Masked key entry — the key never echoes and never touches argv/history.
 export async function askApiKey(providerName: string) {
@@ -267,6 +272,55 @@ export async function confirmSearchProviderDefault(providerName: string) {
     message: `use ${providerName} by default for new Claude sessions?`,
   })
   return !isCancel(value) && value
+}
+
+export async function pickGatewayProvider(
+  provider: ResolvedProvider,
+  model: string,
+) {
+  const s = spinner()
+  s.start(`fetching providers for ${model}`)
+  let providers: string[]
+  try {
+    providers = await listGatewayProviders(provider, model)
+    s.stop(`${String(providers.length)} providers`)
+  } catch {
+    providers = []
+    s.stop('provider fetch failed — automatic/manual still available')
+  }
+
+  const value = await autocomplete({
+    maxItems: 12,
+    message: `AI Gateway provider · ${model}`,
+    options: [
+      {
+        hint: 'Vercel routing and fallback',
+        label: 'automatic (recommended)',
+        value: GATEWAY_AUTO,
+      },
+      ...providers.map((name) => ({
+        hint: 'pin every request; no provider fallback',
+        label: name,
+        value: name,
+      })),
+      { hint: 'type a provider slug', label: 'other…', value: MANUAL },
+    ],
+    placeholder: 'type to filter…',
+  })
+  if (isCancel(value)) bail()
+  if (value === GATEWAY_AUTO) return undefined
+  if (value === MANUAL) {
+    const typed = await text({
+      message: 'AI Gateway provider slug',
+      validate: (v) =>
+        v != null && /^[A-Za-z0-9._-]+$/.test(v)
+          ? undefined
+          : 'use the provider slug from Vercel AI Gateway',
+    })
+    if (isCancel(typed)) bail()
+    return typed
+  }
+  return value
 }
 
 export async function pickModel(provider: ResolvedProvider) {

@@ -5,6 +5,10 @@ export interface LaunchPlan {
   gatewayCostCapture?: {
     resumed: boolean
   }
+  gatewayRouting?: {
+    provider: string
+    targetBaseURL: string
+  }
   notes: string[]
   searchProxy?: SearchProxy
 }
@@ -39,6 +43,7 @@ export interface SearchProxy extends SearchBackend {
 
 export interface Selection {
   effort?: EffortLevel
+  gatewayProvider?: string
   harness: string
   model: string
   provider: string

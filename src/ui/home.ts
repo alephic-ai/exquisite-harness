@@ -59,6 +59,7 @@ export async function home(config: Config) {
 export function selectionFromRecent(config: Config, r: RecentEntry) {
   const selection: Selection = {
     effort: r.effort,
+    gatewayProvider: r.gatewayProvider,
     harness: r.harness,
     model: r.model,
     provider: canonicalProviderName(r.provider),
@@ -74,5 +75,6 @@ function recentLabel(config: Config, r: RecentEntry) {
     searchProvider !== 'native'
       ? ` · ${searchProviderLabel(searchProvider)} search`
       : ''
-  return `${r.harness} · ${providerLabel(r.provider)} · ${r.model}${effort}${search}`
+  const gateway = r.gatewayProvider ? ` via ${r.gatewayProvider}` : ''
+  return `${r.harness} · ${providerLabel(r.provider)}${gateway} · ${r.model}${effort}${search}`
 }

@@ -28,6 +28,7 @@ import {
   askProfileName,
   confirmLaunch,
   pickEffort,
+  pickGatewayProvider,
   pickHarness,
   pickModel,
   pickProvider,
@@ -41,6 +42,7 @@ const isTTY = process.stdout.isTTY
 
 export interface LaunchOptions {
   effort?: EffortLevel
+  gatewayProvider?: string
   printEnvOnly: boolean
   resume?: boolean
   saveAs?: string
@@ -67,6 +69,13 @@ export async function launchFlow(
   let selection: Partial<Selection> = profile
     ? {
         ...profile,
+        gatewayProvider:
+          (providerArg === undefined ||
+            canonicalProviderName(providerArg) ===
+              canonicalProviderName(profile.provider)) &&
+          (modelArg === undefined || modelArg === profile.model)
+            ? profile.gatewayProvider
+            : undefined,
         model: modelArg ?? profile.model,
         provider: providerArg ?? profile.provider,
       }
@@ -80,6 +89,9 @@ export async function launchFlow(
   if (options.effort) selection.effort = options.effort
   if (options.searchProvider !== undefined) {
     selection.searchProvider = options.searchProvider
+  }
+  if (options.gatewayProvider !== undefined) {
+    selection.gatewayProvider = options.gatewayProvider
   }
 
   // Before any session-store scanning: `eh -r bogus` should error, not scan.
@@ -120,10 +132,16 @@ export async function launchFlow(
         canonicalProviderName(provider) ===
         canonicalProviderName(recent.provider)
       const searchProvider = selection.searchProvider ?? recent.searchProvider
+      const model = selection.model ?? (sameProvider ? recent.model : undefined)
       selection = {
         ...selectionFromRecent(config, recent),
         effort: selection.effort ?? recent.effort,
-        model: selection.model ?? (sameProvider ? recent.model : undefined),
+        gatewayProvider:
+          selection.gatewayProvider ??
+          (sameProvider && model === recent.model
+            ? recent.gatewayProvider
+            : undefined),
+        model,
         provider,
         ...(searchProvider === undefined ? {} : { searchProvider }),
       }
@@ -188,7 +206,11 @@ export async function launchFlow(
           continue
         }
         if (choice.kind === 'recent') {
-          selection = selectionFromRecent(config, choice.recent)
+          selection = {
+            ...selectionFromRecent(config, choice.recent),
+            gatewayProvider:
+              options.gatewayProvider ?? choice.recent.gatewayProvider,
+          }
         }
         break
       }
@@ -206,6 +228,7 @@ export async function launchFlow(
   // Persist the canonical id so recents/profiles don't store legacy aliases.
   const complete: Selection = {
     effort: selection.effort,
+    gatewayProvider: selection.gatewayProvider,
     harness,
     model,
     provider: provider.name,
@@ -227,6 +250,7 @@ export async function launchFlow(
 
   const plan = await buildLaunchPlan(harness, provider, model, {
     effort: complete.effort,
+    gatewayProvider: complete.gatewayProvider,
     resume: options.resume,
     resumeSessionId,
     searchBackend,
@@ -276,10 +300,16 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
     ? mustGetProvider(config, partial.provider, def.protocols)
     : await pickProvider(def.protocols, allProviders(config))
   const model = partial.model ?? (await pickModel(provider))
+  const gatewayProvider =
+    provider.type === 'vercel-gateway'
+      ? (partial.gatewayProvider ??
+        (await pickGatewayProvider(provider, model)))
+      : partial.gatewayProvider
   // Only ask when the user is picking interactively and hasn't chosen one.
   const effort = partial.effort ?? (await pickEffort())
   return {
     effort,
+    gatewayProvider,
     harness,
     model,
     provider: provider.name,
@@ -309,6 +339,9 @@ function planSummary(selection: Selection, env: Record<string, string>) {
   const lines = [
     `harness:  ${selection.harness}`,
     `provider: ${providerLabel(selection.provider)} (${selection.provider})`,
+    ...(selection.gatewayProvider
+      ? [`gateway:  ${selection.gatewayProvider}`]
+      : []),
     `model:    ${selection.model}`,
     `search:   ${searchProviderLabel(selection.searchProvider ?? 'native')}`,
     '',
@@ -350,13 +383,19 @@ function resolveResumeWiring(args: {
   const sameProvider =
     canonicalProviderName(provider) === canonicalProviderName(recent.provider)
   const searchProvider = selection.searchProvider ?? recent.searchProvider
+  const model =
+    selection.model ??
+    session.model ??
+    (sameProvider ? recent.model : undefined)
   return {
     ...selection,
     effort: selection.effort ?? recent.effort,
-    model:
-      selection.model ??
-      session.model ??
-      (sameProvider ? recent.model : undefined),
+    gatewayProvider:
+      selection.gatewayProvider ??
+      (sameProvider && model === recent.model
+        ? recent.gatewayProvider
+        : undefined),
+    model,
     provider,
     ...(searchProvider === undefined ? {} : { searchProvider }),
   }
