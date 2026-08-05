@@ -30,8 +30,19 @@ const gatewayEndpointsSchema = z.object({
   data: z.looseObject({
     endpoints: z.array(
       z.looseObject({
+        pricing: z
+          .looseObject({
+            completion: z.union([z.string(), z.number()]).optional(),
+            prompt: z.union([z.string(), z.number()]).optional(),
+          })
+          .optional(),
         provider_name: z.string(),
         status: z.number().optional(),
+        throughput_last_1h: z
+          .looseObject({
+            p50: z.number().optional(),
+          })
+          .optional(),
       }),
     ),
   }),
@@ -172,11 +183,20 @@ export async function listModels(provider: ResolvedProvider) {
 
 // Provider slugs are model-specific, so resolve them from the model endpoint
 // when the Gateway picker opens instead of treating the global provider list as
-// proof that a provider can serve this model.
+// proof that a provider can serve this model. Each entry carries the facts the
+// picker shows next to the slug (cost in/out per 1M, p50 throughput) — the
+// picker formats them; this module only parses.
+export interface GatewayProviderInfo {
+  costInputPerMillion: number | undefined
+  costOutputPerMillion: number | undefined
+  name: string
+  throughputTokensPerSec: number | undefined
+}
+
 export async function listGatewayProviders(
   provider: ResolvedProvider,
   modelId: string,
-) {
+): Promise<GatewayProviderInfo[]> {
   if (provider.type !== 'vercel-gateway') {
     throw new Error(`provider "${provider.name}" is not Vercel AI Gateway`)
   }
@@ -187,13 +207,34 @@ export async function listGatewayProviders(
     `${withV1(provider.baseURL)}/models/${modelPath}/endpoints`,
     apiKey,
   )
-  const names = gatewayEndpointsSchema
+  const endpoints = gatewayEndpointsSchema
     .parse(body)
     .data.endpoints.filter(
       (endpoint) => endpoint.status === undefined || endpoint.status === 0,
     )
-    .map((endpoint) => endpoint.provider_name)
-  return [...new Set(names)]
+  const seen = new Set<string>()
+  const providers: GatewayProviderInfo[] = []
+  for (const endpoint of endpoints) {
+    if (seen.has(endpoint.provider_name)) continue
+    seen.add(endpoint.provider_name)
+    providers.push({
+      costInputPerMillion: perTokenToPerMillion(endpoint.pricing?.prompt),
+      costOutputPerMillion: perTokenToPerMillion(endpoint.pricing?.completion),
+      name: endpoint.provider_name,
+      throughputTokensPerSec: endpoint.throughput_last_1h?.p50,
+    })
+  }
+  return providers.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+// Provider APIs publish USD per token as a string or number. Reject negatives
+// and non-numeric values. Mirrors pricing.ts's parser (kept local to avoid a
+// providers → pricing import cycle).
+function perTokenToPerMillion(raw: number | string | undefined) {
+  if (raw == null || raw === '') return undefined
+  const n = typeof raw === 'number' ? raw : Number(raw)
+  if (!Number.isFinite(n) || n < 0) return undefined
+  return n * 1_000_000
 }
 
 // The one copy of the cache flow: fresh cache → live fetch (write-through) →

@@ -5,7 +5,7 @@ import { createServer } from 'node:http'
 
 import { listGatewayProviders } from './providers.js'
 
-test('lists the active provider slugs for a Gateway model', async () => {
+test('lists active Gateway providers with cost and throughput', async () => {
   let requestedPath = ''
   const upstream = await startUpstream((request, response) => {
     requestedPath = request.url ?? ''
@@ -14,9 +14,19 @@ test('lists the active provider slugs for a Gateway model', async () => {
       JSON.stringify({
         data: {
           endpoints: [
-            { provider_name: 'bedrock', status: 0 },
+            {
+              pricing: { completion: '0.0000004', prompt: '0.0000002' },
+              provider_name: 'bedrock',
+              status: 0,
+              throughput_last_1h: { p50: 148 },
+            },
             { provider_name: 'anthropic', status: 1 },
-            { provider_name: 'bedrock', status: 0 },
+            {
+              pricing: { completion: '0.0000004', prompt: '0.0000002' },
+              provider_name: 'bedrock',
+              status: 0,
+              throughput_last_1h: { p50: 148 },
+            },
             { provider_name: 'vertex' },
           ],
         },
@@ -34,7 +44,16 @@ test('lists the active provider slugs for a Gateway model', async () => {
       'anthropic/model with spaces',
     )
 
-    expect(providers).toEqual(['bedrock', 'vertex'])
+    expect(providers.map((p) => p.name)).toEqual(['bedrock', 'vertex'])
+    expect(providers[0]?.costInputPerMillion).toBeCloseTo(0.2, 6)
+    expect(providers[0]?.costOutputPerMillion).toBeCloseTo(0.4, 6)
+    expect(providers[0]?.throughputTokensPerSec).toBe(148)
+    expect(providers[1]).toEqual({
+      costInputPerMillion: undefined,
+      costOutputPerMillion: undefined,
+      name: 'vertex',
+      throughputTokensPerSec: undefined,
+    })
     expect(requestedPath).toBe(
       '/gateway/v1/models/anthropic/model%20with%20spaces/endpoints',
     )

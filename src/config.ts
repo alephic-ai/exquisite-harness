@@ -26,6 +26,7 @@ const searchProviderConfigSchema = z.object({
 const selectionSchema = z.object({
   effort: z.enum(EFFORT_LEVELS).optional(),
   gatewayProvider: z.string().optional(),
+  gatewayZdr: z.boolean().optional(),
   harness: z.string(),
   model: z.string(),
   provider: z.string(),
@@ -314,6 +315,7 @@ function sameRecentSelection(config: Config, a: Selection, b: Selection) {
     a.provider === b.provider &&
     a.model === b.model &&
     a.gatewayProvider === b.gatewayProvider &&
+    a.gatewayZdr === b.gatewayZdr &&
     searchProviderForSelection(config, a) ===
       searchProviderForSelection(config, b)
   )

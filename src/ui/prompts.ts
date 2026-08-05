@@ -19,8 +19,10 @@ import {
 } from '../config.js'
 import { HARNESSES } from '../harnesses.js'
 import { resolveApiKey, storeApiKey } from '../keys.js'
+import { formatUsd } from '../pricing.js'
 import {
   canServeAny,
+  type GatewayProviderInfo,
   listGatewayProviders,
   listModelsCached,
 } from '../providers.js'
@@ -239,6 +241,15 @@ async function ensureKey(provider: {
 
 const MANUAL = '__manual__'
 const GATEWAY_AUTO = '__gateway_auto__'
+const GATEWAY_ZDR = '__gateway_zdr__'
+
+// What the Gateway picker returns: a pinned provider slug, or automatic
+// routing (undefined) optionally restricted to ZDR providers. Both flags
+// null/undefined means plain automatic Vercel routing + fallback.
+export interface GatewayRouteChoice {
+  provider?: string
+  zeroDataRetention?: boolean
+}
 
 // Masked key entry — the key never echoes and never touches argv/history.
 export async function askApiKey(providerName: string) {
@@ -297,10 +308,10 @@ export async function confirmSearchProviderDefault(providerName: string) {
 export async function pickGatewayProvider(
   provider: ResolvedProvider,
   model: string,
-) {
+): Promise<GatewayRouteChoice> {
   const s = spinner()
   s.start(`fetching providers for ${model}`)
-  let providers: string[]
+  let providers: GatewayProviderInfo[]
   try {
     providers = await listGatewayProviders(provider, model)
     s.stop(`${String(providers.length)} providers`)
@@ -318,17 +329,23 @@ export async function pickGatewayProvider(
         label: 'automatic (recommended)',
         value: GATEWAY_AUTO,
       },
-      ...providers.map((name) => ({
-        hint: 'pin every request; no provider fallback',
-        label: name,
-        value: name,
+      {
+        hint: 'route only to zero-data-retention providers',
+        label: 'ZDR only',
+        value: GATEWAY_ZDR,
+      },
+      ...providers.map((info) => ({
+        hint: gatewayProviderHint(info),
+        label: info.name,
+        value: info.name,
       })),
       { hint: 'type a provider slug', label: 'other…', value: MANUAL },
     ],
     placeholder: 'type to filter…',
   })
   if (isCancel(value)) bail()
-  if (value === GATEWAY_AUTO) return undefined
+  if (value === GATEWAY_AUTO) return {}
+  if (value === GATEWAY_ZDR) return { zeroDataRetention: true }
   if (value === MANUAL) {
     const typed = await text({
       message: 'AI Gateway provider slug',
@@ -338,9 +355,9 @@ export async function pickGatewayProvider(
           : 'use the provider slug from Vercel AI Gateway',
     })
     if (isCancel(typed)) bail()
-    return typed
+    return { provider: typed }
   }
-  return value
+  return { provider: value }
 }
 
 export async function pickModel(provider: ResolvedProvider) {
@@ -370,6 +387,21 @@ export async function pickModel(provider: ResolvedProvider) {
     return typed
   }
   return value
+}
+
+function gatewayProviderHint(info: GatewayProviderInfo) {
+  const cost =
+    info.costInputPerMillion != null && info.costOutputPerMillion != null
+      ? `${formatUsd(info.costInputPerMillion)}/${formatUsd(info.costOutputPerMillion)}`
+      : undefined
+  const throughput =
+    info.throughputTokensPerSec != null
+      ? `${Math.round(info.throughputTokensPerSec)} tps`
+      : undefined
+  const parts = [cost, throughput].filter((part) => part != null)
+  return parts.length > 0
+    ? parts.join(' · ')
+    : 'pin every request; no provider fallback'
 }
 
 async function loadModels(provider: ResolvedProvider) {

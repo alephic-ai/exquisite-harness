@@ -17,6 +17,9 @@
     "lint:ci": "concurrently --raw eslint 'pnpm format:ci' 'tsc --noEmit'",
     "test": "bun test"
   },
+  "overrides": {
+    "shell-quote": "^1.9.0"
+  },
   "dependencies": {
     "@clack/prompts": "1.7.0",
     "@commander-js/extra-typings": "15.0.0",

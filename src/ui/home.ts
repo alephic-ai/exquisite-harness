@@ -60,6 +60,7 @@ export function selectionFromRecent(config: Config, r: RecentEntry) {
   const selection: Selection = {
     effort: r.effort,
     gatewayProvider: r.gatewayProvider,
+    gatewayZdr: r.gatewayZdr,
     harness: r.harness,
     model: r.model,
     provider: canonicalProviderName(r.provider),
@@ -75,6 +76,10 @@ function recentLabel(config: Config, r: RecentEntry) {
     searchProvider !== 'native'
       ? ` · ${searchProviderLabel(searchProvider)} search`
       : ''
-  const gateway = r.gatewayProvider ? ` via ${r.gatewayProvider}` : ''
+  const gateway = r.gatewayProvider
+    ? ` via ${r.gatewayProvider}`
+    : r.gatewayZdr
+      ? ' · ZDR only'
+      : ''
   return `${r.harness} · ${providerLabel(r.provider)}${gateway} · ${r.model}${effort}${search}`
 }

@@ -254,6 +254,7 @@ profileCmd
     profileSave(config, name, {
       effort: last.effort,
       gatewayProvider: last.gatewayProvider,
+      gatewayZdr: last.gatewayZdr,
       harness: last.harness,
       model: last.model,
       provider: last.provider,
