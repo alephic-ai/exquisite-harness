@@ -188,10 +188,8 @@ describe('gateway cost capture', () => {
     const sessionId = '5d1b3c4a-7e2f-4a8b-9c6d-3f4a5b6c7d8e'
     const unpricedBody = 'event: ping\ndata: {}\n\n'
     const costDir = makeTempDir()
-    let requestNumber = 0
     const upstream = await startUpstream((_request, response) => {
       response.setHeader('content-type', 'text/event-stream')
-      requestNumber += 1
       response.end(unpricedBody)
     })
     const proxy = await startGatewayCostProxy({

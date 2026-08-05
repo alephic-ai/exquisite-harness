@@ -136,7 +136,7 @@ export function formatSessionCostUsd(amount: number) {
 }
 
 export function formatStatuslineCost(props: {
-  capturedCost: { exact: boolean; total: string } | undefined
+  capturedCost: undefined | { exact: boolean; total: string }
   captureExpected: boolean
   estimatedCost: string | undefined
   rates: ModelRates | undefined
