@@ -43,8 +43,8 @@ describe('gateway cost capture', () => {
       )
       expect(await response.text()).toBe(body)
       const total = readGatewaySessionCost({ costDir, sessionId })
-      expect(total).toBe('0.000016')
-      expect(total && formatExactSessionCostUsd(total)).toBe('$0.000016')
+      expect(total).toEqual({ exact: true, total: '0.000016' })
+      expect(total && formatExactSessionCostUsd(total.total)).toBe('$0.000016')
     } finally {
       await proxy.close()
       await upstream.close()
@@ -105,6 +105,112 @@ describe('gateway cost capture', () => {
     }
   })
 
+  test('keeps the priced total when one request is unpriced', async () => {
+    const sessionId = '9f2e1701-4c6b-4d5a-9a3b-28c1a5d5f7e2'
+    const costEvent = gatewayCostEvent('gen_priced', '0.00001596')
+    const costBody = `data: ${JSON.stringify(costEvent)}\n\n`
+    const unpricedBody = 'event: ping\ndata: {}\n\n'
+    const costDir = makeTempDir()
+    // Serve the priced request first, then the unpriced one, sharing a session.
+    let requestNumber = 0
+    const upstream = await startUpstream((_request, response) => {
+      response.setHeader('content-type', 'text/event-stream')
+      requestNumber += 1
+      response.end(requestNumber === 1 ? costBody : unpricedBody)
+    })
+    const proxy = await startGatewayCostProxy({
+      costDir,
+      resumed: false,
+      targetBaseURL: upstream.baseURL,
+    })
+    try {
+      await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }).then(async (response) => response.text())
+      await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }).then(async (response) => response.text())
+      expect(readGatewaySessionCost({ costDir, sessionId })).toEqual({
+        exact: false,
+        total: '0.00001596',
+      })
+    } finally {
+      await proxy.close()
+      await upstream.close()
+    }
+  })
+
+  test('keeps the priced total when the unpriced request comes first', async () => {
+    const sessionId = '8c4a2e1f-6d3b-4a9c-8e7f-12b4d5c6e7f8'
+    const costEvent = gatewayCostEvent('gen_priced', '0.00001596')
+    const costBody = `data: ${JSON.stringify(costEvent)}\n\n`
+    const unpricedBody = 'event: ping\ndata: {}\n\n'
+    const costDir = makeTempDir()
+    // The old code returned undefined on the first unpriced entry, so leading
+    // with an unpriced request is the ordering that actually regressed.
+    let requestNumber = 0
+    const upstream = await startUpstream((_request, response) => {
+      response.setHeader('content-type', 'text/event-stream')
+      requestNumber += 1
+      response.end(requestNumber === 1 ? unpricedBody : costBody)
+    })
+    const proxy = await startGatewayCostProxy({
+      costDir,
+      resumed: false,
+      targetBaseURL: upstream.baseURL,
+    })
+    try {
+      await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }).then(async (response) => response.text())
+      await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }).then(async (response) => response.text())
+      expect(readGatewaySessionCost({ costDir, sessionId })).toEqual({
+        exact: false,
+        total: '0.00001596',
+      })
+    } finally {
+      await proxy.close()
+      await upstream.close()
+    }
+  })
+
+  test('shows unavailable when every request is unpriced', async () => {
+    const sessionId = '5d1b3c4a-7e2f-4a8b-9c6d-3f4a5b6c7d8e'
+    const unpricedBody = 'event: ping\ndata: {}\n\n'
+    const costDir = makeTempDir()
+    const upstream = await startUpstream((_request, response) => {
+      response.setHeader('content-type', 'text/event-stream')
+      response.end(unpricedBody)
+    })
+    const proxy = await startGatewayCostProxy({
+      costDir,
+      resumed: false,
+      targetBaseURL: upstream.baseURL,
+    })
+    try {
+      await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }).then(async (response) => response.text())
+      // Nothing priced, so the session must not read as an exact $0.
+      expect(readGatewaySessionCost({ costDir, sessionId })).toBeUndefined()
+    } finally {
+      await proxy.close()
+      await upstream.close()
+    }
+  })
+
   test('stays unavailable while pending and after a response without cost metadata', async () => {
     const sessionId = 'ab4d82d4-33a5-44e4-86f2-1c64a27bbac2'
     let finishResponse: (() => void) | undefined
@@ -137,6 +243,72 @@ describe('gateway cost capture', () => {
       finishResponse?.()
       await settleWithin(proxy.close(), 'pending-test proxy close')
       await settleWithin(upstream.close(), 'pending-test upstream close')
+    }
+  })
+
+  test('keeps showing the priced total while a later request is still pending', async () => {
+    const sessionId = '6e2a4c8b-1d5f-4a7e-9b3c-8f2a4b6c7d8e'
+    const costEvent = gatewayCostEvent('gen_priced', '0.00001596')
+    const costBody = `data: ${JSON.stringify(costEvent)}\n\n`
+    const costDir = makeTempDir()
+    let finishSecond: (() => void) | undefined
+    let secondStarted: (() => void) | undefined
+    const secondResponse = new Promise<void>((resolve) => {
+      finishSecond = resolve
+    })
+    const secondInFlight = new Promise<void>((resolve) => {
+      secondStarted = resolve
+    })
+    let requestNumber = 0
+    const upstream = await startUpstream((_request, response) => {
+      response.setHeader('content-type', 'text/event-stream')
+      requestNumber += 1
+      if (requestNumber === 1) {
+        response.end(costBody)
+      } else {
+        secondStarted?.()
+        // Hold the second request open so it stays pending.
+        response.write('event: ping\ndata: {}\n\n')
+        void secondResponse.then(() => response.end())
+      }
+    })
+    const proxy = await startGatewayCostProxy({
+      costDir,
+      resumed: false,
+      targetBaseURL: upstream.baseURL,
+    })
+
+    try {
+      await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }).then(async (response) => response.text())
+      const second = fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      })
+      await settleWithin(secondInFlight, 'second request in flight')
+      // The priced request has settled; the second is still in flight, so the
+      // total must stay visible (partial) rather than disappear.
+      expect(readGatewaySessionCost({ costDir, sessionId })).toEqual({
+        exact: false,
+        total: '0.00001596',
+      })
+      finishSecond?.()
+      await settleWithin(
+        second.then(async (response) => response.text()),
+        'second request',
+      )
+      expect(readGatewaySessionCost({ costDir, sessionId })).toEqual({
+        exact: false,
+        total: '0.00001596',
+      })
+    } finally {
+      finishSecond?.()
+      await settleWithin(proxy.close(), 'pending-visible proxy close')
+      await settleWithin(upstream.close(), 'pending-visible upstream close')
     }
   })
 

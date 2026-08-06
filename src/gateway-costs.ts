@@ -69,6 +69,7 @@ export function readGatewaySessionCost(props: {
   let complete: boolean | undefined
   const costs = new Map<string, string>()
   const pending = new Set<string>()
+  let hasUnpriced = false
   for (const line of raw.split('\n')) {
     if (!line) continue
     let parsed: unknown
@@ -91,14 +92,27 @@ export function readGatewaySessionCost(props: {
       pending.delete(entry.data.requestId)
       continue
     }
-    if (entry.data.type === 'unpriced') return undefined
+    // A request that finished without cost metadata is held against the
+    // session's exactness, but it must not null out requests that did price.
+    // Only when nothing is priced does the session read as unavailable.
+    if (entry.data.type === 'unpriced') {
+      hasUnpriced = true
+      continue
+    }
     const costUsd = normalizeUsdDecimal(entry.data.costUsd)
     const previous = costs.get(entry.data.generationId)
     if (previous != null && previous !== costUsd) return undefined
     costs.set(entry.data.generationId, costUsd)
   }
-  if (complete !== true || pending.size > 0) return undefined
-  return sumUsdDecimals([...costs.values()])
+  if (complete !== true) return undefined
+  if (costs.size === 0) return undefined
+  return {
+    // A pending request or one that finished without cost data keeps the total
+    // partial, but does not hide the priced sum — the statusline shows it live
+    // (prefixed with `~`) instead of going dark mid-conversation.
+    exact: !hasUnpriced && pending.size === 0,
+    total: sumUsdDecimals([...costs.values()]),
+  }
 }
 
 export async function startGatewayCostProxy(props: {
