@@ -124,20 +124,15 @@ async function listOpenAiModels(baseURL: string, apiKey?: string) {
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-// Vercel AI Gateway model list: cost comes straight from /v1/models pricing;
-// throughput lives per-model in /v1/models/{model}/endpoints, so it's fetched
-// once per model with a bounded concurrency. Models with no pricing or a failed
-// throughput fetch still show, just without that label.
+// Vercel AI Gateway model list: cost comes straight from /v1/models pricing so
+// the picker opens instantly. Per-model throughput lives in a separate
+// /v1/models/{model}/endpoints call, which the picker fetches lazily (only for
+// the models a user actually looks at) rather than for the whole list.
 async function listGatewayModels(baseURL: string, apiKey?: string) {
   const body = await fetchJson(`${withV1(baseURL)}/models`, apiKey)
-  const models = gatewayModelsSchema.parse(body).data
-  const throughputs = await fetchGatewayThroughputs(
-    baseURL,
-    apiKey,
-    models.map((m) => m.id),
-  )
-  return models
-    .map((m) => {
+  return gatewayModelsSchema
+    .parse(body)
+    .data.map((m) => {
       const input = perTokenToPerMillion(m.pricing?.input)
       const output = perTokenToPerMillion(m.pricing?.output)
       return {
@@ -150,47 +145,32 @@ async function listGatewayModels(baseURL: string, apiKey?: string) {
             ? undefined
             : `${String(Math.round(m.context_window / 1024))}k ctx`,
         id: m.id,
-        throughputLabel: throughputs.get(m.id),
       }
     })
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
-// Fetch each model's p50 throughput (tokens/sec) from its /endpoints response,
-// bounded to a few in flight so a large model list doesn't slam the gateway.
-async function fetchGatewayThroughputs(
-  baseURL: string,
-  apiKey: string | undefined,
-  modelIds: string[],
+// Fetch one model's p50 throughput (tokens/sec) from its /endpoints response.
+// Returns undefined when there's no active endpoint or the fetch fails.
+export async function fetchGatewayModelThroughput(
+  provider: ResolvedProvider,
+  modelId: string,
 ) {
-  const out = new Map<string, string | undefined>()
-  let index = 0
-  const workers = Array.from(
-    { length: Math.min(8, modelIds.length) },
-    async () => {
-      for (;;) {
-        const i = index++
-        if (i >= modelIds.length) return
-        const id = modelIds[i]
-        try {
-          const modelPath = id.split('/').map(encodeURIComponent).join('/')
-          const body = await fetchJson(
-            `${withV1(baseURL)}/models/${modelPath}/endpoints`,
-            apiKey,
-          )
-          const endpoints = gatewayEndpointsSchema.parse(body).data.endpoints
-          const p50 = endpoints.find(
-            (e) => e.status === undefined || e.status === 0,
-          )?.throughput_last_1h?.p50
-          out.set(id, p50 == null ? undefined : `${Math.round(p50)} tps`)
-        } catch {
-          out.set(id, undefined)
-        }
-      }
-    },
-  )
-  await Promise.all(workers)
-  return out
+  const key = provider.envKey ? await resolveKey(provider) : undefined
+  const apiKey = key && key.source !== 'none' ? key.value : undefined
+  try {
+    const modelPath = modelId.split('/').map(encodeURIComponent).join('/')
+    const body = await fetchJson(
+      `${withV1(provider.baseURL)}/models/${modelPath}/endpoints`,
+      apiKey,
+    )
+    const endpoints = gatewayEndpointsSchema.parse(body).data.endpoints
+    const p50 = endpoints.find((e) => e.status === undefined || e.status === 0)
+      ?.throughput_last_1h?.p50
+    return p50 == null ? undefined : `${Math.round(p50)} tps`
+  } catch {
+    return undefined
+  }
 }
 
 function stripTrailingSlash(url: string) {

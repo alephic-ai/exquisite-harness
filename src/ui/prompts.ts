@@ -22,6 +22,7 @@ import { resolveApiKey, storeApiKey } from '../keys.js'
 import { formatUsd } from '../pricing.js'
 import {
   canServeAny,
+  fetchGatewayModelThroughput,
   type GatewayProviderInfo,
   listGatewayProviders,
   listModelsCached,
@@ -362,19 +363,53 @@ export async function pickGatewayProvider(
 
 export async function pickModel(provider: ResolvedProvider) {
   const models = await loadModels(provider)
-  const options = models.map((m) => ({
-    hint: m.hint,
-    label: modelLabel(m),
-    value: m.id,
-  }))
+  const isGateway = provider.type === 'vercel-gateway'
+  // Throughput lives per-model in a separate /endpoints call the gateway doesn't
+  // want to pay for the whole list, so it's fetched lazily — only for the models
+  // actually shown — and never blocks the picker from opening.
+  const throughputs = new Map<string, string>()
+  const throughputPending = new Set<string>()
   // Manual-entry escape hatch — never offer it if a real model id collides.
-  if (!models.some((m) => m.id === MANUAL)) {
-    options.push({ hint: 'type a model id', label: 'other…', value: MANUAL })
-  }
+  const hasManual = models.some((m) => m.id === MANUAL)
   const value = await autocomplete({
     maxItems: 12,
     message: `model · ${provider.name}`,
-    options,
+    // Dynamic options getter (re-run by clack on each keystroke): for the
+    // gateway, enrich the labels of the models currently shown with throughput
+    // as fast as it arrives, fetching it for exactly those models.
+    options(this: { filteredOptions?: { value: string }[] }) {
+      if (isGateway) {
+        for (const row of this.filteredOptions ?? []) {
+          if (throughputs.has(row.value) || throughputPending.has(row.value)) {
+            continue
+          }
+          throughputPending.add(row.value)
+          void fetchGatewayModelThroughput(provider, row.value).then(
+            (label) => {
+              if (label != null) throughputs.set(row.value, label)
+            },
+          )
+        }
+      }
+      const options: { hint?: string; label: string; value: string }[] =
+        models.map((m) => ({
+          hint: m.hint,
+          label: modelLabel(
+            throughputs.has(m.id)
+              ? { ...m, throughputLabel: throughputs.get(m.id) }
+              : m,
+          ),
+          value: m.id,
+        }))
+      if (!hasManual) {
+        options.push({
+          hint: 'type a model id',
+          label: 'other…',
+          value: MANUAL,
+        })
+      }
+      return options
+    },
     placeholder: 'type to filter…',
   })
   if (isCancel(value)) bail()

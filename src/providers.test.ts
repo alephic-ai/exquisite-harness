@@ -3,7 +3,11 @@ import type { RequestListener } from 'node:http'
 import { expect, test } from 'bun:test'
 import { createServer } from 'node:http'
 
-import { listGatewayProviders, listModels } from './providers.js'
+import {
+  fetchGatewayModelThroughput,
+  listGatewayProviders,
+  listModels,
+} from './providers.js'
 
 test('lists active Gateway providers with cost and throughput', async () => {
   let requestedPath = ''
@@ -62,48 +66,23 @@ test('lists active Gateway providers with cost and throughput', async () => {
   }
 })
 
-test('lists Gateway models with cost, throughput, and context hints', async () => {
-  const upstream = await startUpstream((request, response) => {
+test('lists Gateway models with cost and context hints (throughput is lazy)', async () => {
+  const upstream = await startUpstream((_request, response) => {
     response.setHeader('content-type', 'application/json')
-    if (request.url?.endsWith('/models')) {
-      response.end(
-        JSON.stringify({
-          data: [
-            {
-              context_window: 1_000_000,
-              id: 'anthropic/claude-sonnet-4.6',
-              pricing: { input: '0.000003', output: '0.000015' },
-            },
-            {
-              context_window: 40960,
-              id: 'openai/gpt-5',
-              pricing: { input: '0.000001', output: '0.000004' },
-            },
-          ],
-        }),
-      )
-      return
-    }
-    // per-model /endpoints: throughput for the first model only.
-    if (request.url?.includes('/anthropic/claude-sonnet-4.6/endpoints')) {
-      response.end(
-        JSON.stringify({
-          data: {
-            endpoints: [
-              {
-                provider_name: 'anthropic',
-                status: 0,
-                throughput_last_1h: { p50: 49.5 },
-              },
-            ],
-          },
-        }),
-      )
-      return
-    }
     response.end(
       JSON.stringify({
-        data: { endpoints: [{ provider_name: 'openai', status: 0 }] },
+        data: [
+          {
+            context_window: 1_000_000,
+            id: 'anthropic/claude-sonnet-4.6',
+            pricing: { input: '0.000003', output: '0.000015' },
+          },
+          {
+            context_window: 40960,
+            id: 'openai/gpt-5',
+            pricing: { input: '0.000001', output: '0.000004' },
+          },
+        ],
       }),
     )
   })
@@ -119,15 +98,47 @@ test('lists Gateway models with cost, throughput, and context hints', async () =
         costLabel: '$3/$15',
         hint: '977k ctx',
         id: 'anthropic/claude-sonnet-4.6',
-        throughputLabel: '50 tps',
       },
       {
         costLabel: '$1/$4',
         hint: '40k ctx',
         id: 'openai/gpt-5',
-        throughputLabel: undefined,
       },
     ])
+  } finally {
+    await upstream.close()
+  }
+})
+
+test('fetches a single Gateway model throughput on demand', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        data: {
+          endpoints: [
+            {
+              provider_name: 'anthropic',
+              status: 0,
+              throughput_last_1h: { p50: 49.5 },
+            },
+            { provider_name: 'bedrock', status: 1 },
+          ],
+        },
+      }),
+    )
+  })
+
+  try {
+    const label = await fetchGatewayModelThroughput(
+      {
+        baseURL: `${upstream.baseURL}/gateway`,
+        name: 'test-gateway',
+        type: 'vercel-gateway',
+      },
+      'anthropic/claude-sonnet-4.6',
+    )
+    expect(label).toBe('50 tps')
   } finally {
     await upstream.close()
   }
