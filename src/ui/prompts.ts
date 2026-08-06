@@ -365,10 +365,17 @@ export async function pickModel(provider: ResolvedProvider) {
   const models = await loadModels(provider)
   const isGateway = provider.type === 'vercel-gateway'
   // Throughput lives per-model in a separate /endpoints call the gateway doesn't
-  // want to pay for the whole list, so it's fetched lazily — only for the models
-  // actually shown — and never blocks the picker from opening.
+  // want to pay for the whole list. Fetch it for the models visible on the first
+  // screen so tok/s shows immediately, then lazily for anything the user filters
+  // to. Bounded so a large list doesn't stall the picker.
   const throughputs = new Map<string, string>()
   const throughputPending = new Set<string>()
+  if (isGateway) {
+    await prefetchVisibleThroughput(provider, models.slice(0, 12), {
+      throughputPending,
+      throughputs,
+    })
+  }
   // Manual-entry escape hatch — never offer it if a real model id collides.
   const hasManual = models.some((m) => m.id === MANUAL)
   const value = await autocomplete({
@@ -379,17 +386,14 @@ export async function pickModel(provider: ResolvedProvider) {
     // as fast as it arrives, fetching it for exactly those models.
     options(this: { filteredOptions?: { value: string }[] }) {
       if (isGateway) {
-        for (const row of this.filteredOptions ?? []) {
-          if (throughputs.has(row.value) || throughputPending.has(row.value)) {
-            continue
-          }
-          throughputPending.add(row.value)
-          void fetchGatewayModelThroughput(provider, row.value).then(
-            (label) => {
-              if (label != null) throughputs.set(row.value, label)
-            },
-          )
-        }
+        void prefetchVisibleThroughput(
+          provider,
+          (this.filteredOptions ?? []).map((r) => ({ id: r.value })),
+          {
+            throughputPending,
+            throughputs,
+          },
+        )
       }
       const options: { hint?: string; label: string; value: string }[] =
         models.map((m) => ({
@@ -422,6 +426,32 @@ export async function pickModel(provider: ResolvedProvider) {
     return typed
   }
   return value
+}
+
+// Fetch throughput for a batch of models (e.g. the currently visible ones) with
+// bounded concurrency, deduped against what's cached or already in flight.
+async function prefetchVisibleThroughput(
+  provider: ResolvedProvider,
+  rows: { id: string }[],
+  state: {
+    throughputPending: Set<string>
+    throughputs: Map<string, string>
+  },
+) {
+  const ids = rows
+    .map((r) => r.id)
+    .filter(
+      (id) => !state.throughputs.has(id) && !state.throughputPending.has(id),
+    )
+    .slice(0, 8)
+  if (ids.length === 0) return
+  for (const id of ids) state.throughputPending.add(id)
+  await Promise.all(
+    ids.map(async (id) => {
+      const label = await fetchGatewayModelThroughput(provider, id)
+      if (label != null) state.throughputs.set(id, label)
+    }),
+  )
 }
 
 // Cost/throughput go in the label so they're visible across the whole list
