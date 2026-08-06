@@ -151,26 +151,24 @@ async function listGatewayModels(baseURL: string, apiKey?: string) {
 }
 
 // Fetch one model's p50 throughput (tokens/sec) from its /endpoints response.
-// Returns undefined when there's no active endpoint or the fetch fails.
+// Returns undefined when no active endpoint publishes a p50; a network/HTTP
+// failure propagates so callers can retry it later (a transient failure must
+// not be treated as "this model has no throughput" forever).
 export async function fetchGatewayModelThroughput(
   provider: ResolvedProvider,
   modelId: string,
 ) {
   const key = provider.envKey ? await resolveKey(provider) : undefined
   const apiKey = key && key.source !== 'none' ? key.value : undefined
-  try {
-    const modelPath = modelId.split('/').map(encodeURIComponent).join('/')
-    const body = await fetchJson(
-      `${withV1(provider.baseURL)}/models/${modelPath}/endpoints`,
-      apiKey,
-    )
-    const endpoints = gatewayEndpointsSchema.parse(body).data.endpoints
-    const p50 = endpoints.find((e) => e.status === undefined || e.status === 0)
-      ?.throughput_last_1h?.p50
-    return p50 == null ? undefined : `${Math.round(p50)} tps`
-  } catch {
-    return undefined
-  }
+  const modelPath = modelId.split('/').map(encodeURIComponent).join('/')
+  const body = await fetchJson(
+    `${withV1(provider.baseURL)}/models/${modelPath}/endpoints`,
+    apiKey,
+  )
+  const endpoints = gatewayEndpointsSchema.parse(body).data.endpoints
+  const p50 = endpoints.find((e) => e.status === undefined || e.status === 0)
+    ?.throughput_last_1h?.p50
+  return p50 == null ? undefined : `${Math.round(p50)} tps`
 }
 
 function stripTrailingSlash(url: string) {

@@ -370,8 +370,10 @@ export async function pickModel(provider: ResolvedProvider) {
   // to. Bounded so a large list doesn't stall the picker.
   const throughputs = new Map<string, string>()
   const throughputPending = new Set<string>()
+  const attemptedNoThroughput = new Set<string>()
   if (isGateway) {
     await prefetchVisibleThroughput(provider, models.slice(0, 12), {
+      attemptedNoThroughput,
       throughputPending,
       throughputs,
     })
@@ -390,6 +392,7 @@ export async function pickModel(provider: ResolvedProvider) {
           provider,
           (this.filteredOptions ?? []).map((r) => ({ id: r.value })),
           {
+            attemptedNoThroughput,
             throughputPending,
             throughputs,
           },
@@ -434,6 +437,7 @@ async function prefetchVisibleThroughput(
   provider: ResolvedProvider,
   rows: { id: string }[],
   state: {
+    attemptedNoThroughput: Set<string>
     throughputPending: Set<string>
     throughputs: Map<string, string>
   },
@@ -441,17 +445,33 @@ async function prefetchVisibleThroughput(
   const ids = rows
     .map((r) => r.id)
     .filter(
-      (id) => !state.throughputs.has(id) && !state.throughputPending.has(id),
+      (id) =>
+        !state.throughputs.has(id) &&
+        !state.attemptedNoThroughput.has(id) &&
+        !state.throughputPending.has(id),
     )
-    .slice(0, 8)
   if (ids.length === 0) return
   for (const id of ids) state.throughputPending.add(id)
-  await Promise.all(
-    ids.map(async (id) => {
-      const label = await fetchGatewayModelThroughput(provider, id)
-      if (label != null) state.throughputs.set(id, label)
-    }),
-  )
+  // Run all target ids through a pool of 8 in flight — the batch is bounded by
+  // concurrency, not by a count cap, so every model passed in gets fetched.
+  let cursor = 0
+  const workers = Array.from({ length: Math.min(8, ids.length) }, async () => {
+    for (;;) {
+      const i = cursor++
+      if (i >= ids.length) return
+      const id = ids[i]
+      try {
+        const label = await fetchGatewayModelThroughput(provider, id)
+        if (label != null) state.throughputs.set(id, label)
+        else state.attemptedNoThroughput.add(id)
+      } finally {
+        // A transient failure isn't "no throughput" — it stays out of
+        // attemptedNoThroughput so a later render retries it.
+        state.throughputPending.delete(id)
+      }
+    }
+  })
+  await Promise.all(workers)
 }
 
 // Cost/throughput go in the label so they're visible across the whole list
