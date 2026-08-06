@@ -26,7 +26,7 @@ import {
   listGatewayProviders,
   listModelsCached,
 } from '../providers.js'
-import { EFFORT_LEVELS } from '../types.js'
+import { EFFORT_LEVELS, type ModelInfo } from '../types.js'
 import { findBin } from '../which.js'
 import { bail, keyStoredText, log, note, spinner } from './output.js'
 
@@ -364,7 +364,7 @@ export async function pickModel(provider: ResolvedProvider) {
   const models = await loadModels(provider)
   const options = models.map((m) => ({
     hint: m.hint,
-    label: m.id,
+    label: modelLabel(m),
     value: m.id,
   }))
   // Manual-entry escape hatch — never offer it if a real model id collides.
@@ -404,6 +404,9 @@ function gatewayProviderLabel(info: GatewayProviderInfo) {
   return parts.length > 0 ? `${info.name} — ${parts.join(' · ')}` : info.name
 }
 
+// Model picker row: cost/throughput (when the provider lists them) go inline in
+// the label so they're visible across the whole list, like the gateway provider
+// picker.
 async function loadModels(provider: ResolvedProvider) {
   // Skip the spinner flash when the fresh cache can answer instantly.
   const fresh = freshModels(provider.name)
@@ -418,4 +421,9 @@ async function loadModels(provider: ResolvedProvider) {
     s.stop('model fetch failed')
     throw error
   }
+}
+
+function modelLabel(m: ModelInfo) {
+  const parts = [m.costLabel, m.throughputLabel].filter((part) => part != null)
+  return parts.length > 0 ? `${m.id} — ${parts.join(' · ')}` : m.id
 }

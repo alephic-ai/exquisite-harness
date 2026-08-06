@@ -19,8 +19,12 @@ export interface LaunchPlan {
 }
 
 export interface ModelInfo {
+  // Cost label ($ in/out per 1M) shown on the model picker row.
+  costLabel?: string
   hint?: string
   id: string
+  // Throughput label (tokens/sec) shown on the model picker row.
+  throughputLabel?: string
 }
 
 export type Protocol = 'anthropic' | 'openai-chat' | 'openai-responses'

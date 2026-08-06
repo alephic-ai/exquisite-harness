@@ -26,6 +26,24 @@ const openAiModelsSchema = z.object({
   ),
 })
 
+// Vercel AI Gateway model list carries per-model pricing (input/output per
+// token) that the picker shows as a cost label. OpenRouter uses prompt/completion
+// instead, so this stays gateway-specific.
+const gatewayModelsSchema = z.object({
+  data: z.array(
+    z.looseObject({
+      context_window: z.number().optional(),
+      id: z.string(),
+      pricing: z
+        .looseObject({
+          input: z.union([z.string(), z.number()]).optional(),
+          output: z.union([z.string(), z.number()]).optional(),
+        })
+        .optional(),
+    }),
+  ),
+})
+
 const gatewayEndpointsSchema = z.object({
   data: z.looseObject({
     endpoints: z.array(
@@ -106,6 +124,75 @@ async function listOpenAiModels(baseURL: string, apiKey?: string) {
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
+// Vercel AI Gateway model list: cost comes straight from /v1/models pricing;
+// throughput lives per-model in /v1/models/{model}/endpoints, so it's fetched
+// once per model with a bounded concurrency. Models with no pricing or a failed
+// throughput fetch still show, just without that label.
+async function listGatewayModels(baseURL: string, apiKey?: string) {
+  const body = await fetchJson(`${withV1(baseURL)}/models`, apiKey)
+  const models = gatewayModelsSchema.parse(body).data
+  const throughputs = await fetchGatewayThroughputs(
+    baseURL,
+    apiKey,
+    models.map((m) => m.id),
+  )
+  return models
+    .map((m) => {
+      const input = perTokenToPerMillion(m.pricing?.input)
+      const output = perTokenToPerMillion(m.pricing?.output)
+      return {
+        costLabel:
+          input != null && output != null
+            ? `${formatUsd(input)}/${formatUsd(output)}`
+            : undefined,
+        hint:
+          m.context_window == null
+            ? undefined
+            : `${String(Math.round(m.context_window / 1024))}k ctx`,
+        id: m.id,
+        throughputLabel: throughputs.get(m.id),
+      }
+    })
+    .sort((a, b) => a.id.localeCompare(b.id))
+}
+
+// Fetch each model's p50 throughput (tokens/sec) from its /endpoints response,
+// bounded to a few in flight so a large model list doesn't slam the gateway.
+async function fetchGatewayThroughputs(
+  baseURL: string,
+  apiKey: string | undefined,
+  modelIds: string[],
+) {
+  const out = new Map<string, string | undefined>()
+  let index = 0
+  const workers = Array.from(
+    { length: Math.min(8, modelIds.length) },
+    async () => {
+      for (;;) {
+        const i = index++
+        if (i >= modelIds.length) return
+        const id = modelIds[i]
+        try {
+          const modelPath = id.split('/').map(encodeURIComponent).join('/')
+          const body = await fetchJson(
+            `${withV1(baseURL)}/models/${modelPath}/endpoints`,
+            apiKey,
+          )
+          const endpoints = gatewayEndpointsSchema.parse(body).data.endpoints
+          const p50 = endpoints.find(
+            (e) => e.status === undefined || e.status === 0,
+          )?.throughput_last_1h?.p50
+          out.set(id, p50 == null ? undefined : `${Math.round(p50)} tps`)
+        } catch {
+          out.set(id, undefined)
+        }
+      }
+    },
+  )
+  await Promise.all(workers)
+  return out
+}
+
 function stripTrailingSlash(url: string) {
   return url.replace(/\/+$/, '')
 }
@@ -131,7 +218,7 @@ const BEHAVIORS: Record<ProviderType, ProviderBehavior> = {
   'vercel-gateway': {
     anthropicBaseURL: withoutV1,
     codexWireApi: 'responses',
-    listModels: listOpenAiModels,
+    listModels: listGatewayModels,
     openAIBaseURL: withV1,
     protocols: ['anthropic', 'openai-chat', 'openai-responses'],
   },
@@ -235,6 +322,20 @@ function perTokenToPerMillion(raw: number | string | undefined) {
   const n = typeof raw === 'number' ? raw : Number(raw)
   if (!Number.isFinite(n) || n < 0) return undefined
   return n * 1_000_000
+}
+
+// Compact $ for the model picker cost label. Mirrors pricing.ts's formatUsd
+// (kept local to avoid a providers → pricing import cycle).
+function formatUsd(amount: number) {
+  if (amount === 0) return '$0'
+  if (amount >= 100) return `$${amount.toFixed(0)}`
+  if (amount >= 1) return `$${trimZeros(amount.toFixed(2))}`
+  if (amount >= 0.01) return `$${trimZeros(amount.toFixed(3))}`
+  return `$${amount.toPrecision(2)}`
+}
+
+function trimZeros(s: string) {
+  return s.replace(/\.?0+$/, '')
 }
 
 // The one copy of the cache flow: fresh cache → live fetch (write-through) →

@@ -3,7 +3,7 @@ import type { RequestListener } from 'node:http'
 import { expect, test } from 'bun:test'
 import { createServer } from 'node:http'
 
-import { listGatewayProviders } from './providers.js'
+import { listGatewayProviders, listModels } from './providers.js'
 
 test('lists active Gateway providers with cost and throughput', async () => {
   let requestedPath = ''
@@ -57,6 +57,77 @@ test('lists active Gateway providers with cost and throughput', async () => {
     expect(requestedPath).toBe(
       '/gateway/v1/models/anthropic/model%20with%20spaces/endpoints',
     )
+  } finally {
+    await upstream.close()
+  }
+})
+
+test('lists Gateway models with cost, throughput, and context hints', async () => {
+  const upstream = await startUpstream((request, response) => {
+    response.setHeader('content-type', 'application/json')
+    if (request.url?.endsWith('/models')) {
+      response.end(
+        JSON.stringify({
+          data: [
+            {
+              context_window: 1_000_000,
+              id: 'anthropic/claude-sonnet-4.6',
+              pricing: { input: '0.000003', output: '0.000015' },
+            },
+            {
+              context_window: 40960,
+              id: 'openai/gpt-5',
+              pricing: { input: '0.000001', output: '0.000004' },
+            },
+          ],
+        }),
+      )
+      return
+    }
+    // per-model /endpoints: throughput for the first model only.
+    if (request.url?.includes('/anthropic/claude-sonnet-4.6/endpoints')) {
+      response.end(
+        JSON.stringify({
+          data: {
+            endpoints: [
+              {
+                provider_name: 'anthropic',
+                status: 0,
+                throughput_last_1h: { p50: 49.5 },
+              },
+            ],
+          },
+        }),
+      )
+      return
+    }
+    response.end(
+      JSON.stringify({
+        data: { endpoints: [{ provider_name: 'openai', status: 0 }] },
+      }),
+    )
+  })
+
+  try {
+    const models = await listModels({
+      baseURL: `${upstream.baseURL}/gateway`,
+      name: 'test-gateway',
+      type: 'vercel-gateway',
+    })
+    expect(models).toEqual([
+      {
+        costLabel: '$3/$15',
+        hint: '977k ctx',
+        id: 'anthropic/claude-sonnet-4.6',
+        throughputLabel: '50 tps',
+      },
+      {
+        costLabel: '$1/$4',
+        hint: '40k ctx',
+        id: 'openai/gpt-5',
+        throughputLabel: undefined,
+      },
+    ])
   } finally {
     await upstream.close()
   }
