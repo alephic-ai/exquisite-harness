@@ -89,12 +89,13 @@ Profiles and recents remember it.
 ### AI Gateway provider routing
 
 For Vercel AI Gateway models, interactive launches offer an additional provider
-picker after the model. Leave it on `automatic` for normal Gateway routing, or
-pin one upstream with `--gateway-provider <slug>`. A pin is fail-closed for that
-run: Gateway will not fall back to another provider. The option works with
-Claude, Codex, and Grok, including their `eh run` forms; profiles and recents
-remember it. Pi and opencode reject the option instead of silently falling back
-to automatic Gateway routing.
+picker after the model. Each provider row shows its cost ($ in/out per 1M) and
+p50 throughput (tps). Leave it on `automatic` for normal Gateway routing, pin
+one upstream with `--gateway-provider <slug>`, or choose `ZDR only` to restrict
+routing to zero-data-retention providers. A pin is fail-closed for that run:
+Gateway will not fall back to another provider. The option works with Claude,
+Codex, Grok, and `eh run`; profiles and recents remember it. Pi and opencode
+reject the option instead of silently falling back to automatic Gateway routing.
 
 ### Resume
 

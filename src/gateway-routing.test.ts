@@ -4,6 +4,7 @@ import { describe, expect, test } from 'bun:test'
 import { createServer, request as httpRequest } from 'node:http'
 
 import { withGatewayRouting } from './gateway-routing.js'
+import { buildLaunchPlan } from './harnesses.js'
 
 describe('gateway provider routing', () => {
   test.each(['/messages', '/responses', '/chat/completions'])(
@@ -77,6 +78,58 @@ describe('gateway provider routing', () => {
       }
     },
   )
+
+  test('ZDR-only routing injects zeroDataRetention without pinning a provider', async () => {
+    let receivedBody = ''
+    const upstream = await startUpstream(async (request, response) => {
+      receivedBody = await readBody(request)
+      response.end('data: {"type":"response.completed"}\n\n')
+    })
+    const targetBaseURL = `${upstream.baseURL}/v1`
+
+    try {
+      await withGatewayRouting(
+        {
+          args: [`base_url="${targetBaseURL}"`],
+          bin: 'test-harness',
+          env: { TEST_GATEWAY_BASE_URL: targetBaseURL },
+          gatewayRouting: {
+            model: 'anthropic/claude-sonnet-4.6',
+            targetBaseURL,
+            zdr: true,
+          },
+          notes: [],
+        },
+        async (plan) => {
+          const response = await fetch(
+            `${plan.env.TEST_GATEWAY_BASE_URL}/messages`,
+            {
+              body: JSON.stringify({
+                model: 'anthropic/claude-sonnet-4.6',
+                providerOptions: { gateway: { order: ['anthropic'] } },
+              }),
+              headers: { 'content-type': 'application/json' },
+              method: 'POST',
+            },
+          )
+          expect(await response.text()).toBe(
+            'data: {"type":"response.completed"}\n\n',
+          )
+        },
+      )
+      expect(JSON.parse(receivedBody)).toEqual({
+        model: 'anthropic/claude-sonnet-4.6',
+        providerOptions: {
+          gateway: {
+            order: ['anthropic'],
+            zeroDataRetention: true,
+          },
+        },
+      })
+    } finally {
+      await upstream.close()
+    }
+  })
 
   test('fails closed before inference when the provider cannot serve the model', async () => {
     let inferenceReached = false
@@ -391,6 +444,51 @@ describe('gateway provider routing', () => {
     } finally {
       await upstream.close()
     }
+  })
+})
+
+describe('gateway routing plan construction', () => {
+  const provider = {
+    baseURL: 'http://127.0.0.1:19099/v1',
+    name: 'vercel-ai-gateway',
+    type: 'vercel-gateway' as const,
+  }
+
+  test('ZDR-only produces a routing proxy without a pinned provider', async () => {
+    const plan = await buildLaunchPlan('codex', provider, 'test/model', {
+      gatewayZdr: true,
+      statusline: false,
+    })
+    expect(plan.gatewayRouting).toEqual({
+      apiKeyEnvKey: undefined,
+      model: 'test/model',
+      targetBaseURL: 'http://127.0.0.1:19099/v1',
+      zdr: true,
+    })
+    expect(plan.notes).toContain('gateway routing: ZDR only')
+  })
+
+  test('a pinned provider wins over a ZDR flag', async () => {
+    const plan = await buildLaunchPlan('codex', provider, 'test/model', {
+      gatewayProvider: 'bedrock',
+      gatewayZdr: true,
+      statusline: false,
+    })
+    expect(plan.gatewayRouting).toEqual({
+      apiKeyEnvKey: undefined,
+      model: 'test/model',
+      provider: 'bedrock',
+      targetBaseURL: 'http://127.0.0.1:19099/v1',
+      zdr: false,
+    })
+    expect(plan.notes).toContain('gateway provider pinned: bedrock')
+  })
+
+  test('no gateway options means no routing proxy', async () => {
+    const plan = await buildLaunchPlan('codex', provider, 'test/model', {
+      statusline: false,
+    })
+    expect(plan.gatewayRouting).toBeUndefined()
   })
 })
 

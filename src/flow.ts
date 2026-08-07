@@ -93,6 +93,8 @@ export async function launchFlow(
   }
   if (options.gatewayProvider !== undefined) {
     selection.gatewayProvider = options.gatewayProvider
+    // An explicit pin replaces any ZDR-only routing from a recent.
+    selection.gatewayZdr = undefined
   }
 
   // Before any session-store scanning: `eh -r bogus` should error, not scan.
@@ -141,6 +143,13 @@ export async function launchFlow(
           selection.gatewayProvider ??
           (sameProvider && model === recent.model
             ? recent.gatewayProvider
+            : undefined),
+        gatewayZdr:
+          selection.gatewayZdr ??
+          (options.gatewayProvider === undefined &&
+          sameProvider &&
+          model === recent.model
+            ? recent.gatewayZdr
             : undefined),
         model,
         provider,
@@ -211,6 +220,11 @@ export async function launchFlow(
             ...selectionFromRecent(config, choice.recent),
             gatewayProvider:
               options.gatewayProvider ?? choice.recent.gatewayProvider,
+            // An explicit pin replaces ZDR-only routing from a recent.
+            gatewayZdr:
+              options.gatewayProvider !== undefined
+                ? undefined
+                : choice.recent.gatewayZdr,
           }
         }
         break
@@ -230,6 +244,7 @@ export async function launchFlow(
   const complete: Selection = {
     effort: selection.effort,
     gatewayProvider: selection.gatewayProvider,
+    gatewayZdr: selection.gatewayZdr,
     harness,
     model,
     provider: provider.name,
@@ -252,6 +267,7 @@ export async function launchFlow(
   const plan = await buildLaunchPlan(harness, provider, model, {
     effort: complete.effort,
     gatewayProvider: complete.gatewayProvider,
+    gatewayZdr: complete.gatewayZdr,
     resume: options.resume,
     resumeSessionId,
     searchBackend,
@@ -301,11 +317,17 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
     ? mustGetProvider(config, partial.provider, def)
     : await pickProvider(def, allProviders(config))
   const model = partial.model ?? (await pickModel(provider))
-  const gatewayProvider =
-    provider.type === 'vercel-gateway' && def.gatewayRouting !== false
-      ? (partial.gatewayProvider ??
-        (await pickGatewayProvider(provider, model)))
-      : partial.gatewayProvider
+  let gatewayProvider = partial.gatewayProvider
+  let gatewayZdr = partial.gatewayZdr
+  if (
+    provider.type === 'vercel-gateway' &&
+    def.gatewayRouting !== false &&
+    gatewayProvider === undefined
+  ) {
+    const route = await pickGatewayProvider(provider, model)
+    gatewayProvider = route.provider
+    gatewayZdr = route.zeroDataRetention
+  }
   // Harnesses with effort: false (currently opencode) skip the question; an
   // explicit effort still reaches the harness plan.
   const effort =
@@ -313,6 +335,7 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
   return {
     effort,
     gatewayProvider,
+    gatewayZdr,
     harness,
     model,
     provider: provider.name,
@@ -350,7 +373,9 @@ function planSummary(selection: Selection, env: Record<string, string>) {
     `provider: ${providerLabel(selection.provider)} (${selection.provider})`,
     ...(selection.gatewayProvider
       ? [`gateway:  ${selection.gatewayProvider}`]
-      : []),
+      : selection.gatewayZdr
+        ? ['gateway:  ZDR only']
+        : []),
     `model:    ${selection.model}`,
     `search:   ${searchProviderLabel(selection.searchProvider ?? 'native')}`,
     '',
@@ -403,6 +428,13 @@ function resolveResumeWiring(args: {
       selection.gatewayProvider ??
       (sameProvider && model === recent.model
         ? recent.gatewayProvider
+        : undefined),
+    gatewayZdr:
+      selection.gatewayZdr ??
+      (selection.gatewayProvider === undefined &&
+      sameProvider &&
+      model === recent.model
+        ? recent.gatewayZdr
         : undefined),
     model,
     provider,

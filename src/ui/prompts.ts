@@ -19,12 +19,15 @@ import {
 } from '../config.js'
 import { HARNESSES } from '../harnesses.js'
 import { resolveApiKey, storeApiKey } from '../keys.js'
+import { formatUsd } from '../pricing.js'
 import {
   canServeAny,
+  fetchGatewayModelThroughput,
+  type GatewayProviderInfo,
   listGatewayProviders,
   listModelsCached,
 } from '../providers.js'
-import { EFFORT_LEVELS } from '../types.js'
+import { EFFORT_LEVELS, type ModelInfo } from '../types.js'
 import { findBin } from '../which.js'
 import { bail, keyStoredText, log, note, spinner } from './output.js'
 
@@ -239,6 +242,15 @@ async function ensureKey(provider: {
 
 const MANUAL = '__manual__'
 const GATEWAY_AUTO = '__gateway_auto__'
+const GATEWAY_ZDR = '__gateway_zdr__'
+
+// What the Gateway picker returns: a pinned provider slug, or automatic
+// routing (undefined) optionally restricted to ZDR providers. Both flags
+// null/undefined means plain automatic Vercel routing + fallback.
+export interface GatewayRouteChoice {
+  provider?: string
+  zeroDataRetention?: boolean
+}
 
 // Masked key entry — the key never echoes and never touches argv/history.
 export async function askApiKey(providerName: string) {
@@ -297,10 +309,10 @@ export async function confirmSearchProviderDefault(providerName: string) {
 export async function pickGatewayProvider(
   provider: ResolvedProvider,
   model: string,
-) {
+): Promise<GatewayRouteChoice> {
   const s = spinner()
   s.start(`fetching providers for ${model}`)
-  let providers: string[]
+  let providers: GatewayProviderInfo[]
   try {
     providers = await listGatewayProviders(provider, model)
     s.stop(`${String(providers.length)} providers`)
@@ -318,17 +330,23 @@ export async function pickGatewayProvider(
         label: 'automatic (recommended)',
         value: GATEWAY_AUTO,
       },
-      ...providers.map((name) => ({
+      {
+        hint: 'route only to zero-data-retention providers',
+        label: 'ZDR only',
+        value: GATEWAY_ZDR,
+      },
+      ...providers.map((info) => ({
         hint: 'pin every request; no provider fallback',
-        label: name,
-        value: name,
+        label: gatewayProviderLabel(info),
+        value: info.name,
       })),
       { hint: 'type a provider slug', label: 'other…', value: MANUAL },
     ],
     placeholder: 'type to filter…',
   })
   if (isCancel(value)) bail()
-  if (value === GATEWAY_AUTO) return undefined
+  if (value === GATEWAY_AUTO) return {}
+  if (value === GATEWAY_ZDR) return { zeroDataRetention: true }
   if (value === MANUAL) {
     const typed = await text({
       message: 'AI Gateway provider slug',
@@ -338,26 +356,67 @@ export async function pickGatewayProvider(
           : 'use the provider slug from Vercel AI Gateway',
     })
     if (isCancel(typed)) bail()
-    return typed
+    return { provider: typed }
   }
-  return value
+  return { provider: value }
 }
 
 export async function pickModel(provider: ResolvedProvider) {
   const models = await loadModels(provider)
-  const options = models.map((m) => ({
-    hint: m.hint,
-    label: m.id,
-    value: m.id,
-  }))
-  // Manual-entry escape hatch — never offer it if a real model id collides.
-  if (!models.some((m) => m.id === MANUAL)) {
-    options.push({ hint: 'type a model id', label: 'other…', value: MANUAL })
+  const isGateway = provider.type === 'vercel-gateway'
+  // Throughput lives per-model in a separate /endpoints call the gateway doesn't
+  // want to pay for the whole list. Fetch it for the models visible on the first
+  // screen so tok/s shows immediately, then lazily for anything the user filters
+  // to. Bounded so a large list doesn't stall the picker.
+  const throughputs = new Map<string, string>()
+  const throughputPending = new Set<string>()
+  const attemptedNoThroughput = new Set<string>()
+  if (isGateway) {
+    await prefetchVisibleThroughput(provider, models.slice(0, 12), {
+      attemptedNoThroughput,
+      throughputPending,
+      throughputs,
+    })
   }
+  // Manual-entry escape hatch — never offer it if a real model id collides.
+  const hasManual = models.some((m) => m.id === MANUAL)
   const value = await autocomplete({
     maxItems: 12,
     message: `model · ${provider.name}`,
-    options,
+    // Dynamic options getter (re-run by clack on each keystroke): for the
+    // gateway, enrich the labels of the models currently shown with throughput
+    // as fast as it arrives, fetching it for exactly those models.
+    options(this: { filteredOptions?: { value: string }[] }) {
+      if (isGateway) {
+        void prefetchVisibleThroughput(
+          provider,
+          (this.filteredOptions ?? []).map((r) => ({ id: r.value })),
+          {
+            attemptedNoThroughput,
+            throughputPending,
+            throughputs,
+          },
+        )
+      }
+      const options: { hint?: string; label: string; value: string }[] =
+        models.map((m) => ({
+          hint: m.hint,
+          label: modelLabel(
+            throughputs.has(m.id)
+              ? { ...m, throughputLabel: throughputs.get(m.id) }
+              : m,
+          ),
+          value: m.id,
+        }))
+      if (!hasManual) {
+        options.push({
+          hint: 'type a model id',
+          label: 'other…',
+          value: MANUAL,
+        })
+      }
+      return options
+    },
     placeholder: 'type to filter…',
   })
   if (isCancel(value)) bail()
@@ -372,6 +431,67 @@ export async function pickModel(provider: ResolvedProvider) {
   return value
 }
 
+// Fetch throughput for a batch of models (e.g. the currently visible ones) with
+// bounded concurrency, deduped against what's cached or already in flight.
+async function prefetchVisibleThroughput(
+  provider: ResolvedProvider,
+  rows: { id: string }[],
+  state: {
+    attemptedNoThroughput: Set<string>
+    throughputPending: Set<string>
+    throughputs: Map<string, string>
+  },
+) {
+  const ids = rows
+    .map((r) => r.id)
+    .filter(
+      (id) =>
+        !state.throughputs.has(id) &&
+        !state.attemptedNoThroughput.has(id) &&
+        !state.throughputPending.has(id),
+    )
+  if (ids.length === 0) return
+  for (const id of ids) state.throughputPending.add(id)
+  // Run all target ids through a pool of 8 in flight — the batch is bounded by
+  // concurrency, not by a count cap, so every model passed in gets fetched.
+  let cursor = 0
+  const workers = Array.from({ length: Math.min(8, ids.length) }, async () => {
+    for (;;) {
+      const i = cursor++
+      if (i >= ids.length) return
+      const id = ids[i]
+      try {
+        const label = await fetchGatewayModelThroughput(provider, id)
+        if (label != null) state.throughputs.set(id, label)
+        else state.attemptedNoThroughput.add(id)
+      } finally {
+        // A transient failure isn't "no throughput" — it stays out of
+        // attemptedNoThroughput so a later render retries it.
+        state.throughputPending.delete(id)
+      }
+    }
+  })
+  await Promise.all(workers)
+}
+
+// Cost/throughput go in the label so they're visible across the whole list
+// (clack only shows the hint on the focused row).
+function gatewayProviderLabel(info: GatewayProviderInfo) {
+  const cost =
+    info.costInputPerMillion != null && info.costOutputPerMillion != null
+      ? `${formatUsd(info.costInputPerMillion)}/${formatUsd(info.costOutputPerMillion)}`
+      : undefined
+  const throughput =
+    info.throughputTokensPerSec != null
+      ? `${Math.round(info.throughputTokensPerSec)} tps`
+      : undefined
+  const parts = [cost, throughput].filter((part) => part != null)
+  return parts.length > 0 ? `${info.name} — ${parts.join(' · ')}` : info.name
+}
+
+// Model picker row: cost/throughput (when the provider lists them) go inline in
+// the label so they're visible across the whole list, like the gateway provider
+// picker.
 async function loadModels(provider: ResolvedProvider) {
   // Skip the spinner flash when the fresh cache can answer instantly.
   const fresh = freshModels(provider.name)
@@ -386,4 +506,9 @@ async function loadModels(provider: ResolvedProvider) {
     s.stop('model fetch failed')
     throw error
   }
+}
+
+function modelLabel(m: ModelInfo) {
+  const parts = [m.costLabel, m.throughputLabel].filter((part) => part != null)
+  return parts.length > 0 ? `${m.id} — ${parts.join(' · ')}` : m.id
 }

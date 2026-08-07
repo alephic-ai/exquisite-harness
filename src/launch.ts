@@ -19,9 +19,10 @@ export function printEnv(plan: LaunchPlan) {
     console.log(`# plus args: ${plan.bin} ${plan.args.join(' ')}`)
   }
   if (plan.gatewayRouting) {
-    console.log(
-      `# gateway provider: ${plan.gatewayRouting.provider} (pinned by an eh loopback proxy on launch)`,
-    )
+    const label = plan.gatewayRouting.provider
+      ? `gateway provider: ${plan.gatewayRouting.provider}`
+      : 'gateway routing: ZDR only'
+    console.log(`# ${label} (pinned by an eh loopback proxy on launch)`)
   }
 }
 

@@ -155,8 +155,10 @@ Picker flow (via `@clack/prompts`, skipped per already-specified args):
 4. **Model** — live list from the provider (cached 5 min, stale fallback),
    scrollable, with a manual-entry escape hatch.
 5. **Gateway provider** — only for Vercel AI Gateway: live endpoint providers
-   for the selected model, plus `automatic` (the default) and manual entry.
-   Selecting a provider pins the run with no fallback to another upstream.
+   for the selected model, each hinting its cost ($ in/out per 1M) and p50
+   throughput (tps), plus `automatic` (the default), `ZDR only` (restrict
+   routing to zero-data-retention providers), and manual entry. Selecting a
+   provider pins the run with no fallback to another upstream.
 6. **Web access** (Claude only) — Native (default), or Firecrawl with the same
    inline key-status and masked key-entry behavior as model providers. Explicit
    `--search` skips this picker; Codex and Grok stay native.
@@ -292,6 +294,12 @@ provider options are preserved; count-token bodies are relayed unchanged. With
 Claude, request routing composes with exact cost capture as
 `harness → cost proxy → routing proxy → Gateway`.
 
+A `ZDR only` routing choice (picker, recents, or profile) starts the same proxy
+but injects `providerOptions.gateway.zeroDataRetention: true` without pinning a
+provider, so Vercel routes only to providers with zero-data-retention agreements
+for the model. Provider cost/throughput hints come from the same
+`/models/{model}/endpoints` response the picker already fetches.
+
 - **claude**: env `ANTHROPIC_BASE_URL` (provider's Anthropic endpoint),
   `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL`, `ANTHROPIC_SMALL_FAST_MODEL`.
   Effort (when not `auto`): `CLAUDE_CODE_EFFORT_LEVEL=<level>`, plus
@@ -425,7 +433,7 @@ src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
 src/pricing.ts    provider rates/ranges ($/1M) and fallback cost estimates
 src/gateway-costs.ts transparent Vercel stream proxy + exact session ledger
-src/gateway-routing.ts process-scoped request rewriter for Gateway provider pins
+src/gateway-routing.ts process-scoped request rewriter for Gateway provider pins / ZDR-only routing
 src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
 src/pi.ts         pi provider resolution: native catalog map + models.json matching

@@ -28,6 +28,7 @@ export interface HarnessDef {
     options: {
       effort?: string
       gatewayProvider?: string
+      gatewayZdr?: boolean
       statusline?: boolean
     },
   ) => Promise<LaunchPlan>
@@ -63,6 +64,7 @@ async function planClaude(
   options: {
     effort?: string
     gatewayProvider?: string
+    gatewayZdr?: boolean
     statusline?: boolean
   },
 ) {
@@ -136,6 +138,7 @@ async function planClaude(
       options.gatewayProvider,
       baseURL,
       model,
+      options.gatewayZdr,
     ),
     notes,
   }
@@ -148,7 +151,7 @@ async function planClaude(
 async function planCodex(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; gatewayProvider?: string },
+  options: { effort?: string; gatewayProvider?: string; gatewayZdr?: boolean },
 ) {
   const { effort } = options
   const baseURL = openAIBaseURLFor(provider)
@@ -189,6 +192,7 @@ async function planCodex(
       options.gatewayProvider,
       baseURL,
       model,
+      options.gatewayZdr,
     ),
     notes,
   }
@@ -198,7 +202,7 @@ async function planCodex(
 async function planGrok(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; gatewayProvider?: string },
+  options: { effort?: string; gatewayProvider?: string; gatewayZdr?: boolean },
 ) {
   const { effort } = options
   const baseURL = openAIBaseURLFor(provider)
@@ -218,6 +222,7 @@ async function planGrok(
       options.gatewayProvider,
       baseURL,
       model,
+      options.gatewayZdr,
     ),
     notes: [],
   }
@@ -234,9 +239,13 @@ function tomlString(value: string) {
 async function planPi(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; gatewayProvider?: string },
+  options: { effort?: string; gatewayProvider?: string; gatewayZdr?: boolean },
 ) {
-  rejectUnsupportedGatewayRouting('pi', options.gatewayProvider)
+  rejectUnsupportedGatewayRouting(
+    'pi',
+    options.gatewayProvider,
+    options.gatewayZdr,
+  )
   const { effort } = options
   const match = resolvePiProvider(provider)
   if (!match) {
@@ -262,9 +271,13 @@ async function planPi(
 async function planOpencode(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; gatewayProvider?: string },
+  options: { effort?: string; gatewayProvider?: string; gatewayZdr?: boolean },
 ) {
-  rejectUnsupportedGatewayRouting('opencode', options.gatewayProvider)
+  rejectUnsupportedGatewayRouting(
+    'opencode',
+    options.gatewayProvider,
+    options.gatewayZdr,
+  )
   const { effort } = options
   const notes: string[] = []
   if (effort && effort !== 'auto') {
@@ -340,6 +353,7 @@ export async function buildLaunchPlan(
   options: {
     effort?: string
     gatewayProvider?: string
+    gatewayZdr?: boolean
     resume?: boolean
     resumeSessionId?: string
     searchBackend?: SearchBackend
@@ -351,6 +365,7 @@ export async function buildLaunchPlan(
   const planned = await def.plan(provider, model, {
     effort: options.effort,
     gatewayProvider: options.gatewayProvider,
+    gatewayZdr: options.gatewayZdr,
     statusline: options.statusline,
   })
   const plan = {
@@ -358,12 +373,16 @@ export async function buildLaunchPlan(
     args: options.resume
       ? [...planned.args, ...def.resumeArgs(options.resumeSessionId)]
       : planned.args,
-    notes: planned.gatewayRouting
-      ? [
-          ...planned.notes,
-          `gateway provider pinned: ${planned.gatewayRouting.provider}`,
-        ]
-      : planned.notes,
+    ...(planned.gatewayRouting
+      ? {
+          notes: [
+            ...planned.notes,
+            planned.gatewayRouting.provider
+              ? `gateway provider pinned: ${planned.gatewayRouting.provider}`
+              : 'gateway routing: ZDR only',
+          ],
+        }
+      : {}),
     ...(planned.gatewayCostCapture
       ? {
           gatewayCostCapture: {
@@ -399,21 +418,32 @@ function gatewayRoutingFor(
   gatewayProvider: string | undefined,
   targetBaseURL: string,
   model: string,
+  gatewayZdr: boolean | undefined,
 ) {
-  if (gatewayProvider === undefined) return undefined
+  if (gatewayProvider === undefined && gatewayZdr !== true) return undefined
   if (provider.type !== 'vercel-gateway') {
-    throw new Error('--gateway-provider requires a Vercel AI Gateway provider')
+    throw new Error(
+      gatewayProvider === undefined
+        ? 'ZDR-only routing requires a Vercel AI Gateway provider'
+        : '--gateway-provider requires a Vercel AI Gateway provider',
+    )
   }
-  if (!/^[A-Za-z0-9._-]+$/.test(gatewayProvider)) {
+  if (
+    gatewayProvider !== undefined &&
+    !/^[A-Za-z0-9._-]+$/.test(gatewayProvider)
+  ) {
     throw new Error(
       `invalid gateway provider "${gatewayProvider}" (use its Vercel provider slug)`,
     )
   }
+  // A pin wins over ZDR-only routing: pinning a provider replaces the
+  // ZDR restriction, it doesn't combine with it.
   return {
     apiKeyEnvKey: provider.envKey,
     model,
     provider: gatewayProvider,
     targetBaseURL,
+    zdr: gatewayProvider === undefined && gatewayZdr === true,
   }
 }
 
@@ -428,8 +458,12 @@ function isVercelGatewayURL(baseURL: string) {
 function rejectUnsupportedGatewayRouting(
   harness: string,
   gatewayProvider: string | undefined,
+  gatewayZdr: boolean | undefined,
 ) {
   if (gatewayProvider !== undefined) {
     throw new Error(`--gateway-provider is not supported by ${harness}`)
+  }
+  if (gatewayZdr === true) {
+    throw new Error(`ZDR-only routing is not supported by ${harness}`)
   }
 }

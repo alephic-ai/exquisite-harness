@@ -5,19 +5,26 @@ export interface LaunchPlan {
   gatewayCostCapture?: {
     resumed: boolean
   }
+  // Gateway routing is either a pinned provider, or automatic Vercel routing
+  // (`provider` unset) optionally restricted to ZDR providers (zdr true).
   gatewayRouting?: {
     apiKeyEnvKey?: string
     model: string
-    provider: string
+    provider?: string
     targetBaseURL: string
+    zdr?: boolean
   }
   notes: string[]
   searchProxy?: SearchProxy
 }
 
 export interface ModelInfo {
+  // Cost label ($ in/out per 1M) shown on the model picker row.
+  costLabel?: string
   hint?: string
   id: string
+  // Throughput label (tokens/sec) shown on the model picker row.
+  throughputLabel?: string
 }
 
 export type Protocol = 'anthropic' | 'openai-chat' | 'openai-responses'
@@ -45,11 +52,14 @@ export interface SearchProxy extends SearchBackend {
 
 export interface Selection {
   effort?: EffortLevel
+  // Pinned Gateway provider slug (undefined = automatic Vercel routing).
   gatewayProvider?: string
   harness: string
   model: string
   provider: string
   searchProvider?: string
+  // Restrict automatic Gateway routing to ZDR providers.
+  gatewayZdr?: boolean
 }
 
 // Reasoning/effort levels, normalized across harnesses. `auto` means the

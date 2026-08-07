@@ -46,6 +46,7 @@ export async function withGatewayRouting<T>(
     provider: plan.gatewayRouting.provider,
     targetBaseURL: plan.gatewayRouting.targetBaseURL,
     validatedModels,
+    zdr: plan.gatewayRouting.zdr,
   })
   try {
     return await run(routePlanThroughProxy(plan, proxy.baseURL))
@@ -109,11 +110,12 @@ async function fetchGatewayProviders(props: {
 
 async function forwardRequest(props: {
   activeRequests: Set<AbortController>
-  provider: string
+  provider: string | undefined
   request: IncomingMessage
   response: ServerResponse
   target: URL
   validatedModels: Map<string, Promise<void>>
+  zdr: boolean | undefined
 }) {
   const controller = new AbortController()
   const abortUpstream = () => {
@@ -137,7 +139,10 @@ async function forwardRequest(props: {
       method === 'POST' ? await readRequestBody(props.request) : undefined
     const headers = requestHeaders(props.request.headers)
     const routed = isInferencePath(upstreamURL.pathname)
-      ? routeRequestBody(rawBody ?? Buffer.alloc(0), props.provider)
+      ? routeRequestBody(rawBody ?? Buffer.alloc(0), {
+          provider: props.provider,
+          zdr: props.zdr,
+        })
       : undefined
     if (routed) {
       await validateGatewayProvider({
@@ -304,19 +309,27 @@ function routePlanThroughProxy(plan: LaunchPlan, proxyBaseURL: string) {
   return routedPlan
 }
 
-function routeRequestBody(body: Buffer, provider: string) {
+function routeRequestBody(
+  body: Buffer,
+  route: { provider: string | undefined; zdr: boolean | undefined },
+) {
   const parsed = requestBodySchema.parse(JSON.parse(body.toString('utf8')))
   if (typeof parsed.model !== 'string' || parsed.model.length === 0) {
     throw new Error('gateway routing request is missing a model')
   }
   const providerOptions = asRecord(parsed.providerOptions) ?? {}
   const gateway = asRecord(providerOptions.gateway) ?? {}
+  const injection = {
+    ...gateway,
+    ...(route.provider !== undefined ? { only: [route.provider] } : {}),
+    ...(route.zdr === true ? { zeroDataRetention: true } : {}),
+  }
   return {
     body: JSON.stringify({
       ...parsed,
       providerOptions: {
         ...providerOptions,
-        gateway: { ...gateway, only: [provider] },
+        gateway: injection,
       },
     }),
     model: parsed.model,
@@ -324,9 +337,10 @@ function routeRequestBody(body: Buffer, provider: string) {
 }
 
 async function startGatewayRoutingProxy(props: {
-  provider: string
+  provider: string | undefined
   targetBaseURL: string
   validatedModels?: Map<string, Promise<void>>
+  zdr: boolean | undefined
 }) {
   const target = validateTargetBaseURL(props.targetBaseURL)
   const activeRequests = new Set<AbortController>()
@@ -340,6 +354,7 @@ async function startGatewayRoutingProxy(props: {
       response,
       target,
       validatedModels,
+      zdr: props.zdr,
     })
   })
 
@@ -375,18 +390,22 @@ async function startGatewayRoutingProxy(props: {
 async function validateGatewayProvider(props: {
   headers: Headers
   model: string
-  provider: string
+  provider: string | undefined
   target: URL
   validatedModels: Map<string, Promise<void>>
 }) {
-  const cacheKey = `${props.model}\0${props.provider}`
+  // ZDR-only routing has no pinned provider to validate — Vercel handles the
+  // ZDR restriction itself, so validation only applies to a pinned slug.
+  if (props.provider === undefined) return
+  const { provider } = props
+  const cacheKey = `${props.model}\0${provider}`
   let validation = props.validatedModels.get(cacheKey)
   if (!validation) {
     validation = fetchGatewayProviders(props).then((providers) => {
-      if (!providers.includes(props.provider)) {
+      if (!providers.includes(provider)) {
         const available = providers.length > 0 ? providers.join(', ') : 'none'
         throw new Error(
-          `gateway provider "${props.provider}" is unavailable for model "${props.model}" (available: ${available})`,
+          `gateway provider "${provider}" is unavailable for model "${props.model}" (available: ${available})`,
         )
       }
     })
