@@ -1,3 +1,7 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+
 import type { ResolvedProvider } from './config.js'
 import type {
   ApprovalMode,
@@ -23,10 +27,6 @@ export interface HarnessDef {
   // false = the interactive picker skips effort; explicit options may still
   // be handled by the launch plan (grok) or ignored with a note (opencode).
   effort?: false
-  // Pi's provider URL comes from its native catalog, and opencode's routing
-  // is owned by its inline provider definition. Neither currently supports
-  // eh's process-scoped Gateway routing proxy.
-  gatewayRouting?: false
   label: string
   plan: (
     provider: ResolvedProvider,
@@ -240,21 +240,23 @@ function tomlString(value: string) {
   return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`
 }
 
-// pi speaks OpenAI chat through its own provider catalog: the eh provider must
-// exist there natively or in ~/.pi/agent/models.json (providerCompat gates the
-// picker; this throw is the flag-driven path's version). Model ids pass
-// through — pi warns and uses generic limits for models it doesn't know.
+// pi speaks OpenAI chat / Anthropic Messages through its own provider catalog:
+// the eh provider must exist there natively or in ~/.pi/agent/models.json
+// (providerCompat gates the picker; this throw is the flag-driven path's
+// version). Model ids pass through — pi warns and uses generic limits for
+// models it doesn't know. For a Gateway provider pin or ZDR-only routing, eh
+// points pi's native vercel-ai-gateway provider at the eh loopback proxy via a
+// temporary `--extension` that overrides its baseUrl — no models.json mutation.
 async function planPi(
   provider: ResolvedProvider,
   model: string,
   options: HarnessPlanOptions,
 ) {
-  rejectUnsupportedGatewayRouting(
-    'pi',
-    options.gatewayProvider,
-    options.gatewayZdr,
-  )
   const { effort } = options
+  // pi's SDK appends its own /v1 (Anthropic) or /chat/completions (OpenAI) to
+  // the provider base URL, so the Gateway target drops /v1 — the proxy accepts
+  // both prefixed and unprefixed inference paths.
+  const baseURL = openAIBaseURLFor(provider).replace(/\/v1$/, '')
   const match = resolvePiProvider(provider)
   if (!match) {
     throw new Error(
@@ -271,23 +273,51 @@ async function planPi(
   // pi's thinking levels are eh's effort levels (auto = send nothing).
   if (effort && effort !== 'auto') args.push('--thinking', effort)
   args.push(...approvalArgsForHarness('pi', options.approvalMode))
-  return { args, bin: 'pi', env, notes: [] }
+  const gatewayRouting = gatewayRoutingFor(
+    provider,
+    options.gatewayProvider,
+    baseURL,
+    model,
+    options.gatewayZdr,
+  )
+  if (!gatewayRouting) return { args, bin: 'pi', env, notes: [] }
+
+  // Route pi's native provider through eh's loopback proxy. The extension
+  // reads the proxy URL from the child env (rewritten by the routing proxy at
+  // launch); the temp file is removed once the run finishes.
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'eh-pi-'))
+  const extensionPath = path.join(dir, 'gateway-routing.js')
+  await writeFile(
+    extensionPath,
+    `export default function (pi) {
+  pi.registerProvider(${JSON.stringify(match.piName)}, { baseUrl: process.env.EH_PI_PROXY_URL })
+}
+`,
+    { mode: 0o600 },
+  )
+  env.EH_PI_PROXY_URL = baseURL
+  return {
+    args: [...args, '--extension', extensionPath],
+    bin: 'pi',
+    cleanup: async () => rm(dir, { force: true, recursive: true }),
+    env,
+    gatewayRouting,
+    notes: ['gateway routing via pi extension override'],
+  }
 }
 
 // opencode speaks OpenAI chat to anything via @ai-sdk/openai-compatible. The
 // provider definition rides as inline JSON in OPENCODE_CONFIG_CONTENT, which
-// merges over the user's own config — nothing written to disk.
+// merges over the user's own config — nothing written to disk. Its baseURL
+// lives in that JSON, so the gateway routing proxy's baseURL rewrite reaches
+// it the same way it reaches grok's env var.
 async function planOpencode(
   provider: ResolvedProvider,
   model: string,
   options: HarnessPlanOptions,
 ) {
-  rejectUnsupportedGatewayRouting(
-    'opencode',
-    options.gatewayProvider,
-    options.gatewayZdr,
-  )
   const { effort } = options
+  const baseURL = openAIBaseURLFor(provider)
   const notes: string[] = []
   if (effort && effort !== 'auto') {
     notes.push('opencode has no CLI effort knob — ignoring')
@@ -307,6 +337,13 @@ async function planOpencode(
     args,
     bin: 'opencode',
     env,
+    gatewayRouting: gatewayRoutingFor(
+      provider,
+      options.gatewayProvider,
+      baseURL,
+      model,
+      options.gatewayZdr,
+    ),
     notes,
   }
 }
@@ -340,7 +377,6 @@ export const HARNESSES: Record<string, HarnessDef> = {
   opencode: {
     bin: 'opencode',
     effort: false,
-    gatewayRouting: false,
     label: 'opencode',
     plan: planOpencode,
     protocols: ['openai-chat'],
@@ -348,7 +384,6 @@ export const HARNESSES: Record<string, HarnessDef> = {
   },
   pi: {
     bin: 'pi',
-    gatewayRouting: false,
     label: 'pi',
     plan: planPi,
     protocols: ['openai-chat'],
@@ -466,18 +501,5 @@ function isVercelGatewayURL(baseURL: string) {
     return new URL(baseURL).hostname === 'ai-gateway.vercel.sh'
   } catch {
     return false
-  }
-}
-
-function rejectUnsupportedGatewayRouting(
-  harness: string,
-  gatewayProvider: string | undefined,
-  gatewayZdr: boolean | undefined,
-) {
-  if (gatewayProvider !== undefined) {
-    throw new Error(`--gateway-provider is not supported by ${harness}`)
-  }
-  if (gatewayZdr === true) {
-    throw new Error(`ZDR-only routing is not supported by ${harness}`)
   }
 }

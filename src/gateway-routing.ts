@@ -34,37 +34,47 @@ export async function withGatewayRouting<T>(
 ) {
   if (!plan.gatewayRouting) return run(plan)
 
-  const validatedModels = new Map<string, Promise<void>>()
-  await validateGatewayProvider({
-    headers: gatewayValidationHeaders(plan),
-    model: plan.gatewayRouting.model,
-    provider: plan.gatewayRouting.provider,
-    target: validateTargetBaseURL(plan.gatewayRouting.targetBaseURL),
-    validatedModels,
-  })
-  const proxy = await startGatewayRoutingProxy({
-    provider: plan.gatewayRouting.provider,
-    targetBaseURL: plan.gatewayRouting.targetBaseURL,
-    validatedModels,
-    zdr: plan.gatewayRouting.zdr,
-  })
+  // Clean up launch-time artifacts (pi's temp extension) on every exit path,
+  // including validation/proxy-start failures below the try.
   try {
-    return await run(routePlanThroughProxy(plan, proxy.baseURL))
+    const validatedModels = new Map<string, Promise<void>>()
+    await validateGatewayProvider({
+      headers: gatewayValidationHeaders(plan),
+      model: plan.gatewayRouting.model,
+      provider: plan.gatewayRouting.provider,
+      target: validateTargetBaseURL(plan.gatewayRouting.targetBaseURL),
+      validatedModels,
+    })
+    const proxy = await startGatewayRoutingProxy({
+      provider: plan.gatewayRouting.provider,
+      targetBaseURL: plan.gatewayRouting.targetBaseURL,
+      validatedModels,
+      zdr: plan.gatewayRouting.zdr,
+    })
+    try {
+      return await run(routePlanThroughProxy(plan, proxy.baseURL))
+    } finally {
+      await proxy.close()
+    }
   } finally {
-    await proxy.close()
+    await plan.cleanup?.()
   }
 }
 
+// Harnesses differ in whether they append the API base path to their base URL:
+// the OpenAI SDK does not, while the Anthropic SDK appends /v1. Normalize
+// relative to the target's configured base path so both `/messages` and
+// `/v1/messages` (and custom prefixes like `/gateway/v1/messages`) route the
+// same way.
 function allowedGatewayPath(pathname: string, apiBasePath: string) {
-  if (pathname === `${apiBasePath}/chat/completions`) {
-    return '/chat/completions'
-  }
-  if (pathname === `${apiBasePath}/messages`) return '/messages'
-  if (pathname === `${apiBasePath}/responses`) return '/responses'
-  if (pathname === `${apiBasePath}/messages/count_tokens`) {
-    return '/messages/count_tokens'
-  }
-  if (pathname === `${apiBasePath}/models`) return '/models'
+  const normalized = pathname.startsWith(apiBasePath)
+    ? pathname.slice(apiBasePath.length) || '/'
+    : pathname
+  if (normalized === '/chat/completions') return '/chat/completions'
+  if (normalized === '/messages') return '/messages'
+  if (normalized === '/responses') return '/responses'
+  if (normalized === '/messages/count_tokens') return '/messages/count_tokens'
+  if (normalized === '/models') return '/models'
   throw new Error('unsupported request path')
 }
 

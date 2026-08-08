@@ -1,6 +1,9 @@
 export interface LaunchPlan {
   args: string[]
   bin: string
+  // Optional teardown for launch-time temp artifacts (e.g. pi's gateway
+  // routing extension). Runs after the child exits, alongside proxy shutdown.
+  cleanup?: () => Promise<void>
   env: Record<string, string>
   gatewayCostCapture?: {
     resumed: boolean

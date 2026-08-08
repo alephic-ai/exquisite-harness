@@ -282,6 +282,9 @@ export async function launchFlow(
 
   if (options.printEnvOnly) {
     printEnv(plan)
+    // print-env never launches the child, so no withGatewayRouting run to
+    // trigger cleanup — release launch-time artifacts (pi's temp extension).
+    await plan.cleanup?.()
     return
   }
 
@@ -295,7 +298,12 @@ export async function launchFlow(
         selection: complete,
       }),
     )
-    if (action === 'back') return
+    if (action === 'back') {
+      // Won't reach exec() (and its withGatewayRouting cleanup) — release
+      // launch-time artifacts (pi's temp extension) before returning.
+      await plan.cleanup?.()
+      return
+    }
     if (action === 'save') {
       const name = await askProfileName()
       config = { ...config, profiles: { ...config.profiles, [name]: complete } }
@@ -306,7 +314,10 @@ export async function launchFlow(
   // Explicit --save: persist the combo without any prompt.
   if (options.saveAs) {
     const taken = reservedProfileNameMessage(options.saveAs)
-    if (taken) throw new Error(taken)
+    if (taken) {
+      await plan.cleanup?.()
+      throw new Error(taken)
+    }
     config = {
       ...config,
       profiles: { ...config.profiles, [options.saveAs]: complete },
@@ -332,11 +343,7 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
   const model = partial.model ?? (await pickModel(provider))
   let gatewayProvider = partial.gatewayProvider
   let gatewayZdr = partial.gatewayZdr
-  if (
-    provider.type === 'vercel-gateway' &&
-    def.gatewayRouting !== false &&
-    gatewayProvider === undefined
-  ) {
+  if (provider.type === 'vercel-gateway' && gatewayProvider === undefined) {
     const route = await pickGatewayProvider(provider, model)
     gatewayProvider = route.provider
     gatewayZdr = route.zeroDataRetention
