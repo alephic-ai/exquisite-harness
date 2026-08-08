@@ -79,6 +79,61 @@ describe('gateway provider routing', () => {
     },
   )
 
+  test('preserves a configured gateway base path prefix in routes', async () => {
+    let receivedPath = ''
+    const responseBody = 'data: {"type":"response.completed"}\n\n'
+    const upstream = await startUpstream((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: { endpoints: [{ provider_name: 'bedrock', status: 0 }] },
+          }),
+        )
+        return
+      }
+      receivedPath = request.url ?? ''
+      response.setHeader('content-type', 'text/event-stream')
+      response.end(responseBody)
+    })
+    // Custom base path, not just /v1: https://host/gateway/v1
+    const targetBaseURL = `${upstream.baseURL}/gateway/v1`
+
+    try {
+      await withGatewayRouting(
+        {
+          args: [`base_url="${targetBaseURL}"`],
+          bin: 'test-harness',
+          env: { TEST_GATEWAY_BASE_URL: targetBaseURL },
+          gatewayRouting: {
+            model: 'anthropic/claude-sonnet-4.6',
+            provider: 'bedrock',
+            targetBaseURL,
+          },
+          notes: [],
+        },
+        async (plan) => {
+          const response = await fetch(
+            `${plan.env.TEST_GATEWAY_BASE_URL}/chat/completions`,
+            {
+              body: JSON.stringify({
+                model: 'anthropic/claude-sonnet-4.6',
+                providerOptions: { gateway: { order: ['anthropic'] } },
+              }),
+              headers: { 'content-type': 'application/json' },
+              method: 'POST',
+            },
+          )
+          expect(await response.text()).toBe(responseBody)
+        },
+      )
+      // The upstream sees the full configured base path, not a collapsed /v1.
+      expect(receivedPath).toBe('/gateway/v1/chat/completions')
+    } finally {
+      await upstream.close()
+    }
+  })
+
   test('ZDR-only routing injects zeroDataRetention without pinning a provider', async () => {
     let receivedBody = ''
     const upstream = await startUpstream(async (request, response) => {

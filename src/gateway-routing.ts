@@ -61,11 +61,15 @@ export async function withGatewayRouting<T>(
   }
 }
 
-// Harnesses differ in whether they append a /v1 prefix to their base URL (the
-// OpenAI SDK does not; the Anthropic SDK does). Normalize a leading /v1 so both
-// `/messages` and `/v1/messages` route the same way.
-function allowedGatewayPath(pathname: string) {
-  const normalized = pathname.startsWith('/v1') ? pathname.slice(3) : pathname
+// Harnesses differ in whether they append the API base path to their base URL:
+// the OpenAI SDK does not, while the Anthropic SDK appends /v1. Normalize
+// relative to the target's configured base path so both `/messages` and
+// `/v1/messages` (and custom prefixes like `/gateway/v1/messages`) route the
+// same way.
+function allowedGatewayPath(pathname: string, apiBasePath: string) {
+  const normalized = pathname.startsWith(apiBasePath)
+    ? pathname.slice(apiBasePath.length) || '/'
+    : pathname
   if (normalized === '/chat/completions') return '/chat/completions'
   if (normalized === '/messages') return '/messages'
   if (normalized === '/responses') return '/responses'
@@ -206,7 +210,7 @@ function gatewayUpstreamURL(requestPath: string, target: URL) {
   const apiBasePath = target.pathname.endsWith('/v1')
     ? target.pathname
     : `${target.pathname}/v1`.replace('//', '/')
-  const allowedPath = allowedGatewayPath(incoming.pathname)
+  const allowedPath = allowedGatewayPath(incoming.pathname, apiBasePath)
   const query = [...incoming.searchParams]
     .map(
       ([name, value]) =>

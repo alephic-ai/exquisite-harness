@@ -285,7 +285,12 @@ export async function launchFlow(
   // positionals (and profiles) launch straight away.
   if (isTTY && needsPicking) {
     const action = await confirmLaunch(planSummary(complete, plan.env))
-    if (action === 'back') return
+    if (action === 'back') {
+      // Won't reach exec() (and its withGatewayRouting cleanup) — release
+      // launch-time artifacts (pi's temp extension) before returning.
+      await plan.cleanup?.()
+      return
+    }
     if (action === 'save') {
       const name = await askProfileName()
       config = { ...config, profiles: { ...config.profiles, [name]: complete } }
@@ -296,7 +301,10 @@ export async function launchFlow(
   // Explicit --save: persist the combo without any prompt.
   if (options.saveAs) {
     const taken = reservedProfileNameMessage(options.saveAs)
-    if (taken) throw new Error(taken)
+    if (taken) {
+      await plan.cleanup?.()
+      throw new Error(taken)
+    }
     config = {
       ...config,
       profiles: { ...config.profiles, [options.saveAs]: complete },
