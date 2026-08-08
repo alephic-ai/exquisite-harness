@@ -6,6 +6,7 @@ import { z } from 'zod'
 import type { ProviderType, SearchProviderType, Selection } from './types.js'
 
 import {
+  APPROVAL_MODES,
   EFFORT_LEVELS,
   PROVIDER_TYPES,
   SEARCH_PROVIDER_TYPES,
@@ -40,6 +41,7 @@ const recentEntrySchema = selectionSchema.extend({
 })
 
 const configSchema = z.object({
+  defaultApprovalMode: z.enum(APPROVAL_MODES).default('platform'),
   defaultSearchProvider: z.string().optional(),
   profiles: z.record(z.string(), selectionSchema).default({}),
   providers: z.record(z.string(), providerConfigSchema).default({}),

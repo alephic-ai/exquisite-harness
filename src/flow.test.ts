@@ -12,6 +12,14 @@ afterAll(() => {
 })
 
 describe('profile Gateway routing', () => {
+  test('applies the current approval default without storing it in the profile', () => {
+    const result = runProfile({ approvalMode: 'auto' })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stderr).toBe('')
+    expect(result.stdout).toContain('--approve-for-me')
+  })
+
   test('keeps the saved provider pin when the model is unchanged', () => {
     const result = runProfile({})
 
@@ -53,7 +61,11 @@ describe('profile Gateway routing', () => {
   })
 })
 
-function runProfile(options: { model?: string; provider?: string }) {
+function runProfile(options: {
+  approvalMode?: 'auto' | 'platform'
+  model?: string
+  provider?: string
+}) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'eh-flow-test-'))
   tempDirs.push(root)
   const configDir = path.join(root, 'xdg', 'eh')
@@ -61,6 +73,9 @@ function runProfile(options: { model?: string; provider?: string }) {
   writeFileSync(
     path.join(configDir, 'config.json'),
     JSON.stringify({
+      ...(options.approvalMode
+        ? { defaultApprovalMode: options.approvalMode }
+        : {}),
       profiles: {
         'gateway-fireworks': {
           gatewayProvider: 'fireworks',

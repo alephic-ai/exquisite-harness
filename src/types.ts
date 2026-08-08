@@ -50,6 +50,11 @@ export interface SearchProxy extends SearchBackend {
   upstreamBaseURL: string
 }
 
+// Global approval behavior is resolved at launch time, so profiles and
+// recents remain portable when the default changes.
+export const APPROVAL_MODES = ['platform', 'auto'] as const
+export type ApprovalMode = (typeof APPROVAL_MODES)[number]
+
 export interface Selection {
   effort?: EffortLevel
   // Pinned Gateway provider slug (undefined = automatic Vercel routing).

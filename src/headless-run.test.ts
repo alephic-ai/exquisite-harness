@@ -127,6 +127,52 @@ describe('eh run', () => {
     expect(args).not.toContain('--dangerously-bypass-approvals-and-sandbox')
   })
 
+  test('applies the global approval default to headless runs', async () => {
+    const fixture = createFakeCodex()
+    const ehConfigDir = path.join(fixture.configDir, 'eh')
+    mkdirSync(ehConfigDir, { recursive: true })
+    writeFileSync(
+      path.join(ehConfigDir, 'config.json'),
+      JSON.stringify({ defaultApprovalMode: 'auto', version: 1 }),
+    )
+    const child = spawn(
+      process.execPath,
+      ['run', 'src/main.ts', 'run', 'codex', 'ollama', 'qwen3-coder'],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('approve this run')
+
+    const [exitCode, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stdout),
+      readStream(child.stderr),
+    ])
+    const events = parseEvents(stdout)
+    const argsEvent = events
+      .map((event) =>
+        z
+          .object({
+            event: z.object({
+              args: z.array(z.string()),
+              type: z.literal('fake.args'),
+            }),
+            type: z.literal('harness.event'),
+          })
+          .safeParse(event),
+      )
+      .find((result) => result.success)
+
+    expect(exitCode).toBe(0)
+    expect(argsEvent?.data.event.args).toContain('--approve-for-me')
+  })
+
   test('normalizes a missing harness binary as a failed run', async () => {
     const root = mkdtempSync(path.join(tmpdir(), 'eh-headless-test-'))
     tempDirs.push(root)

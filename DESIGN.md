@@ -114,7 +114,7 @@ appears as a synthetic provider that serves all protocols, so the picker logic
 ## UX
 
 ```text
-eh                                  # home: recents, new session, providers, doctor
+eh                                  # home: recents, new session, providers, defaults, doctor
 eh claude                           # interactive: provider + model pickers
 eh claude ollama                    # interactive: model picker only
 eh claude ollama qwen3-coder        # no UI, just launches
@@ -138,7 +138,9 @@ eh update                           # self-update to the latest GitHub release
 
 Picker flow (via `@clack/prompts`, skipped per already-specified args):
 
-1. **Home** — recent combos (Enter relaunches last), or new session.
+1. **Home** — recent combos (Enter relaunches last), new session, providers,
+   defaults, or doctor. Home → defaults → approvals sets a global launch-time
+   choice between each harness's platform behavior and native auto mode.
 2. **Harness** — installed status in the hint.
 3. **Provider** — filtered to protocol-compatible; incompatible rows shown with
    a `needs router` hint or the harness's own providerCompat reason (pi:
@@ -178,6 +180,7 @@ prompts.
 ```jsonc
 {
   "version": 1,
+  "defaultApprovalMode": "auto",
   "defaultSearchProvider": "firecrawl",
   "providers": {
     "ollama": { "type": "ollama", "baseURL": "http://localhost:11434" },
@@ -236,6 +239,11 @@ Search resolution is explicit `--search` → profile/recent choice →
 retargets existing Claude recents so home-screen shortcuts follow it. Saved
 profiles remain reproducible and keep their explicit choice.
 
+Approval resolution is the current `defaultApprovalMode` at launch time. It is
+deliberately absent from selections, profiles, and recents: changing the global
+default immediately affects every launch path, including `eh run`, while
+`platform` remains the backwards-compatible default for existing config files.
+
 ## Key handling
 
 `eh` can store provider and search API keys so you don't have to pre-export env
@@ -284,6 +292,13 @@ Phase-2 note (Claude Code's `apiKeyHelper` pattern): a stored key _command_
 resolve at launch time without eh storing anything.
 
 ## Launch plans
+
+Approval mode `auto` maps to each harness's native automatic behavior: Claude
+and Grok `--permission-mode auto`, Codex `--approve-for-me`, and opencode
+`--auto`. Pi receives no flag because it has no tool-approval prompts;
+`--approve` is its project-trust option and is not equivalent. Platform mode
+adds no argument. The mapping never uses unrestricted bypass flags, and native
+availability/errors remain owned by the selected harness.
 
 For a Vercel AI Gateway selection, `--gateway-provider <slug>` adds a
 process-scoped loopback proxy to Claude, Codex, and Grok launch plans. Pi and
@@ -431,6 +446,7 @@ which keeps non-TTY use clean and a future Ink/miller-column UI swappable.
 src/main.ts       entry: commander wiring
 src/flow.ts       positional/profile resolution → pickers → launch
 src/headless-run.ts  non-interactive harness execution + NDJSON normalization
+src/approval-mode.ts  approval labels + per-harness native argument mapping
 src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
 src/pricing.ts    provider rates/ranges ($/1M) and fallback cost estimates
@@ -454,6 +470,7 @@ src/cache.ts      model-list cache
 src/which.ts      PATH binary lookup (PATHEXT-aware)
 src/time-ago.ts   relative time for recents
 src/types.ts      shared types
+src/ui/defaults-screen.ts  home → defaults: global launch behavior
 src/ui/home.ts    home screen
 src/ui/output.ts  single re-export site for clack output helpers (+ bail, keyStoredText)
 src/ui/prompts.ts pickers + confirm
