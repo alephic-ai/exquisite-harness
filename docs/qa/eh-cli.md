@@ -78,6 +78,16 @@ Each prints env/args and exits 0 without launching.
 16. `AI_GATEWAY_API_KEY=test eh --print-env --gateway-provider bedrock codex vercel-ai-gateway anthropic/claude-sonnet-4.6`
     → prints the normal Gateway launch plan plus `gateway provider: bedrock`; it
     does not start a proxy in print-only mode.
+17. Point `XDG_CONFIG_HOME` at a temp directory and write
+    `$XDG_CONFIG_HOME/eh/config.json` with
+    `{"defaultApprovalMode":"auto","version":1}`. Give pi a runnable Ollama
+    entry for `qwen3-coder` in its active `models.json`, then run these five
+    commands: `eh --print-env claude ollama qwen3-coder`, the same for `codex`,
+    `grok`, `opencode`, and `pi`. → Claude and Grok include
+    `--permission-mode auto`, Codex includes `--approve-for-me`, opencode
+    includes `--auto`, and pi adds no approval argument. None includes an
+    unrestricted bypass flag. Change the config value to `platform` and repeat
+    the same commands. → none of those approval arguments is present.
 
 ## C. Config / error paths
 
@@ -120,12 +130,15 @@ Drive each with the PTY; assert on screen text.
    without a redundant confirmation prompt.
 2. **Home**: with one recent entry present, run `eh`. → home select lists the
    recent combo with a relative-time hint, plus "new session →", "providers",
-   "doctor". Enter providers → one list with disabled "Model providers" and
-   "Search providers" headings; Native and Firecrawl appear in the latter, the
-   active default is labeled, and the other provider exposes a make-default
-   action. Firecrawl also exposes set/delete key actions. Enter on the recent →
-   launch-plan note with **redacted** secrets (`ANTHROPIC_AUTH_TOKEN=•••`), and
-   go/save/back options.
+   "defaults", "doctor". Enter defaults → approvals shows `platform default` and
+   `auto`; choosing `auto` writes `defaultApprovalMode: "auto"`, and the
+   approvals row reflects it. Enter providers → one list with disabled "Model
+   providers" and "Search providers" headings; Native and Firecrawl appear in
+   the latter, the active default is labeled, and the other provider exposes a
+   make-default action. Firecrawl also exposes set/delete key actions. Enter on
+   the recent → launch-plan note with **redacted** secrets
+   (`ANTHROPIC_AUTH_TOKEN=•••`), the resolved approval default, and go/save/back
+   options.
 3. **Pickers**: run `eh claude` → provider picker lists ollama (compatible) and,
    if configured, openrouter. Arrow down to focus openrouter → its hint reads
    "openai-chat · needs router" (clack only shows the focused row's hint);
@@ -329,10 +342,12 @@ Drive each with the PTY; assert on screen text.
 - `pnpm lint` (eslint typed rules + prettier + tsc) is the static gate.
 - `bun test` — `src/statusline.test.ts` (transcript usage),
   `src/sessions.test.ts` (resume session-store parsers), `src/config.test.ts`
-  (search-default precedence and recent retargeting), and
-  `src/search-proxy.test.ts` (Firecrawl search/fetch interception + Anthropic
-  passthrough), plus exact Gateway stream/cost capture, provider routing and
-  model discovery, active-provider pricing ranges, transcript usage/cost
-  fallbacks, all five headless adapters and their normalized NDJSON/failure
-  contracts, Pi provider matching/config parsing, OpenCode inline config, and
-  per-row session isolation for out-of-range timestamps.
+  (backwards-compatible approval default, search-default precedence and recent
+  retargeting), `src/approval-mode.test.ts` (all approval mappings and bypass
+  exclusions), and `src/search-proxy.test.ts` (Firecrawl search/fetch
+  interception + Anthropic passthrough), plus exact Gateway stream/cost capture,
+  provider routing and model discovery, active-provider pricing ranges,
+  transcript usage/cost fallbacks, all five headless adapters and their
+  normalized NDJSON/failure contracts, Pi provider matching/config parsing,
+  OpenCode inline config, and per-row session isolation for out-of-range
+  timestamps.

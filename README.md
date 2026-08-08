@@ -89,6 +89,27 @@ non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map 
 `--thinking <level>` (levels match 1:1); opencode has no knob and ignores it.
 Profiles and recents remember it.
 
+### Approval defaults
+
+Open **Home → defaults → approvals** to choose `platform default` or `auto`.
+This is a global, launch-time preference, so changing it immediately affects new
+sessions, saved profiles, recent shortcuts, and `eh run` without rewriting any
+of them.
+
+| Harness  | `auto` mapping                    |
+| -------- | --------------------------------- |
+| Claude   | `--permission-mode auto`          |
+| Codex    | `--approve-for-me`                |
+| Grok     | `--permission-mode auto`          |
+| opencode | `--auto`                          |
+| pi       | no flag; no tool-approval prompts |
+
+These are the harnesses' native guarded/automatic modes, not unrestricted bypass
+flags. Native support still decides whether a mode is available; in particular,
+Claude's auto mode may reject unsupported accounts, models, or custom provider
+wiring. Pi's separate project-trust `--approve` option is intentionally not
+mapped. `platform default` adds no approval argument.
+
 ### AI Gateway provider routing
 
 For Vercel AI Gateway models, interactive launches offer an additional provider
@@ -234,11 +255,12 @@ signal.
 ## Config
 
 `~/.config/eh/config.json` (`$XDG_CONFIG_HOME/eh`, `%APPDATA%\eh` on Windows) —
-providers, profiles, recents. `~/.config/eh/cache.json` — model lists. All three
-matrix providers are built in; config only overrides or adds custom ones.
-Firecrawl search is also built in; `searchProviders` can override its `baseURL`
-or `envKey`, and `defaultSearchProvider` controls new Claude launches. Saved
-profiles and recents also include an optional Gateway provider pin.
+providers, profiles, recents, and global defaults. `defaultApprovalMode`
+controls launch-time approval behavior. `~/.config/eh/cache.json` — model lists.
+All three matrix providers are built in; config only overrides or adds custom
+ones. Firecrawl search is also built in; `searchProviders` can override its
+`baseURL` or `envKey`, and `defaultSearchProvider` controls new Claude launches.
+Saved profiles and recents also include an optional Gateway provider pin.
 
 ## Developing
 

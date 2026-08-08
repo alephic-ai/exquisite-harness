@@ -67,13 +67,15 @@ export async function runHeadless(options: HeadlessRunOptions) {
       provider: options.provider,
       resumeSessionId: options.resumeSessionId,
     }
-    const provider = getProvider(loadConfig(), resolved.provider)
+    const config = loadConfig()
+    const provider = getProvider(config, resolved.provider)
     if (!provider) throw new Error(`unknown provider "${resolved.provider}"`)
     const plan = await buildLaunchPlan(
       resolved.harness,
       provider,
       resolved.model,
       {
+        approvalMode: config.defaultApprovalMode,
         effort: resolved.effort,
         gatewayProvider: resolved.gatewayProvider,
         statusline: false,
