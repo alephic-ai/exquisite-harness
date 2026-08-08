@@ -13,7 +13,7 @@ export interface ModelRates {
   outputPerMillion: number
 }
 
-// List-time model facts for the statusline (rates + real context window size).
+// List-time model facts used by harness launch metadata.
 export interface ModelMeta {
   contextWindow: number | undefined
   rateLabel: string | undefined

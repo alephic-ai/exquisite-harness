@@ -55,6 +55,9 @@ paid-provider fallbacks carry a `~`; providers with published zero rates show
 exact `$0`. Partial or unpriceable totals show `—`
 instead of guessing.
 
+OpenCode launches receive the same published rates in their inline model
+configuration, so OpenCode's own session-spend display stays populated.
+
 ## Use it
 
 ```bash

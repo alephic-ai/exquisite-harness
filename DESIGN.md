@@ -358,10 +358,12 @@ for the model. Provider cost/throughput hints come from the same
 - **opencode**: env `OPENCODE_CONFIG_CONTENT` — an inline JSON provider
   definition (`@ai-sdk/openai-compatible`, chat completions) that merges over
   the user's own config, so nothing is written to disk; `apiKey` uses
-  `{env:VAR}` indirection so the payload stays key-free (print-env safe). No
-  `limit` on the model entry: opencode requires context and output together, and
-  the output limit isn't knowable. Args `-m eh-<provider>/<model>`. No CLI
-  effort knob; an explicit effort is noted and ignored.
+  `{env:VAR}` indirection so the payload stays key-free (print-env safe). The
+  model entry includes published per-million-token rates when available so
+  opencode can calculate session spend. No `limit` on the model entry: opencode
+  requires context and output together, and the output limit isn't knowable.
+  Args `-m eh-<provider>/<model>`. No CLI effort knob; an explicit effort is
+  noted and ignored.
 - **pi**: args `--provider <pi name> --model <id>`, plus `--thinking <level>`
   for effort (pi's levels are eh's 1:1). The pi provider name resolves from pi's
   native catalog (openrouter, vercel-ai-gateway — both read the same key env

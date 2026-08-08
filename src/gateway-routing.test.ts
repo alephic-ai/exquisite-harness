@@ -206,9 +206,9 @@ describe('gateway provider routing', () => {
           {
             args: [],
             bin: 'test-harness',
-            cleanup: () => {
+            cleanup: async () => {
               cleanedUp = true
-              return Promise.resolve()
+              await Promise.resolve()
             },
             env: { TEST_GATEWAY_BASE_URL: upstream.baseURL },
             gatewayRouting: {
