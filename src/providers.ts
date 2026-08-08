@@ -60,6 +60,7 @@ const gatewayEndpointsSchema = z.object({
           .looseObject({
             p50: z.number().optional(),
           })
+          .nullable()
           .optional(),
       }),
     ),
