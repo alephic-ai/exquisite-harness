@@ -286,13 +286,19 @@ resolve at launch time without eh storing anything.
 ## Launch plans
 
 For a Vercel AI Gateway selection, `--gateway-provider <slug>` adds a
-process-scoped loopback proxy to Claude, Codex, and Grok launch plans. Pi and
-opencode reject the option. The proxy preserves the harness's native Anthropic
-Messages, OpenAI Responses, or Chat Completions protocol and only merges
+process-scoped loopback proxy to Claude, Codex, Grok, opencode, and pi launch
+plans. The proxy preserves the harness's native Anthropic Messages, OpenAI
+Responses, or Chat Completions protocol and only merges
 `providerOptions.gateway.only: [slug]` into JSON inference bodies. Existing
 provider options are preserved; count-token bodies are relayed unchanged. With
 Claude, request routing composes with exact cost capture as
 `harness → cost proxy → routing proxy → Gateway`.
+
+Pi's provider URL comes from its own catalog (a file eh never writes), so eh
+redirects the native `vercel-ai-gateway` provider at the loopback proxy with a
+temporary `--extension <file>` that overrides its `baseUrl` to
+`process.env.EH_PI_PROXY_URL`; the temp file is removed after the run. This also
+means pi needs no `~/.pi/agent/models.json` mutation.
 
 A `ZDR only` routing choice (picker, recents, or profile) starts the same proxy
 but injects `providerOptions.gateway.zeroDataRetention: true` without pinning a

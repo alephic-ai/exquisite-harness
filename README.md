@@ -94,8 +94,10 @@ p50 throughput (tps). Leave it on `automatic` for normal Gateway routing, pin
 one upstream with `--gateway-provider <slug>`, or choose `ZDR only` to restrict
 routing to zero-data-retention providers. A pin is fail-closed for that run:
 Gateway will not fall back to another provider. The option works with Claude,
-Codex, Grok, and `eh run`; profiles and recents remember it. Pi and opencode
-reject the option instead of silently falling back to automatic Gateway routing.
+Codex, Grok, opencode, and pi, plus `eh run`; profiles and recents remember it.
+For pi, eh points the harness's native gateway provider at its loopback proxy
+via a temporary `--extension`, so no `~/.pi/agent/models.json` mutation is
+needed.
 
 ### Resume
 
@@ -140,8 +142,8 @@ private temporary prompt file because its headless CLI exposes `--prompt-file`;
 for all five harnesses with `--resume-session <id>`. Orchestrators that must
 preserve harness-specific policy flags can pass a JSON string array with
 `--native-args-json`; those args are prepended before `eh`'s required
-machine-output flags. Vercel AI Gateway runs through Claude, Codex, or Grok may
-also use `--gateway-provider <slug>`; Pi and opencode reject it.
+machine-output flags. Vercel AI Gateway runs through Claude, Codex, Grok,
+opencode, or pi may also use `--gateway-provider <slug>`.
 
 ### Keys
 

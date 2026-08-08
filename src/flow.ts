@@ -275,6 +275,9 @@ export async function launchFlow(
 
   if (options.printEnvOnly) {
     printEnv(plan)
+    // print-env never launches the child, so no withGatewayRouting run to
+    // trigger cleanup — release launch-time artifacts (pi's temp extension).
+    await plan.cleanup?.()
     return
   }
 
@@ -319,11 +322,7 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
   const model = partial.model ?? (await pickModel(provider))
   let gatewayProvider = partial.gatewayProvider
   let gatewayZdr = partial.gatewayZdr
-  if (
-    provider.type === 'vercel-gateway' &&
-    def.gatewayRouting !== false &&
-    gatewayProvider === undefined
-  ) {
+  if (provider.type === 'vercel-gateway' && gatewayProvider === undefined) {
     const route = await pickGatewayProvider(provider, model)
     gatewayProvider = route.provider
     gatewayZdr = route.zeroDataRetention

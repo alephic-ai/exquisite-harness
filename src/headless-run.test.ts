@@ -243,24 +243,6 @@ describe('eh run', () => {
       'missing-key',
       'no API key for "missing-key"',
     ],
-    [
-      'unsupported Pi Gateway provider pin',
-      'pi',
-      'test-gateway',
-      'run the task',
-      ['--gateway-provider', 'bedrock'],
-      'gateway',
-      '--gateway-provider is not supported by pi',
-    ],
-    [
-      'unsupported opencode Gateway provider pin',
-      'opencode',
-      'test-gateway',
-      'run the task',
-      ['--gateway-provider', 'bedrock'],
-      'gateway',
-      '--gateway-provider is not supported by opencode',
-    ],
   ] as const)(
     'normalizes the %s preflight failure',
     async (
@@ -278,7 +260,7 @@ describe('eh run', () => {
       const piDir = path.join(root, 'pi')
       mkdirSync(configDir, { recursive: true })
       mkdirSync(piDir, { recursive: true })
-      if (setup === 'missing-key' || setup === 'gateway') {
+      if (setup === 'missing-key') {
         const ehConfigDir = path.join(configDir, 'eh')
         mkdirSync(ehConfigDir, { recursive: true })
         writeFileSync(
@@ -286,18 +268,11 @@ describe('eh run', () => {
           JSON.stringify({
             profiles: {},
             providers: {
-              [setup === 'gateway' ? 'test-gateway' : 'missing-key']:
-                setup === 'gateway'
-                  ? {
-                      baseURL: 'https://ai-gateway.vercel.sh/v1',
-                      envKey: 'EH_HEADLESS_GATEWAY_KEY',
-                      type: 'vercel-gateway',
-                    }
-                  : {
-                      baseURL: 'https://missing-key.invalid/v1',
-                      envKey: 'EH_HEADLESS_MISSING_KEY',
-                      type: 'openai-chat',
-                    },
+              'missing-key': {
+                baseURL: 'https://missing-key.invalid/v1',
+                envKey: 'EH_HEADLESS_MISSING_KEY',
+                type: 'openai-chat',
+              },
             },
             recent: [],
             version: 1,
@@ -508,6 +483,196 @@ describe('eh run', () => {
     expect(fakeEvent.event.anthropicBaseUrl).toMatch(
       /^http:\/\/127\.0\.0\.1:\d+$/,
     )
+  })
+
+  test('routes an opencode Gateway provider pin through the proxy', async () => {
+    const fixture = createFakeOpencode()
+    const gateway = await startGatewayStub()
+    const ehConfigDir = path.join(fixture.configDir, 'eh')
+    mkdirSync(ehConfigDir, { recursive: true })
+    writeFileSync(
+      path.join(ehConfigDir, 'config.json'),
+      JSON.stringify({
+        profiles: {},
+        providers: {
+          'test-gateway': {
+            baseURL: gateway.baseURL,
+            envKey: 'EH_TEST_GATEWAY_KEY',
+            type: 'vercel-gateway',
+          },
+        },
+        recent: [],
+        version: 1,
+      }),
+    )
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'opencode',
+        'test-gateway',
+        'test-model',
+        '--gateway-provider',
+        'bedrock',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TEST_GATEWAY_KEY: 'qa-key',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('verify opencode routing')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    await gateway.close()
+    const events = parseEvents(stdout)
+
+    expect(exitCode).toBe(0)
+    expect(stderr).toBe('')
+    expect(events).toContainEqual({
+      effort: 'auto',
+      gatewayProvider: 'bedrock',
+      harness: 'opencode',
+      model: 'test-model',
+      provider: 'test-gateway',
+      type: 'run.started',
+      v: 1,
+    })
+    const fakeEvent = z
+      .object({
+        event: z.object({
+          opencodeConfigContent: z.string(),
+          type: z.literal('fake.args'),
+        }),
+        type: z.literal('harness.event'),
+      })
+      .parse(events.find((event) => event.type === 'harness.event'))
+    const config = z
+      .object({
+        provider: z.record(
+          z.string(),
+          z.object({
+            options: z.object({ baseURL: z.string() }),
+          }),
+        ),
+      })
+      .parse(JSON.parse(fakeEvent.event.opencodeConfigContent))
+    const routedBaseURL = config.provider['eh-test-gateway'].options.baseURL
+    expect(routedBaseURL).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/v1$/)
+  })
+
+  test('routes a Pi Gateway provider pin through the proxy', async () => {
+    const fixture = createFakePi()
+    const gateway = await startGatewayStub()
+    // Point pi's `test-gateway` provider at the stub so eh's provider matches.
+    writeFileSync(
+      path.join(fixture.configDir, 'models.json'),
+      JSON.stringify({
+        providers: {
+          'test-gateway': {
+            api: 'openai-completions',
+            apiKey: 'pi-gateway-key',
+            baseUrl: `${gateway.baseURL}/v1`,
+            models: [{ id: 'test-model' }],
+          },
+        },
+      }),
+    )
+    const ehConfigDir = path.join(fixture.configDir, 'eh')
+    mkdirSync(ehConfigDir, { recursive: true })
+    writeFileSync(
+      path.join(ehConfigDir, 'config.json'),
+      JSON.stringify({
+        profiles: {},
+        providers: {
+          'test-gateway': {
+            baseURL: gateway.baseURL,
+            envKey: 'EH_TEST_GATEWAY_KEY',
+            type: 'vercel-gateway',
+          },
+        },
+        recent: [],
+        version: 1,
+      }),
+    )
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'pi',
+        'test-gateway',
+        'test-model',
+        '--gateway-provider',
+        'bedrock',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TEST_GATEWAY_KEY: 'qa-key',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          PI_CODING_AGENT_DIR: fixture.configDir,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('verify pi routing')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    await gateway.close()
+    const events = parseEvents(stdout)
+
+    expect(exitCode).toBe(0)
+    expect(stderr).toBe('')
+    expect(events).toContainEqual({
+      effort: 'auto',
+      gatewayProvider: 'bedrock',
+      harness: 'pi',
+      model: 'test-model',
+      provider: 'test-gateway',
+      type: 'run.started',
+      v: 1,
+    })
+    const fakeEvent = z
+      .object({
+        event: z.object({
+          args: z.array(z.string()),
+          piProxyUrl: z.union([z.string(), z.undefined()]),
+          type: z.literal('fake.args'),
+        }),
+        type: z.literal('harness.event'),
+      })
+      .parse(
+        events.find(
+          (event) =>
+            event.type === 'harness.event' &&
+            asRecord(event.event)?.type === 'fake.args',
+        ),
+      )
+    const extensionArg = fakeEvent.event.args.findIndex(
+      (arg) => arg === '--extension',
+    )
+    expect(extensionArg).toBeGreaterThan(-1)
+    const extensionPath = fakeEvent.event.args[extensionArg + 1]
+    expect(extensionPath).toMatch(/^\/.*eh-pi-.*gateway-routing\.js$/)
+    expect(fakeEvent.event.piProxyUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/)
+    expect(existsSync(extensionPath)).toBe(false)
   })
 
   test('uses and removes a private prompt file for Grok', async () => {
@@ -1042,6 +1207,11 @@ describe('eh run', () => {
   })
 })
 
+function asRecord(value: unknown) {
+  const parsed = z.record(z.string(), z.unknown()).safeParse(value)
+  return parsed.success ? parsed.data : undefined
+}
+
 async function childExitCode(child: ReturnType<typeof spawn>) {
   return new Promise<number>((resolve, reject) => {
     child.on('error', reject)
@@ -1192,7 +1362,11 @@ function createFakeOpencode() {
 for await (const chunk of process.stdin) chunks.push(chunk)
 const prompt = Buffer.concat(chunks).toString('utf8')
 const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
-emit({ type: 'fake.args', args: process.argv.slice(2) })
+emit({
+  type: 'fake.args',
+  args: process.argv.slice(2),
+  opencodeConfigContent: process.env.OPENCODE_CONFIG_CONTENT,
+})
 if (process.env.EH_TEST_HEADLESS_FAIL === '1') {
   emit({
     type: 'error',
@@ -1235,7 +1409,11 @@ for await (const chunk of process.stdin) chunks.push(chunk)
 const prompt = Buffer.concat(chunks).toString('utf8')
 const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
 emit({ type: 'session', id: 'pi-session', version: 3 })
-emit({ type: 'fake.args', args: process.argv.slice(2) })
+emit({
+  type: 'fake.args',
+  args: process.argv.slice(2),
+  piProxyUrl: process.env.EH_PI_PROXY_URL,
+})
 if (process.env.EH_TEST_HEADLESS_FAIL === '1') {
   emit({
     type: 'message_end',

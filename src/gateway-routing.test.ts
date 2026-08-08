@@ -189,6 +189,51 @@ describe('gateway provider routing', () => {
     }
   })
 
+  test('runs plan cleanup even when gateway validation fails', async () => {
+    const upstream = await startUpstream((_request, response) => {
+      response.setHeader('content-type', 'application/json')
+      response.end(
+        JSON.stringify({
+          data: { endpoints: [{ provider_name: 'anthropic', status: 0 }] },
+        }),
+      )
+    })
+    let cleanedUp = false
+    try {
+      let message = ''
+      try {
+        await withGatewayRouting(
+          {
+            args: [],
+            bin: 'test-harness',
+            cleanup: () => {
+              cleanedUp = true
+              return Promise.resolve()
+            },
+            env: { TEST_GATEWAY_BASE_URL: upstream.baseURL },
+            gatewayRouting: {
+              model: 'anthropic/claude-sonnet-4.6',
+              provider: 'bedrock',
+              targetBaseURL: upstream.baseURL,
+            },
+            notes: [],
+          },
+          () => {
+            throw new Error('run should not be reached')
+          },
+        )
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      expect(message).toContain(
+        'gateway provider "bedrock" is unavailable for model "anthropic/claude-sonnet-4.6"',
+      )
+      expect(cleanedUp).toBeTrue()
+    } finally {
+      await upstream.close()
+    }
+  })
+
   test('uses a non-empty auth token when the provider key variable is deliberately blank', async () => {
     let validationAuthorization = ''
     const upstream = await startUpstream((request, response) => {
