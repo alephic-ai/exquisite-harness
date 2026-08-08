@@ -110,6 +110,42 @@ test('lists Gateway models with cost and context hints (throughput is lazy)', as
   }
 })
 
+test('tolerates endpoints whose throughput_last_1h is null', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        data: {
+          endpoints: [
+            { provider_name: 'anthropic', status: 0, throughput_last_1h: null },
+            {
+              provider_name: 'bedrock',
+              status: 0,
+              throughput_last_1h: { p50: 80 },
+            },
+          ],
+        },
+      }),
+    )
+  })
+
+  try {
+    const providers = await listGatewayProviders(
+      {
+        baseURL: `${upstream.baseURL}/gateway`,
+        name: 'test-gateway',
+        type: 'vercel-gateway',
+      },
+      'anthropic/model',
+    )
+    expect(providers.map((p) => p.name)).toEqual(['anthropic', 'bedrock'])
+    expect(providers[0]?.throughputTokensPerSec).toBeUndefined()
+    expect(providers[1]?.throughputTokensPerSec).toBe(80)
+  } finally {
+    await upstream.close()
+  }
+})
+
 test('fetches a single Gateway model throughput on demand', async () => {
   const upstream = await startUpstream((_request, response) => {
     response.setHeader('content-type', 'application/json')
