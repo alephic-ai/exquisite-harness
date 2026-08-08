@@ -1,6 +1,12 @@
 import type { ResolvedProvider } from './config.js'
-import type { LaunchPlan, Protocol, SearchBackend } from './types.js'
+import type {
+  ApprovalMode,
+  LaunchPlan,
+  Protocol,
+  SearchBackend,
+} from './types.js'
 
+import { approvalArgsForHarness } from './approval-mode.js'
 import { opencodeConfigContent, opencodeProviderId } from './opencode.js'
 import { piModelsJsonHint, piProviderCompat, resolvePiProvider } from './pi.js'
 import { fetchModelMeta } from './pricing.js'
@@ -25,12 +31,7 @@ export interface HarnessDef {
   plan: (
     provider: ResolvedProvider,
     model: string,
-    options: {
-      effort?: string
-      gatewayProvider?: string
-      gatewayZdr?: boolean
-      statusline?: boolean
-    },
+    options: HarnessPlanOptions,
   ) => Promise<LaunchPlan>
   protocols: Protocol[]
   // Instance-level gate beyond protocol intersection (pi: the provider must
@@ -43,6 +44,14 @@ export interface HarnessDef {
   // exact session; without one (the --print-env path), falls back to the
   // harness's own picker / most recent.
   resumeArgs: (sessionId?: string) => string[]
+}
+
+interface HarnessPlanOptions {
+  approvalMode?: ApprovalMode
+  effort?: string
+  gatewayProvider?: string
+  gatewayZdr?: boolean
+  statusline?: boolean
 }
 
 // Ollama ignores the token value but requires one to be present.
@@ -61,12 +70,7 @@ async function authTokenFor(provider: ResolvedProvider) {
 async function planClaude(
   provider: ResolvedProvider,
   model: string,
-  options: {
-    effort?: string
-    gatewayProvider?: string
-    gatewayZdr?: boolean
-    statusline?: boolean
-  },
+  options: HarnessPlanOptions,
 ) {
   const { effort, statusline = true } = options
   const baseURL = anthropicBaseURLFor(provider)
@@ -122,8 +126,10 @@ async function planClaude(
   if (meta.contextWindow == null) {
     notes.push('context window unknown — falling back to Claude context size')
   }
+  const args = statusline ? ['--settings', writeClaudeStatuslineSettings()] : []
+  args.push(...approvalArgsForHarness('claude', options.approvalMode))
   return {
-    args: statusline ? ['--settings', writeClaudeStatuslineSettings()] : [],
+    args,
     bin: 'claude',
     env,
     ...(statusline && isVercelGatewayURL(baseURL)
@@ -151,7 +157,7 @@ async function planClaude(
 async function planCodex(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; gatewayProvider?: string; gatewayZdr?: boolean },
+  options: HarnessPlanOptions,
 ) {
   const { effort } = options
   const baseURL = openAIBaseURLFor(provider)
@@ -183,6 +189,7 @@ async function planCodex(
     args.push('-c', `model_reasoning_effort=${tomlString(level)}`)
     if (level !== effort) notes.push(`effort ${effort} → codex max is high`)
   }
+  args.push(...approvalArgsForHarness('codex', options.approvalMode))
   return {
     args,
     bin: 'codex',
@@ -202,7 +209,7 @@ async function planCodex(
 async function planGrok(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; gatewayProvider?: string; gatewayZdr?: boolean },
+  options: HarnessPlanOptions,
 ) {
   const { effort } = options
   const baseURL = openAIBaseURLFor(provider)
@@ -210,6 +217,7 @@ async function planGrok(
   if (effort && effort !== 'auto') {
     args.push('--reasoning-effort', effort)
   }
+  args.push(...approvalArgsForHarness('grok', options.approvalMode))
   return {
     args,
     bin: 'grok',
@@ -239,7 +247,7 @@ function tomlString(value: string) {
 async function planPi(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; gatewayProvider?: string; gatewayZdr?: boolean },
+  options: HarnessPlanOptions,
 ) {
   rejectUnsupportedGatewayRouting(
     'pi',
@@ -262,6 +270,7 @@ async function planPi(
   const args = ['--provider', match.piName, '--model', model]
   // pi's thinking levels are eh's effort levels (auto = send nothing).
   if (effort && effort !== 'auto') args.push('--thinking', effort)
+  args.push(...approvalArgsForHarness('pi', options.approvalMode))
   return { args, bin: 'pi', env, notes: [] }
 }
 
@@ -271,7 +280,7 @@ async function planPi(
 async function planOpencode(
   provider: ResolvedProvider,
   model: string,
-  options: { effort?: string; gatewayProvider?: string; gatewayZdr?: boolean },
+  options: HarnessPlanOptions,
 ) {
   rejectUnsupportedGatewayRouting(
     'opencode',
@@ -292,8 +301,10 @@ async function planOpencode(
     // reads the var from its own environment via the {env:VAR} indirection.
     env[provider.envKey] = await authTokenFor(provider)
   }
+  const args = ['-m', `${opencodeProviderId(provider)}/${model}`]
+  args.push(...approvalArgsForHarness('opencode', options.approvalMode))
   return {
-    args: ['-m', `${opencodeProviderId(provider)}/${model}`],
+    args,
     bin: 'opencode',
     env,
     notes,
@@ -352,6 +363,7 @@ export async function buildLaunchPlan(
   provider: ResolvedProvider,
   model: string,
   options: {
+    approvalMode?: ApprovalMode
     effort?: string
     gatewayProvider?: string
     gatewayZdr?: boolean
@@ -364,6 +376,7 @@ export async function buildLaunchPlan(
   const def = getHarness(harness)
   if (!def) throw new Error(`unknown harness "${harness}"`)
   const planned = await def.plan(provider, model, {
+    approvalMode: options.approvalMode,
     effort: options.effort,
     gatewayProvider: options.gatewayProvider,
     gatewayZdr: options.gatewayZdr,

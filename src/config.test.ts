@@ -206,8 +206,39 @@ describe('search provider defaults', () => {
   })
 })
 
+test('legacy config defaults approvals to the platform behavior', () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), 'eh-config-test-'))
+  try {
+    const configDirectory = path.join(directory, 'eh')
+    mkdirSync(configDirectory)
+    writeFileSync(
+      path.join(configDirectory, 'config.json'),
+      `${JSON.stringify({ version: 1 })}\n`,
+    )
+
+    const moduleURL = new URL('./config.ts', import.meta.url).href
+    const result = spawnSync(
+      process.execPath,
+      [
+        '-e',
+        `import { loadConfig } from ${JSON.stringify(moduleURL)}; console.log(loadConfig().defaultApprovalMode)`,
+      ],
+      {
+        encoding: 'utf8',
+        env: { ...process.env, XDG_CONFIG_HOME: directory },
+      },
+    )
+
+    expect(result.status).toBe(0)
+    expect(result.stdout.trim()).toBe('platform')
+  } finally {
+    rmSync(directory, { force: true, recursive: true })
+  }
+})
+
 function buildConfig(defaultSearchProvider?: string) {
   return {
+    defaultApprovalMode: 'platform',
     ...(defaultSearchProvider ? { defaultSearchProvider } : {}),
     profiles: {} as Config['profiles'],
     providers: {} as Config['providers'],

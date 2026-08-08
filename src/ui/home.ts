@@ -13,11 +13,13 @@ import { timeAgo } from '../time-ago.js'
 import { bail } from './output.js'
 
 export type HomeChoice =
+  | { kind: 'defaults' }
   | { kind: 'doctor' }
   | { kind: 'new' }
   | { kind: 'providers' }
   | { kind: 'recent'; recent: RecentEntry }
 
+const DEFAULTS = '__defaults__'
 const NEW = '__new__'
 const PROVIDERS = '__providers__'
 const DOCTOR = '__doctor__'
@@ -42,12 +44,18 @@ export async function home(config: Config) {
         label: 'providers',
         value: PROVIDERS,
       },
+      {
+        hint: 'approval behavior',
+        label: 'defaults',
+        value: DEFAULTS,
+      },
       { hint: 'check harnesses & providers', label: 'doctor', value: DOCTOR },
     ],
   })
   if (isCancel(value)) bail()
   if (value === NEW) return { kind: 'new' } as const
   if (value === PROVIDERS) return { kind: 'providers' } as const
+  if (value === DEFAULTS) return { kind: 'defaults' } as const
   if (value === DOCTOR) return { kind: 'doctor' } as const
   const index = Number(value.split(':')[1])
   const recent =

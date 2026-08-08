@@ -3,6 +3,7 @@ import type { HarnessDef } from './harnesses.js'
 import type { SessionInfo } from './sessions.js'
 import type { EffortLevel, Selection } from './types.js'
 
+import { approvalModeLabel } from './approval-mode.js'
 import {
   allProviders,
   allSearchProviders,
@@ -23,6 +24,7 @@ import { exec, printEnv } from './launch.js'
 import { canServeAny } from './providers.js'
 import { resolveSearchBackend } from './search-provider.js'
 import { listSessionsForCwd } from './sessions.js'
+import { defaultsScreen } from './ui/defaults-screen.js'
 import { home, selectionFromRecent } from './ui/home.js'
 import { intro, log, outro } from './ui/output.js'
 import {
@@ -215,6 +217,10 @@ export async function launchFlow(
           config = await providersScreen(config)
           continue
         }
+        if (choice.kind === 'defaults') {
+          config = await defaultsScreen(config)
+          continue
+        }
         if (choice.kind === 'recent') {
           selection = {
             ...selectionFromRecent(config, choice.recent),
@@ -265,6 +271,7 @@ export async function launchFlow(
   const searchBackend = await resolveSearchBackend(config, searchProviderName)
 
   const plan = await buildLaunchPlan(harness, provider, model, {
+    approvalMode: config.defaultApprovalMode,
     effort: complete.effort,
     gatewayProvider: complete.gatewayProvider,
     gatewayZdr: complete.gatewayZdr,
@@ -281,7 +288,13 @@ export async function launchFlow(
   // Confirm only when the user picked interactively; fully-specified
   // positionals (and profiles) launch straight away.
   if (isTTY && needsPicking) {
-    const action = await confirmLaunch(planSummary(complete, plan.env))
+    const action = await confirmLaunch(
+      planSummary({
+        approvalMode: config.defaultApprovalMode,
+        env: plan.env,
+        selection: complete,
+      }),
+    )
     if (action === 'back') return
     if (action === 'save') {
       const name = await askProfileName()
@@ -367,7 +380,12 @@ function mustGetProvider(config: Config, name: string, def: HarnessDef) {
   return provider
 }
 
-function planSummary(selection: Selection, env: Record<string, string>) {
+function planSummary(options: {
+  approvalMode: Config['defaultApprovalMode']
+  env: Record<string, string>
+  selection: Selection
+}) {
+  const { approvalMode, env, selection } = options
   const lines = [
     `harness:  ${selection.harness}`,
     `provider: ${providerLabel(selection.provider)} (${selection.provider})`,
@@ -378,6 +396,7 @@ function planSummary(selection: Selection, env: Record<string, string>) {
         : []),
     `model:    ${selection.model}`,
     `search:   ${searchProviderLabel(selection.searchProvider ?? 'native')}`,
+    `approvals: ${approvalModeLabel(approvalMode)}`,
     '',
     ...Object.entries(env).map(
       ([k, v]) => `${k}=${SECRET_ENV.test(k) ? '•••' : v}`,
