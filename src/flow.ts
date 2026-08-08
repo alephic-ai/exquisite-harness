@@ -291,7 +291,7 @@ export async function launchFlow(
   // Confirm only when the user picked interactively; fully-specified
   // positionals (and profiles) launch straight away.
   if (isTTY && needsPicking) {
-const action = await confirmLaunch(
+    const action = await confirmLaunch(
       planSummary({
         approvalMode: config.defaultApprovalMode,
         env: plan.env,
