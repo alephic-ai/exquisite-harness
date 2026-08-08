@@ -323,9 +323,9 @@ for the model. Provider cost/throughput hints come from the same
   **Statusline:** session override via
   `claude --settings ~/.config/eh/claude-statusline.json` pointing at
   `eh statusline`. Env `EH_PROVIDER` / `EH_MODEL` / `EH_EFFORT` / `EH_PRICE_IN`
-  / `EH_PRICE_OUT` / cache-price vars / `EH_RATE_LABEL` / `EH_CONTEXT_WINDOW`
-  (selected endpoint rates when Gateway routing is pinned, otherwise the active
-  provider rate range
+  / `EH_PRICE_OUT` / cache-price vars / `EH_RATE_LABEL` / `EH_CONTEXT_WINDOW` /
+  `CLAUDE_CODE_MAX_CONTEXT_TOKENS` (selected endpoint rates when Gateway routing
+  is pinned, otherwise the active provider rate range
   $/1M + real context size from the provider APIs at
   launch). Context % is recomputed as
   `(input + cache_write + cache_read) / provider_window` from live

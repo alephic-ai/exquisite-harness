@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import { formatStatuslineCost, sessionCostUsd } from './pricing.js'
-import { sumTranscriptUsage } from './statusline.js'
+import { statuslineEnv, sumTranscriptUsage } from './statusline.js'
 
 const tempDirs: string[] = []
 
@@ -175,5 +175,22 @@ describe('formatStatuslineCost', () => {
         rates: { inputPerMillion: 1, outputPerMillion: 2 },
       }),
     ).toBe('—')
+  })
+})
+
+describe('statuslineEnv', () => {
+  test('gives Claude Code the provider context window', () => {
+    expect(
+      statuslineEnv({
+        contextWindow: 256_000,
+        model: 'alibaba/qwen-3-235b',
+        provider: 'vercel-ai-gateway',
+        rateLabel: undefined,
+        rates: undefined,
+      }),
+    ).toMatchObject({
+      CLAUDE_CODE_MAX_CONTEXT_TOKENS: '256000',
+      EH_CONTEXT_WINDOW: '256000',
+    })
   })
 })
