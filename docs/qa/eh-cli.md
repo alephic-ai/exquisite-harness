@@ -66,7 +66,8 @@ Each prints env/args and exits 0 without launching.
     `--thinking high`.
 12. `eh --print-env opencode ollama qwen3-coder` → `OPENCODE_CONFIG_CONTENT`
     inline JSON (provider `eh-ollama`, npm `@ai-sdk/openai-compatible`,
-    placeholder `apiKey`, baseURL `…/v1`), args `-m eh-ollama/qwen3-coder`.
+    placeholder `apiKey`, baseURL `…/v1`, model cost `{input:0,output:0}`), args
+    `-m eh-ollama/qwen3-coder`.
 13. `eh -r --print-env pi ollama qwen3-coder` / `… opencode …` → args end with
     `--continue` (the --print-env path resolves no session id; `--session <id>`
     appears only via the interactive picker).

@@ -283,8 +283,9 @@ async function planOpencode(
   if (effort && effort !== 'auto') {
     notes.push('opencode has no CLI effort knob — ignoring')
   }
+  const meta = await fetchModelMeta({ modelId: model, provider })
   const env: Record<string, string> = {
-    OPENCODE_CONFIG_CONTENT: opencodeConfigContent(provider, model),
+    OPENCODE_CONFIG_CONTENT: opencodeConfigContent(provider, model, meta.rates),
   }
   if (provider.envKey && !process.env[provider.envKey]) {
     // Same injection pattern as codex: the key lives in our store, opencode

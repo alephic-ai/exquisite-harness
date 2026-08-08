@@ -1,4 +1,5 @@
 import type { ResolvedProvider } from './config.js'
+import type { ModelRates } from './pricing.js'
 
 import { openAIBaseURLFor } from './providers.js'
 
@@ -11,11 +12,30 @@ import { openAIBaseURLFor } from './providers.js'
 export function opencodeConfigContent(
   provider: ResolvedProvider,
   model: string,
+  rates: ModelRates | undefined,
 ) {
   return JSON.stringify({
     provider: {
       [opencodeProviderId(provider)]: {
-        models: { [model]: { name: model } },
+        models: {
+          [model]: {
+            ...(rates
+              ? {
+                  cost: {
+                    ...(rates.cacheReadPerMillion == null
+                      ? {}
+                      : { cache_read: rates.cacheReadPerMillion }),
+                    ...(rates.cacheWritePerMillion == null
+                      ? {}
+                      : { cache_write: rates.cacheWritePerMillion }),
+                    input: rates.inputPerMillion,
+                    output: rates.outputPerMillion,
+                  },
+                }
+              : {}),
+            name: model,
+          },
+        },
         name: `eh · ${provider.name}`,
         npm: '@ai-sdk/openai-compatible',
         options: {
