@@ -190,8 +190,8 @@ export function writeClaudeStatuslineSettings() {
   return settingsPath
 }
 
-// Env vars the statusline reads. Rates are provider-published ($/1M); context
-// window is the provider's published size (not Claude's default 200k).
+// Env vars sourced from provider metadata. Rates are provider-published
+// ($/1M); context window is the provider's published size.
 export function statuslineEnv(props: {
   contextWindow: number | undefined
   effort?: string
@@ -223,6 +223,8 @@ export function statuslineEnv(props: {
     env.EH_RATE_LABEL = props.rateLabel
   }
   if (props.contextWindow != null) {
+    // Claude Code otherwise assumes 200k for unrecognized third-party IDs.
+    env.CLAUDE_CODE_MAX_CONTEXT_TOKENS = String(props.contextWindow)
     env.EH_CONTEXT_WINDOW = String(props.contextWindow)
   }
   return env
