@@ -446,6 +446,7 @@ async function prefetchVisibleThroughput(
     .map((r) => r.id)
     .filter(
       (id) =>
+        id !== MANUAL &&
         !state.throughputs.has(id) &&
         !state.attemptedNoThroughput.has(id) &&
         !state.throughputPending.has(id),
@@ -464,9 +465,9 @@ async function prefetchVisibleThroughput(
         const label = await fetchGatewayModelThroughput(provider, id)
         if (label != null) state.throughputs.set(id, label)
         else state.attemptedNoThroughput.add(id)
+      } catch {
+        // Transient failure — leave it retryable on a later render.
       } finally {
-        // A transient failure isn't "no throughput" — it stays out of
-        // attemptedNoThroughput so a later render retries it.
         state.throughputPending.delete(id)
       }
     }

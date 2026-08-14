@@ -152,9 +152,10 @@ async function listGatewayModels(baseURL: string, apiKey?: string) {
 }
 
 // Fetch one model's p50 throughput (tokens/sec) from its /endpoints response.
-// Returns undefined when no active endpoint publishes a p50; a network/HTTP
-// failure propagates so callers can retry it later (a transient failure must
-// not be treated as "this model has no throughput" forever).
+// Returns undefined when no active endpoint publishes a p50, or when the
+// model id 404s. Other network/HTTP failures propagate so callers can retry
+// them later (a transient failure must not be treated as "no throughput"
+// forever).
 export async function fetchGatewayModelThroughput(
   provider: ResolvedProvider,
   modelId: string,
@@ -162,14 +163,26 @@ export async function fetchGatewayModelThroughput(
   const key = provider.envKey ? await resolveKey(provider) : undefined
   const apiKey = key && key.source !== 'none' ? key.value : undefined
   const modelPath = modelId.split('/').map(encodeURIComponent).join('/')
-  const body = await fetchJson(
-    `${withV1(provider.baseURL)}/models/${modelPath}/endpoints`,
-    apiKey,
-  )
+  let body: unknown
+  try {
+    body = await fetchJson(
+      `${withV1(provider.baseURL)}/models/${modelPath}/endpoints`,
+      apiKey,
+    )
+  } catch (error) {
+    // Unknown ids (and picker sentinels like `__manual__`) 404 from
+    // `/models/{id}/endpoints`. Treat as unpublished throughput.
+    if (isHttp404(error)) return undefined
+    throw error
+  }
   const endpoints = gatewayEndpointsSchema.parse(body).data.endpoints
   const p50 = endpoints.find((e) => e.status === undefined || e.status === 0)
     ?.throughput_last_1h?.p50
   return p50 == null ? undefined : `${Math.round(p50)} tps`
+}
+
+function isHttp404(error: unknown) {
+  return error instanceof Error && error.message.startsWith('HTTP 404 ')
 }
 
 function stripTrailingSlash(url: string) {

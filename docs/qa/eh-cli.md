@@ -179,6 +179,8 @@ Drive each with the PTY; assert on screen text.
     picker lists `automatic` first, then the model's active endpoint providers,
     plus manual entry. Pick one → the confirm note shows `gateway: <slug>`; save
     as a profile and relaunch → the pin is retained without another prompt.
+    Typing in the model picker (so `other…` is visible) must not crash with
+    `HTTP 404 from …/models/__manual__/endpoints`.
 
 ## E. Key storage
 
