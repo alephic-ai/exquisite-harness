@@ -28,7 +28,7 @@ directly; interactive clack flows run under a PTY harness.
 
 ## B. Flag-driven launch plans (no TTY)
 
-Each prints env/args and exits 0 without launching.
+Each prints env/args and exits 0 without launching, unless noted.
 
 1. `eh --print-env claude ollama qwen3-coder` → prints
    `ANTHROPIC_BASE_URL='http://localhost:11434'`, `ANTHROPIC_MODEL`,
@@ -36,9 +36,9 @@ Each prints env/args and exits 0 without launching.
 2. `eh --print-env codex ollama qwen3-coder` →
    `# plus args: codex -c model="qwen3-coder" ... wire_api="responses"`; no
    `env_key` line.
-3. `eh --print-env grok ollama qwen3-coder` → `GROK_MODELS_BASE_URL=.../v1`,
-   `XAI_API_KEY='ollama'`, `--model qwen3-coder`. Repeat with `-e high` → args
-   include `--reasoning-effort high`.
+3. `eh --print-env grok ollama qwen3-coder` → actionable temporary-artifacts
+   error directing the user to launch through `eh`, non-zero exit, and no
+   exports. The same applies with `-e high`.
 4. `eh --print-env codex openrouter openai/gpt-5.1` (openrouter configured) →
    `wire_api="chat"`, `env_key="OPENROUTER_API_KEY"`.
 5. `eh --print-env claude openrouter x` → error "cannot serve the Anthropic
@@ -49,7 +49,9 @@ Each prints env/args and exits 0 without launching.
 7. `eh -r --print-env claude ollama qwen3-coder` → args end with `--resume`.
 8. `eh -r --print-env codex ollama qwen3-coder` → args end with `resume` (after
    the `-c` overrides).
-9. `eh -r --print-env grok ollama qwen3-coder` → args end with `--resume`.
+9. `eh -r --print-env grok ollama qwen3-coder` → the same actionable
+   temporary-artifacts error directing the user to launch through `eh`, non-zero
+   exit, and no resume args or exports.
 10. `eh --print-env pi ollama qwen3-coder` with a models.json entry
     `{"providers":{"ollama":{"api":"openai-completions","apiKey":"ollama","baseUrl":"http://127.0.0.1:11434/v1","models":[{"id":"qwen3-coder"}]}}}`
     in `~/.pi/agent/models.json` → args `--provider ollama --model qwen3-coder`,
@@ -81,13 +83,15 @@ Each prints env/args and exits 0 without launching.
 17. Point `XDG_CONFIG_HOME` at a temp directory and write
     `$XDG_CONFIG_HOME/eh/config.json` with
     `{"defaultApprovalMode":"auto","version":1}`. Give pi a runnable Ollama
-    entry for `qwen3-coder` in its active `models.json`, then run these five
+    entry for `qwen3-coder` in its active `models.json`, then run these four
     commands: `eh --print-env claude ollama qwen3-coder`, the same for `codex`,
-    `grok`, `opencode`, and `pi`. → Claude and Grok include
-    `--permission-mode auto`, Codex includes `--approve-for-me`, opencode
-    includes `--auto`, and pi adds no approval argument. None includes an
-    unrestricted bypass flag. Change the config value to `platform` and repeat
-    the same commands. → none of those approval arguments is present.
+    `opencode`, and `pi`. → Claude includes `--permission-mode auto`, Codex
+    includes `--approve-for-me`, opencode includes `--auto`, and pi adds no
+    approval argument. None includes an unrestricted bypass flag. Grok approval
+    argument coverage belongs to automated approval-mode tests because Grok
+    `--print-env` is intentionally unsupported with its isolated temp home.
+    Change the config value to `platform` and repeat the same commands. → none
+    of those approval arguments is present.
 
 ## C. Config / error paths
 
@@ -188,8 +192,8 @@ Drive each with the PTY; assert on screen text.
    on macOS (`security find-generic-password -s eh -a openrouter -w` returns it)
    or 0600 file elsewhere; value never echoed to screen.
 2. Resolve precedence: with the key stored AND `OPENROUTER_API_KEY` set in the
-   shell, a `grok` print-env plan uses the **env** value; with env unset, it
-   uses the stored value.
+   shell, a Grok launch uses the **env** value; with env unset, it uses the
+   stored value.
 3. `eh provider key openrouter --delete` → key removed from store; a later
    resolve finds none.
 4. Linux secret-service path (simulated `secret-tool` on PATH): store → lookup →

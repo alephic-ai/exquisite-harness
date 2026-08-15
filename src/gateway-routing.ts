@@ -34,30 +34,24 @@ export async function withGatewayRouting<T>(
 ) {
   if (!plan.gatewayRouting) return run(plan)
 
-  // Clean up launch-time artifacts (pi's temp extension) on every exit path,
-  // including validation/proxy-start failures below the try.
+  const validatedModels = new Map<string, Promise<void>>()
+  await validateGatewayProvider({
+    headers: gatewayValidationHeaders(plan),
+    model: plan.gatewayRouting.model,
+    provider: plan.gatewayRouting.provider,
+    target: validateTargetBaseURL(plan.gatewayRouting.targetBaseURL),
+    validatedModels,
+  })
+  const proxy = await startGatewayRoutingProxy({
+    provider: plan.gatewayRouting.provider,
+    targetBaseURL: plan.gatewayRouting.targetBaseURL,
+    validatedModels,
+    zdr: plan.gatewayRouting.zdr,
+  })
   try {
-    const validatedModels = new Map<string, Promise<void>>()
-    await validateGatewayProvider({
-      headers: gatewayValidationHeaders(plan),
-      model: plan.gatewayRouting.model,
-      provider: plan.gatewayRouting.provider,
-      target: validateTargetBaseURL(plan.gatewayRouting.targetBaseURL),
-      validatedModels,
-    })
-    const proxy = await startGatewayRoutingProxy({
-      provider: plan.gatewayRouting.provider,
-      targetBaseURL: plan.gatewayRouting.targetBaseURL,
-      validatedModels,
-      zdr: plan.gatewayRouting.zdr,
-    })
-    try {
-      return await run(routePlanThroughProxy(plan, proxy.baseURL))
-    } finally {
-      await proxy.close()
-    }
+    return await run(routePlanThroughProxy(plan, proxy.baseURL))
   } finally {
-    await plan.cleanup?.()
+    await proxy.close()
   }
 }
 

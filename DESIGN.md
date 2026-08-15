@@ -370,6 +370,14 @@ for the model. Provider cost/throughput hints come from the same
 - **grok**: env `XAI_API_KEY`, `GROK_MODELS_BASE_URL`, args `--model <id>` and
   optional `--reasoning-effort <level>`. These are Grok Build's documented
   custom-model and CLI interfaces; `eh doctor` reports the installed binary.
+  Grok's session OAuth in `~/.grok/auth.json` outranks `XAI_API_KEY`, so a
+  logged-in user would otherwise send an xAI JWT to third-party bases (Gateway,
+  Ollama, …). Launch therefore uses a process-scoped `GROK_HOME` without
+  `auth.json`, replaces the selected model's routing/auth fields with
+  `env_key = "XAI_API_KEY"`, and carries forward existing Grok state so
+  sessions, skills, agents, rules, and plugins keep working. `--print-env`
+  rejects this plan because the caller cannot inherit ownership of the temporary
+  home and its cleanup.
 - **opencode**: env `OPENCODE_CONFIG_CONTENT` — an inline JSON provider
   definition (`@ai-sdk/openai-compatible`, chat completions) that merges over
   the user's own config, so nothing is written to disk; `apiKey` uses
@@ -460,6 +468,7 @@ src/gateway-costs.ts transparent Vercel stream proxy + exact session ledger
 src/gateway-routing.ts process-scoped request rewriter for Gateway provider pins / ZDR-only routing
 src/statusline.ts Claude statusline render + session settings writer
 src/harnesses.ts  harness registry: detection + launch plans
+src/grok-home.ts  process-scoped GROK_HOME isolation so custom bases use XAI_API_KEY
 src/pi.ts         pi provider resolution: native catalog map + models.json matching
 src/opencode.ts   opencode inline-config builder (OPENCODE_CONFIG_CONTENT)
 src/sessions.ts   cross-harness session enumeration for -r (read-only store scans)

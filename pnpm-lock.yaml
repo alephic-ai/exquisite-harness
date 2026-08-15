@@ -23,6 +23,9 @@ importers:
       commander:
         specifier: 15.0.0
         version: 15.0.0
+      smol-toml:
+        specifier: 1.7.1
+        version: 1.7.1
       strip-json-comments:
         specifier: 5.0.3
         version: 5.0.3
@@ -1066,6 +1069,10 @@ packages:
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
+  smol-toml@1.7.1:
+    resolution: {integrity: sha512-PPlsspAZ4jbMBu5DMFhfUGDQLu/vrL4SyBROVS37x8ynnVmFIs1VPBz1Co8Xks3TvpIaZXmU85y4DrQ+UyVFoQ==}
+    engines: {node: '>= 18'}
+
   sort-object-keys@2.1.0:
     resolution: {integrity: sha512-SOiEnthkJKPv2L6ec6HMwhUcN0/lppkeYuN1x63PbyPRrgSPIuBJCiYxYyvWRTtjMlOi14vQUCGUJqS6PLVm8g==}
 
@@ -2097,6 +2104,8 @@ snapshots:
   shell-quote@1.10.0: {}
 
   sisteransi@1.0.5: {}
+
+  smol-toml@1.7.1: {}
 
   sort-object-keys@2.1.0: {}
 

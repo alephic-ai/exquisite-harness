@@ -1,6 +1,12 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -58,6 +64,39 @@ describe('profile Gateway routing', () => {
     expect(result.stderr).toBe('')
     expect(result.stdout).not.toContain('# gateway provider:')
     expect(result.stdout).toContain('base_url="http://localhost:11434/v1"')
+  })
+})
+
+describe('--print-env temporary launch artifacts', () => {
+  test('rejects Grok exports and removes the isolated home', () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'eh-flow-test-'))
+    tempDirs.push(root)
+    const grokHome = path.join(root, 'grok')
+    const processTemp = path.join(root, 'tmp')
+    mkdirSync(grokHome, { recursive: true })
+    mkdirSync(processTemp, { recursive: true })
+
+    const result = spawnSync(
+      process.execPath,
+      ['run', 'src/main.ts', '--print-env', 'grok', 'ollama', 'qwen3-coder'],
+      {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          GROK_HOME: grokHome,
+          TMPDIR: processTemp,
+          XDG_CONFIG_HOME: path.join(root, 'xdg'),
+        },
+      },
+    )
+
+    expect(result.status).toBe(1)
+    expect(result.stdout).toBe('')
+    expect(result.stderr).toContain(
+      '--print-env cannot expose temporary launch artifacts — launch through eh instead',
+    )
+    expect(readdirSync(processTemp)).toEqual([])
   })
 })
 
