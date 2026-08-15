@@ -80,6 +80,17 @@ const ollamaTagsSchema = z.object({
 
 const FETCH_TIMEOUT_MS = 4000
 
+// Carries the HTTP status so callers can branch on it (404 = unknown model,
+// 401/403 = bad key) without parsing the message back apart.
+export class HttpError extends Error {
+  public readonly status: number
+
+  constructor(status: number, url: string) {
+    super(`HTTP ${String(status)} from ${url}`)
+    this.status = status
+  }
+}
+
 // Shared with pricing.ts — same timeout, auth header, and /v1 handling.
 export async function fetchJson(url: string, apiKey?: string) {
   const headers: Record<string, string> = {}
@@ -88,7 +99,7 @@ export async function fetchJson(url: string, apiKey?: string) {
     headers,
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   })
-  if (!res.ok) throw new Error(`HTTP ${String(res.status)} from ${url}`)
+  if (!res.ok) throw new HttpError(res.status, url)
   const body: unknown = await res.json()
   return body
 }
@@ -152,16 +163,16 @@ async function listGatewayModels(baseURL: string, apiKey?: string) {
 }
 
 // Fetch one model's p50 throughput (tokens/sec) from its /endpoints response.
-// Returns undefined when no active endpoint publishes a p50, or when the
-// model id 404s. Other network/HTTP failures propagate so callers can retry
-// them later (a transient failure must not be treated as "no throughput"
+// Returns undefined when no active endpoint publishes a p50, or when the model
+// id 404s — Vercel 404s `/models/{id}/endpoints` for ids it no longer lists
+// (e.g. from a stale model cache). Other failures propagate so callers can
+// retry them later (a transient failure must not be treated as "no throughput"
 // forever).
 export async function fetchGatewayModelThroughput(
   provider: ResolvedProvider,
   modelId: string,
+  apiKey?: string,
 ) {
-  const key = provider.envKey ? await resolveKey(provider) : undefined
-  const apiKey = key && key.source !== 'none' ? key.value : undefined
   const modelPath = modelId.split('/').map(encodeURIComponent).join('/')
   let body: unknown
   try {
@@ -170,19 +181,15 @@ export async function fetchGatewayModelThroughput(
       apiKey,
     )
   } catch (error) {
-    // Unknown ids (and picker sentinels like `__manual__`) 404 from
-    // `/models/{id}/endpoints`. Treat as unpublished throughput.
-    if (isHttp404(error)) return undefined
+    if (error instanceof HttpError && error.status === 404) return undefined
     throw error
   }
-  const endpoints = gatewayEndpointsSchema.parse(body).data.endpoints
-  const p50 = endpoints.find((e) => e.status === undefined || e.status === 0)
-    ?.throughput_last_1h?.p50
+  const p50 = gatewayEndpointsSchema
+    .parse(body)
+    .data.endpoints.filter((e) => e.status === undefined || e.status === 0)
+    .map((e) => e.throughput_last_1h?.p50)
+    .find((value) => value != null)
   return p50 == null ? undefined : `${Math.round(p50)} tps`
-}
-
-function isHttp404(error: unknown) {
-  return error instanceof Error && error.message.startsWith('HTTP 404 ')
 }
 
 function stripTrailingSlash(url: string) {

@@ -180,21 +180,10 @@ test('fetches a single Gateway model throughput on demand', async () => {
   }
 })
 
-// Unknown ids 404 on /models/{id}/endpoints (Vercel does this for the
-// picker's `__manual__` sentinel). Throwing that 404 used to kill eh.
 test('treats a missing Gateway /endpoints model as no throughput', async () => {
   const upstream = await startUpstream((_request, response) => {
     response.statusCode = 404
-    response.setHeader('content-type', 'application/json')
-    response.end(
-      JSON.stringify({
-        error: {
-          code: 'model_not_found',
-          message: "The model '__manual__/endpoints' does not exist",
-          type: 'model_not_found',
-        },
-      }),
-    )
+    response.end('not found')
   })
 
   try {
@@ -205,9 +194,43 @@ test('treats a missing Gateway /endpoints model as no throughput', async () => {
           name: 'vercel-ai-gateway',
           type: 'vercel-gateway',
         },
-        '__manual__',
+        'zai/glm-4.6x',
       ),
     ).toBeUndefined()
+  } finally {
+    await upstream.close()
+  }
+})
+
+test('skips an active endpoint with null throughput for one that has a p50', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        data: {
+          endpoints: [
+            { provider_name: 'anthropic', status: 0, throughput_last_1h: null },
+            {
+              provider_name: 'bedrock',
+              status: 0,
+              throughput_last_1h: { p50: 80 },
+            },
+          ],
+        },
+      }),
+    )
+  })
+
+  try {
+    const label = await fetchGatewayModelThroughput(
+      {
+        baseURL: `${upstream.baseURL}/gateway`,
+        name: 'test-gateway',
+        type: 'vercel-gateway',
+      },
+      'anthropic/model',
+    )
+    expect(label).toBe('80 tps')
   } finally {
     await upstream.close()
   }
@@ -220,6 +243,7 @@ test('lets a Gateway /endpoints 500 propagate so the picker can retry', async ()
   })
 
   try {
+    let message = ''
     try {
       await fetchGatewayModelThroughput(
         {
@@ -229,11 +253,10 @@ test('lets a Gateway /endpoints 500 propagate so the picker can retry', async ()
         },
         'zai/glm-5.2',
       )
-      throw new Error('expected fetchGatewayModelThroughput to reject')
     } catch (error) {
-      if (!(error instanceof Error)) throw error
-      expect(error.message).toMatch(/^HTTP 500 /)
+      message = error instanceof Error ? error.message : String(error)
     }
+    expect(message).toMatch(/^HTTP 500 /)
   } finally {
     await upstream.close()
   }
