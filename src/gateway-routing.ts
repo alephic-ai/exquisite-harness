@@ -100,6 +100,12 @@ async function fetchGatewayProviders(props: {
     headers: props.headers,
     redirect: 'manual',
   })
+  // The gateway 404s /models/{id}/endpoints for ids it doesn't list.
+  if (response.status === 404) {
+    throw new Error(
+      `model "${props.model}" not found on the gateway — check the model id`,
+    )
+  }
   if (!response.ok) {
     throw new Error(
       `could not validate gateway provider: HTTP ${String(response.status)} from ${url.toString()}`,

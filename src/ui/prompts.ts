@@ -6,6 +6,7 @@ import {
   select,
   text,
 } from '@clack/prompts'
+import { ZodError } from 'zod'
 
 import type { ResolvedProvider, ResolvedSearchProvider } from '../config.js'
 import type { HarnessDef } from '../harnesses.js'
@@ -24,6 +25,7 @@ import {
   canServeAny,
   fetchGatewayModelThroughput,
   type GatewayProviderInfo,
+  HttpError,
   listGatewayProviders,
   listModelsCached,
 } from '../providers.js'
@@ -244,12 +246,26 @@ const MANUAL = '__manual__'
 const GATEWAY_AUTO = '__gateway_auto__'
 const GATEWAY_ZDR = '__gateway_zdr__'
 
+// Rows the model picker renders at once (autocomplete maxItems); the
+// throughput prefetch window derives from it.
+const MODEL_PICKER_ROWS = 12
+
 // What the Gateway picker returns: a pinned provider slug, or automatic
 // routing (undefined) optionally restricted to ZDR providers. Both flags
 // null/undefined means plain automatic Vercel routing + fallback.
 export interface GatewayRouteChoice {
   provider?: string
   zeroDataRetention?: boolean
+}
+
+interface ThroughputState {
+  apiKey: string | undefined
+  attemptedNoThroughput: Set<string>
+  // First prefetch failure, stashed until the prompt closes — clack owns the
+  // terminal while it's open, and an out-of-band log.warn garbles its frame.
+  failureMessage: string | undefined
+  throughputPending: Set<string>
+  throughputs: Map<string, string>
 }
 
 // Masked key entry — the key never echoes and never touches argv/history.
@@ -316,9 +332,13 @@ export async function pickGatewayProvider(
   try {
     providers = await listGatewayProviders(provider, model)
     s.stop(`${String(providers.length)} providers`)
-  } catch {
+  } catch (error) {
     providers = []
-    s.stop('provider fetch failed — automatic/manual still available')
+    s.stop(
+      error instanceof HttpError && error.status === 404
+        ? `${model} not found on the gateway — automatic/manual still available`
+        : 'provider fetch failed — automatic/manual still available',
+    )
   }
 
   const value = await autocomplete({
@@ -368,42 +388,60 @@ export async function pickModel(provider: ResolvedProvider) {
   // want to pay for the whole list. Fetch it for the models visible on the first
   // screen so tok/s shows immediately, then lazily for anything the user filters
   // to. Bounded so a large list doesn't stall the picker.
-  const throughputs = new Map<string, string>()
-  const throughputPending = new Set<string>()
-  const attemptedNoThroughput = new Set<string>()
+  const throughputState: ThroughputState = {
+    apiKey: undefined,
+    attemptedNoThroughput: new Set(),
+    failureMessage: undefined,
+    throughputPending: new Set(),
+    throughputs: new Map(),
+  }
   if (isGateway) {
-    await prefetchVisibleThroughput(provider, models.slice(0, 12), {
-      attemptedNoThroughput,
-      throughputPending,
-      throughputs,
-    })
+    // Resolve the key once — resolveApiKey can shell out to the OS keychain,
+    // far too slow to repeat per model on every render.
+    const key = provider.envKey
+      ? await resolveApiKey(provider.envKey, provider.name)
+      : undefined
+    throughputState.apiKey =
+      key && key.source !== 'none' ? key.value : undefined
+    await prefetchVisibleThroughput(
+      provider,
+      models.slice(0, MODEL_PICKER_ROWS),
+      throughputState,
+    )
+    warnThroughputFailure(throughputState)
   }
   // Manual-entry escape hatch — never offer it if a real model id collides.
   const hasManual = models.some((m) => m.id === MANUAL)
   const value = await autocomplete({
-    maxItems: 12,
+    maxItems: MODEL_PICKER_ROWS,
     message: `model · ${provider.name}`,
     // Dynamic options getter (re-run by clack on each keystroke): for the
     // gateway, enrich the labels of the models currently shown with throughput
     // as fast as it arrives, fetching it for exactly those models.
-    options(this: { filteredOptions?: { value: string }[] }) {
+    options(this: { cursor?: number; filteredOptions?: { value: string }[] }) {
       if (isGateway) {
+        // filteredOptions is clack's whole filtered list, not the rendered
+        // window. The rendered window always contains the cursor and holds at
+        // most MODEL_PICKER_ROWS rows, so every visible row sits within
+        // MODEL_PICKER_ROWS - 1 of it — prefetch that span instead of fanning
+        // out /endpoints requests for rows never shown. .catch keeps a
+        // rejection here from becoming a fatal unhandled rejection mid-prompt.
+        const filtered = this.filteredOptions ?? []
+        const start = Math.max(0, (this.cursor ?? 0) - (MODEL_PICKER_ROWS - 1))
         void prefetchVisibleThroughput(
           provider,
-          (this.filteredOptions ?? []).map((r) => ({ id: r.value })),
-          {
-            attemptedNoThroughput,
-            throughputPending,
-            throughputs,
-          },
-        )
+          filtered
+            .slice(start, start + 2 * MODEL_PICKER_ROWS - 1)
+            .map((r) => ({ id: r.value })),
+          throughputState,
+        ).catch(() => undefined)
       }
       const options: { hint?: string; label: string; value: string }[] =
         models.map((m) => ({
           hint: m.hint,
           label: modelLabel(
-            throughputs.has(m.id)
-              ? { ...m, throughputLabel: throughputs.get(m.id) }
+            throughputState.throughputs.has(m.id)
+              ? { ...m, throughputLabel: throughputState.throughputs.get(m.id) }
               : m,
           ),
           value: m.id,
@@ -420,6 +458,7 @@ export async function pickModel(provider: ResolvedProvider) {
     placeholder: 'type to filter…',
   })
   if (isCancel(value)) bail()
+  warnThroughputFailure(throughputState)
   if (value === MANUAL) {
     const typed = await text({
       message: 'model id',
@@ -431,21 +470,24 @@ export async function pickModel(provider: ResolvedProvider) {
   return value
 }
 
+function warnThroughputFailure(state: ThroughputState) {
+  if (!state.failureMessage) return
+  log.warn(`throughput unavailable: ${state.failureMessage}`)
+  state.failureMessage = undefined
+}
+
 // Fetch throughput for a batch of models (e.g. the currently visible ones) with
 // bounded concurrency, deduped against what's cached or already in flight.
 async function prefetchVisibleThroughput(
   provider: ResolvedProvider,
   rows: { id: string }[],
-  state: {
-    attemptedNoThroughput: Set<string>
-    throughputPending: Set<string>
-    throughputs: Map<string, string>
-  },
+  state: ThroughputState,
 ) {
   const ids = rows
     .map((r) => r.id)
     .filter(
       (id) =>
+        id !== MANUAL &&
         !state.throughputs.has(id) &&
         !state.attemptedNoThroughput.has(id) &&
         !state.throughputPending.has(id),
@@ -461,12 +503,27 @@ async function prefetchVisibleThroughput(
       if (i >= ids.length) return
       const id = ids[i]
       try {
-        const label = await fetchGatewayModelThroughput(provider, id)
+        const label = await fetchGatewayModelThroughput(
+          provider,
+          id,
+          state.apiKey,
+        )
         if (label != null) state.throughputs.set(id, label)
         else state.attemptedNoThroughput.add(id)
+      } catch (error) {
+        // A bad key or response-shape drift fails identically for every id —
+        // retrying those on later renders would refetch the whole list per
+        // keystroke. Anything else (timeout, blip) stays retryable.
+        if (
+          error instanceof ZodError ||
+          (error instanceof HttpError &&
+            (error.status === 401 || error.status === 403))
+        ) {
+          state.attemptedNoThroughput.add(id)
+        }
+        state.failureMessage ??=
+          error instanceof Error ? error.message : String(error)
       } finally {
-        // A transient failure isn't "no throughput" — it stays out of
-        // attemptedNoThroughput so a later render retries it.
         state.throughputPending.delete(id)
       }
     }

@@ -180,6 +180,88 @@ test('fetches a single Gateway model throughput on demand', async () => {
   }
 })
 
+test('treats a missing Gateway /endpoints model as no throughput', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.statusCode = 404
+    response.end('not found')
+  })
+
+  try {
+    expect(
+      await fetchGatewayModelThroughput(
+        {
+          baseURL: `${upstream.baseURL}/v1`,
+          name: 'vercel-ai-gateway',
+          type: 'vercel-gateway',
+        },
+        'zai/glm-4.6x',
+      ),
+    ).toBeUndefined()
+  } finally {
+    await upstream.close()
+  }
+})
+
+test('skips an active endpoint with null throughput for one that has a p50', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        data: {
+          endpoints: [
+            { provider_name: 'anthropic', status: 0, throughput_last_1h: null },
+            {
+              provider_name: 'bedrock',
+              status: 0,
+              throughput_last_1h: { p50: 80 },
+            },
+          ],
+        },
+      }),
+    )
+  })
+
+  try {
+    const label = await fetchGatewayModelThroughput(
+      {
+        baseURL: `${upstream.baseURL}/gateway`,
+        name: 'test-gateway',
+        type: 'vercel-gateway',
+      },
+      'anthropic/model',
+    )
+    expect(label).toBe('80 tps')
+  } finally {
+    await upstream.close()
+  }
+})
+
+test('lets a Gateway /endpoints 500 propagate so the picker can retry', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.statusCode = 500
+    response.end('upstream error')
+  })
+
+  try {
+    let message = ''
+    try {
+      await fetchGatewayModelThroughput(
+        {
+          baseURL: `${upstream.baseURL}/v1`,
+          name: 'vercel-ai-gateway',
+          type: 'vercel-gateway',
+        },
+        'zai/glm-5.2',
+      )
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error)
+    }
+    expect(message).toMatch(/^HTTP 500 /)
+  } finally {
+    await upstream.close()
+  }
+})
+
 async function startUpstream(listener: RequestListener) {
   const server = createServer(listener)
   await new Promise<void>((resolve, reject) => {
