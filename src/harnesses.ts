@@ -11,6 +11,7 @@ import type {
 } from './types.js'
 
 import { approvalArgsForHarness } from './approval-mode.js'
+import { prepareGrokApiKeyHome } from './grok-home.js'
 import { opencodeConfigContent, opencodeProviderId } from './opencode.js'
 import { piModelsJsonHint, piProviderCompat, resolvePiProvider } from './pi.js'
 import { fetchModelMeta } from './pricing.js'
@@ -218,21 +219,26 @@ async function planGrok(
     args.push('--reasoning-effort', effort)
   }
   args.push(...approvalArgsForHarness('grok', options.approvalMode))
+  const gatewayRouting = gatewayRoutingFor(
+    provider,
+    options.gatewayProvider,
+    baseURL,
+    model,
+    options.gatewayZdr,
+  )
+  const authToken = await authTokenFor(provider)
+  const grokHome = await prepareGrokApiKeyHome(model)
   return {
     args,
     bin: 'grok',
+    cleanup: grokHome.cleanup,
     env: {
+      GROK_HOME: grokHome.home,
       GROK_MODELS_BASE_URL: baseURL,
-      XAI_API_KEY: await authTokenFor(provider),
+      XAI_API_KEY: authToken,
     },
-    gatewayRouting: gatewayRoutingFor(
-      provider,
-      options.gatewayProvider,
-      baseURL,
-      model,
-      options.gatewayZdr,
-    ),
-    notes: [],
+    gatewayRouting,
+    notes: ['grok auth: API key (session OAuth isolated)'],
   }
 }
 

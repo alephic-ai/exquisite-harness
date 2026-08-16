@@ -8,6 +8,7 @@ import { z } from 'zod'
 
 import type { EffortLevel, LaunchPlan } from './types.js'
 
+import { withCleanup } from './cleanup.js'
 import { getProvider, loadConfig } from './config.js'
 import { withGatewayRouting } from './gateway-routing.js'
 import { buildLaunchPlan } from './harnesses.js'
@@ -45,8 +46,6 @@ interface ResolvedHeadlessRunOptions {
 }
 
 export async function runHeadless(options: HeadlessRunOptions) {
-  let cleanup = async () => Promise.resolve()
-
   try {
     const prompt = readPrompt()
     const effort = EFFORT_LEVELS.find((level) => level === options.effort)
@@ -81,35 +80,35 @@ export async function runHeadless(options: HeadlessRunOptions) {
         statusline: false,
       },
     )
-    const prepared = await prepareHeadlessPlan({
-      options: resolved,
-      plan,
-      prompt,
-    })
-    cleanup = prepared.cleanup
+    return await withCleanup(plan.cleanup, async () => {
+      const prepared = await prepareHeadlessPlan({
+        options: resolved,
+        plan,
+        prompt,
+      })
+      return withCleanup(prepared.cleanup, async () => {
+        emit({
+          effort: resolved.effort,
+          ...(resolved.gatewayProvider === undefined
+            ? {}
+            : { gatewayProvider: resolved.gatewayProvider }),
+          harness: resolved.harness,
+          model: resolved.model,
+          provider: provider.name,
+          type: 'run.started',
+        })
 
-    emit({
-      effort: resolved.effort,
-      ...(resolved.gatewayProvider === undefined
-        ? {}
-        : { gatewayProvider: resolved.gatewayProvider }),
-      harness: resolved.harness,
-      model: resolved.model,
-      provider: provider.name,
-      type: 'run.started',
-    })
-
-    return await executeHeadlessPlan({
-      harness: resolved.harness,
-      plan: prepared.plan,
-      stdin: prepared.stdin,
+        return executeHeadlessPlan({
+          harness: resolved.harness,
+          plan: prepared.plan,
+          stdin: prepared.stdin,
+        })
+      })
     })
   } catch (error) {
     emit({ message: errorMessage(error), type: 'run.error' })
     emit({ exitCode: 1, resultIsError: true, type: 'run.completed' })
     return 1
-  } finally {
-    await cleanup()
   }
 }
 

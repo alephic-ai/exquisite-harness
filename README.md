@@ -138,7 +138,9 @@ gateway model. `eh -r codex` lists only codex sessions.
 
 Resume needs an interactive terminal. For scripts, `eh -r --print-env …` keeps
 the old behavior: no picker, prints the env lines plus the harness's bare resume
-args (its own picker / most recent).
+args (its own picker / most recent). Plans with process-scoped temporary
+artifacts cannot be represented safely as exports and instead direct the caller
+to launch through eh; this includes Grok's isolated home and Pi Gateway routes.
 
 ### Headless runs
 

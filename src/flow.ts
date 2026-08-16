@@ -4,6 +4,7 @@ import type { SessionInfo } from './sessions.js'
 import type { EffortLevel, Selection } from './types.js'
 
 import { approvalModeLabel } from './approval-mode.js'
+import { withCleanup } from './cleanup.js'
 import {
   allProviders,
   allSearchProviders,
@@ -280,57 +281,56 @@ export async function launchFlow(
     searchBackend,
   })
 
-  if (options.printEnvOnly) {
-    printEnv(plan)
-    // print-env never launches the child, so no withGatewayRouting run to
-    // trigger cleanup — release launch-time artifacts (pi's temp extension).
-    await plan.cleanup?.()
-    return
-  }
-
-  // Confirm only when the user picked interactively; fully-specified
-  // positionals (and profiles) launch straight away.
-  if (isTTY && needsPicking) {
-    const action = await confirmLaunch(
-      planSummary({
-        approvalMode: config.defaultApprovalMode,
-        env: plan.env,
-        selection: complete,
-      }),
-    )
-    if (action === 'back') {
-      // Won't reach exec() (and its withGatewayRouting cleanup) — release
-      // launch-time artifacts (pi's temp extension) before returning.
-      await plan.cleanup?.()
+  await withCleanup(plan.cleanup, async () => {
+    if (options.printEnvOnly) {
+      if (plan.cleanup) {
+        throw new Error(
+          '--print-env cannot expose temporary launch artifacts — launch through eh instead',
+        )
+      }
+      printEnv(plan)
       return
     }
-    if (action === 'save') {
-      const name = await askProfileName()
-      config = { ...config, profiles: { ...config.profiles, [name]: complete } }
-      log.success(`profile "${name}" saved`)
-    }
-  }
 
-  // Explicit --save: persist the combo without any prompt.
-  if (options.saveAs) {
-    const taken = reservedProfileNameMessage(options.saveAs)
-    if (taken) {
-      await plan.cleanup?.()
-      throw new Error(taken)
+    // Confirm only when the user picked interactively; fully-specified
+    // positionals (and profiles) launch straight away.
+    if (isTTY && needsPicking) {
+      const action = await confirmLaunch(
+        planSummary({
+          approvalMode: config.defaultApprovalMode,
+          env: plan.env,
+          selection: complete,
+        }),
+      )
+      if (action === 'back') return
+      if (action === 'save') {
+        const name = await askProfileName()
+        config = {
+          ...config,
+          profiles: { ...config.profiles, [name]: complete },
+        }
+        log.success(`profile "${name}" saved`)
+      }
     }
-    config = {
-      ...config,
-      profiles: { ...config.profiles, [options.saveAs]: complete },
+
+    // Explicit --save: persist the combo without any prompt.
+    if (options.saveAs) {
+      const taken = reservedProfileNameMessage(options.saveAs)
+      if (taken) throw new Error(taken)
+      config = {
+        ...config,
+        profiles: { ...config.profiles, [options.saveAs]: complete },
+      }
+      log.success(`profile "${options.saveAs}" saved`)
     }
-    log.success(`profile "${options.saveAs}" saved`)
-  }
 
-  config = pushRecent(config, complete)
-  saveConfig(config)
+    config = pushRecent(config, complete)
+    saveConfig(config)
 
-  const code = await exec(plan)
-  if (isTTY) outro(`back in eh — ${plan.bin} exited ${String(code)}`)
-  process.exitCode = code
+    const code = await exec(plan)
+    if (isTTY) outro(`back in eh — ${plan.bin} exited ${String(code)}`)
+    process.exitCode = code
+  })
 }
 
 async function completeSelection(config: Config, partial: Partial<Selection>) {

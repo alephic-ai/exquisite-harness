@@ -764,6 +764,8 @@ describe('eh run', () => {
           args: z.array(z.string()),
           grokApiKey: z.string(),
           grokBaseUrl: z.string(),
+          grokHome: z.string(),
+          grokHomeHasAuth: z.boolean(),
           grokModelsBaseUrl: z.string(),
           pid: z.number().int().positive(),
           prompt: z.string(),
@@ -785,7 +787,10 @@ describe('eh run', () => {
     expect(fakeEvent.event.xaiApiKey).toBe('ollama')
     expect(fakeEvent.event.grokBaseUrl).toBe('parent-grok-base-url')
     expect(fakeEvent.event.grokApiKey).toBe('parent-grok-api-key')
+    expect(fakeEvent.event.grokHome.length).toBeGreaterThan(0)
+    expect(fakeEvent.event.grokHomeHasAuth).toBe(false)
     expect(existsSync(fakeEvent.event.promptPath)).toBe(false)
+    expect(existsSync(fakeEvent.event.grokHome)).toBe(false)
     expect(events).toContainEqual({
       sessionId: 'grok-session',
       type: 'session.started',
@@ -1344,6 +1349,10 @@ emit({
   args,
   grokApiKey: process.env.GROK_API_KEY,
   grokBaseUrl: process.env.GROK_BASE_URL,
+  grokHome: process.env.GROK_HOME,
+  grokHomeHasAuth: require('node:fs').existsSync(
+    require('node:path').join(process.env.GROK_HOME ?? '', 'auth.json'),
+  ),
   grokModelsBaseUrl: process.env.GROK_MODELS_BASE_URL,
   pid: process.pid,
   prompt,
