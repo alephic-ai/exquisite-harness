@@ -19,18 +19,18 @@ its native CLI because the eh codex harness is currently broken (see
 Environmental findings). OpenCode follow-up probes (2026-08-18, native
 `opencode run --format json`, model `opencode/deepseek-v4-flash-free`) covered
 `--agent plan` with and without `--auto`, plus `OPENCODE_PERMISSION` denying
-`edit` and `bash`. One trial per cell — this verifies the mechanism exists
-and behaves as labeled, it is not an exhaustive bypass audit.
+`edit` and `bash`. One trial per cell — this verifies the mechanism exists and
+behaves as labeled, it is not an exhaustive bypass audit.
 
 ## Per-harness mapping table
 
-| Harness  | Version | Mechanism        | Exact args                  | Blocks                                                                                                                                                | Reads survive | Baseline wrote                                   | Restricted blocked  |
-| -------- | ------- | ---------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------ | ------------------- |
-| claude   | 2.1.234 | permission mode  | `--permission-mode plan`    | file writes/edits via tool permission layer (not an OS sandbox; network not probed)                                                                   | yes           | yes                                              | yes                 |
-| codex    | 0.147.0 | OS-level sandbox | `--sandbox read-only`       | model-generated shell commands incl. file writes (OS-enforced; strongest of the five)                                                                 | yes           | yes (with `--approve-for-me`)                    | yes                 |
-| grok     | 1.0.5   | permission mode  | `--permission-mode plan`    | file writes/edits via tool permission layer (its separate `--sandbox <PROFILE>` flag covers "filesystem and network" but documents no enum; unprobed) | yes           | yes                                              | yes                 |
-| opencode | 1.18.18 | permission agent | `--agent plan`              | file writes/edits via the plan agent's permission layer (`edit * deny`; plan-file exceptions only). `--auto` still cannot create `pwned.txt`. Not an OS sandbox; `bash` remains listed as a tool but an explicit shell-write request was refused and no file appeared. | yes           | yes (with `--auto`)                              | yes                 |
-| pi       | 0.84.2  | tool allowlist   | `--tools read,grep,find,ls` | all mutating tools (`write`, `edit`, `bash`) by omission; pi's own help labels this "Read-only mode (no file modifications possible)"                 | yes           | yes                                              | yes                 |
+| Harness  | Version | Mechanism        | Exact args                  | Blocks                                                                                                                                                                                                                                                                 | Reads survive | Baseline wrote                | Restricted blocked |
+| -------- | ------- | ---------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------- | ------------------ |
+| claude   | 2.1.234 | permission mode  | `--permission-mode plan`    | file writes/edits via tool permission layer (not an OS sandbox; network not probed)                                                                                                                                                                                    | yes           | yes                           | yes                |
+| codex    | 0.147.0 | OS-level sandbox | `--sandbox read-only`       | model-generated shell commands incl. file writes (OS-enforced; strongest of the five)                                                                                                                                                                                  | yes           | yes (with `--approve-for-me`) | yes                |
+| grok     | 1.0.5   | permission mode  | `--permission-mode plan`    | file writes/edits via tool permission layer (its separate `--sandbox <PROFILE>` flag covers "filesystem and network" but documents no enum; unprobed)                                                                                                                  | yes           | yes                           | yes                |
+| opencode | 1.18.18 | permission agent | `--agent plan`              | file writes/edits via the plan agent's permission layer (`edit * deny`; plan-file exceptions only). `--auto` still cannot create `pwned.txt`. Not an OS sandbox; `bash` remains listed as a tool but an explicit shell-write request was refused and no file appeared. | yes           | yes (with `--auto`)           | yes                |
+| pi       | 0.84.2  | tool allowlist   | `--tools read,grep,find,ls` | all mutating tools (`write`, `edit`, `bash`) by omission; pi's own help labels this "Read-only mode (no file modifications possible)"                                                                                                                                  | yes           | yes                           | yes                |
 
 ## The collision findings (why the shape decision matters)
 
@@ -49,8 +49,8 @@ them:
   `plan` beat the earlier `auto` in the probe) — it works by accident of arg
   order and is not a contract worth relying on.
 - **opencode** does **not** collide: `--agent plan` plus `--auto` ran to
-  completion and still blocked `pwned.txt`. Approval args stay when read-only
-  is set.
+  completion and still blocked `pwned.txt`. Approval args stay when read-only is
+  set.
 
 ## Decision
 
@@ -72,21 +72,21 @@ them:
    - pi → `--tools read,grep,find,ls` (pi has no approval args to suppress)
    - opencode → `--agent plan` (keep `--auto` when approval is auto — the two
      flags compose; `--auto` does not override plan's `edit * deny`)
-3. **No mechanism = refuse to launch.** That default still applies to any
-   future harness with no restriction lever. OpenCode is no longer in that
-   set: `--agent plan` blocked `pwned.txt` with and without `--auto`, and
-   blocked an explicit "use a shell command" write request. Omitting `--auto`
-   alone is **not** a mechanism (the original baseline still wrote). A second
-   lever, `OPENCODE_PERMISSION='{"edit":"deny","bash":"deny"}'`, also blocked
-   writes under `--auto`; implementation should prefer the CLI flag
-   (`--agent plan`) to match the other harnesses. Invariant: **a lane started
-   with `--read-only` is never silently unrestricted.**
+3. **No mechanism = refuse to launch.** That default still applies to any future
+   harness with no restriction lever. OpenCode is no longer in that set:
+   `--agent plan` blocked `pwned.txt` with and without `--auto`, and blocked an
+   explicit "use a shell command" write request. Omitting `--auto` alone is
+   **not** a mechanism (the original baseline still wrote). A second lever,
+   `OPENCODE_PERMISSION='{"edit":"deny","bash":"deny"}'`, also blocked writes
+   under `--auto`; implementation should prefer the CLI flag (`--agent plan`) to
+   match the other harnesses. Invariant: **a lane started with `--read-only` is
+   never silently unrestricted.**
 4. **Contract of the flag: best-available write-restriction, per harness.** The
    five mechanisms are heterogeneous — codex is an OS sandbox; claude, grok,
    opencode, and pi are tool-permission-layer restrictions; network access is
-   not uniformly restricted. The flag promises "the harness's own strongest file-write
-   restriction is engaged", documented per harness in this table — it does not
-   promise a uniform full sandbox.
+   not uniformly restricted. The flag promises "the harness's own strongest
+   file-write restriction is engaged", documented per harness in this table — it
+   does not promise a uniform full sandbox.
 
 ## Environmental findings (not spike-blocking, worth fixing separately)
 
