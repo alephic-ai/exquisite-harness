@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:24.619Z",
-  "currentNodeId": "lint",
+  "currentNodeId": "test",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -648,17 +648,17 @@
       }
     },
     "lint": {
-      "completedAt": "2026-08-18T15:40:11.782Z",
+      "completedAt": "2026-08-18T15:50:10.501Z",
       "nodeId": "lint",
       "outcome": "success",
-      "output": "Lockfile is up to date, resolution step is skipped\nAlready up to date\n\nDone in 610ms using pnpm v11.1.1\n\n$ concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'\n$ prettier --write . --log-level=error",
+      "output": "No formatter changes to commit\n\n$ concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'\n$ prettier --write . --log-level=error",
       "outputCapture": {
-        "capturedLength": 227,
+        "capturedLength": 154,
         "lengthUnit": "utf16_code_units",
-        "originalLength": 227,
+        "originalLength": 154,
         "truncated": false
       },
-      "retryCount": 0,
+      "retryCount": 1,
       "startedAt": "2026-08-18T15:40:01.219Z"
     },
     "test": {
@@ -679,7 +679,7 @@
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3106",
   "status": "running",
-  "updatedAt": "2026-08-18T15:49:59.386Z",
+  "updatedAt": "2026-08-18T15:50:10.505Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -803,7 +803,7 @@
     "lint": {
       "handler": "tool",
       "outcome": "success",
-      "totalDurationMs": 10563,
+      "totalDurationMs": 20227,
       "usage": {
         "cacheReadTokens": 0,
         "cacheWriteTokens": 0,
@@ -811,7 +811,7 @@
         "inputTokens": 0,
         "outputTokens": 0
       },
-      "visits": 1
+      "visits": 2
     },
     "test": {
       "handler": "tool",
