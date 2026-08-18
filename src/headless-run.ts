@@ -58,11 +58,9 @@ interface ResolvedHeadlessRunOptions {
 }
 
 export async function runHeadless(options: HeadlessRunOptions) {
-  // Preflight errors (setup before the child is spawned) are reported as
-  // EH_EXIT_PREFLIGHT. Once execution has started below, a failure is a
-  // runtime/teardown error, not a preflight error — rethrow instead of
-  // emitting a second run.completed with the preflight code after the child
-  // has already completed.
+  // Set after spawn so pre-spawn setup (including withGatewayRouting
+  // validation) still maps to 64. After spawn, rethrow so teardown cannot
+  // emit a second run.completed.
   const state = { executionStarted: false }
   try {
     const prompt = readPrompt()
@@ -123,10 +121,12 @@ export async function runHeadless(options: HeadlessRunOptions) {
           provider: provider.name,
           type: 'run.started',
         })
-        state.executionStarted = true
 
         return executeHeadlessPlan({
           harness: resolved.harness,
+          markSpawned: () => {
+            state.executionStarted = true
+          },
           plan: prepared.plan,
           stdin: prepared.stdin,
         })
@@ -219,6 +219,7 @@ function errorMessage(error: unknown) {
 
 async function executeHeadlessPlan(options: {
   harness: string
+  markSpawned: () => void
   plan: LaunchPlan
   stdin?: string
 }) {
@@ -229,6 +230,7 @@ async function executeHeadlessPlan(options: {
 
 async function executePreparedHeadlessPlan(options: {
   harness: string
+  markSpawned: () => void
   plan: LaunchPlan
   stdin?: string
 }) {
@@ -236,6 +238,7 @@ async function executePreparedHeadlessPlan(options: {
     env: { ...process.env, ...options.plan.env },
     stdio: ['pipe', 'pipe', 'pipe'],
   })
+  options.markSpawned()
   const lines = createInterface({ input: child.stdout })
   const completion = new Promise<
     | { code: null | number; signal: keyof typeof os.constants.signals | null }

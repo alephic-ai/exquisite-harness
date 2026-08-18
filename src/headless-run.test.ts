@@ -730,6 +730,84 @@ describe('eh run', () => {
     expect(existsSync(extensionPath)).toBe(false)
   })
 
+  test('treats a post-started gateway pin failure as preflight, not a crash', async () => {
+    const fixture = createFakeClaude()
+    const gateway = await startGatewayStub()
+    const ehConfigDir = path.join(fixture.configDir, 'eh')
+    mkdirSync(ehConfigDir, { recursive: true })
+    writeFileSync(
+      path.join(ehConfigDir, 'config.json'),
+      JSON.stringify({
+        profiles: {},
+        providers: {
+          'test-gateway': {
+            baseURL: gateway.baseURL,
+            envKey: 'EH_TEST_GATEWAY_KEY',
+            type: 'vercel-gateway',
+          },
+        },
+        recent: [],
+        version: 1,
+      }),
+    )
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'claude',
+        'test-gateway',
+        'test-model',
+        '--gateway-provider',
+        'not-available',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TEST_GATEWAY_KEY: 'qa-key',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('verify routing')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    await gateway.close()
+    const events = parseEvents(stdout)
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(64)
+    expect(events).toEqual([
+      {
+        effort: 'auto',
+        gatewayProvider: 'not-available',
+        harness: 'claude',
+        model: 'test-model',
+        provider: 'test-gateway',
+        type: 'run.started',
+        v: 1,
+      },
+      {
+        message: expect.stringContaining('unavailable'),
+        type: 'run.error',
+        v: 1,
+      },
+      {
+        exitCode: 64,
+        resultIsError: true,
+        type: 'run.completed',
+        v: 1,
+      },
+    ])
+  })
+
   test('uses and removes a private prompt file for Grok', async () => {
     const fixture = createFakeGrok()
     const child = spawn(
