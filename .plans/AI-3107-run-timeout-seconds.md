@@ -39,18 +39,19 @@ command, `.action` at line 140) which calls `runHeadless` in
   error (lines 262-269), then always emits `run.completed` last (line 272).
 
 Preflight validation belongs alongside the existing effort check in
-`runHeadless` (lines 51-56), which runs **before** `emit(run.started)` (line 90).
-A throw there is caught (lines 108-112) and emits exactly
-`run.error` then `run.completed` with exit `1` — the same shape the existing
-preflight `test.each` asserts (`src/headless-run.test.ts:228-380`).
+`runHeadless` (lines 51-56), which runs **before** `emit(run.started)` (line
+90). A throw there is caught (lines 108-112) and emits exactly `run.error` then
+`run.completed` with exit `1` — the same shape the existing preflight
+`test.each` asserts (`src/headless-run.test.ts:228-380`).
 
 **Reference implementation — the existing signal test** that proves child
 termination and the `128 + signal` exit code
-(`src/headless-run.test.ts:1180-1258`, test name
-"forwards termination signals and removes the Grok prompt file"): it spawns
-`eh run`, waits for the fake harness's `fake.args` event, kills, and asserts
-`exitCode === 128 + os.constants.signals.SIGTERM` plus a `run.completed` with the
-same code. The timeout tests reuse this exit-code and event-ordering approach.
+(`src/headless-run.test.ts:1180-1258`, test name "forwards termination signals
+and removes the Grok prompt file"): it spawns `eh run`, waits for the fake
+harness's `fake.args` event, kills, and asserts
+`exitCode === 128 + os.constants.signals.SIGTERM` plus a `run.completed` with
+the same code. The timeout tests reuse this exit-code and event-ordering
+approach.
 
 ## Load-Bearing Assumptions
 
@@ -70,11 +71,11 @@ same code. The timeout tests reuse this exit-code and event-ordering approach.
    `effort`, `harness`, `model`, `nativeArgs`, `resumeSessionId`; it never reads
    a timeout. This is why the invariant test can deep-equal the with-flag and
    no-flag event streams.
-5. **The `ollama` provider is a zero-config built-in.** VERIFIED — every existing
-   headless test spawns `run codex ollama qwen3-coder` with only an empty
-   `XDG_CONFIG_HOME` and passes.
-6. **A pending 60s `setTimeout` keeps the `eh` process alive until it fires or is
-   cleared (timers are NOT unref'd).** VERIFIED — standard Node timer-ref
+5. **The `ollama` provider is a zero-config built-in.** VERIFIED — every
+   existing headless test spawns `run codex ollama qwen3-coder` with only an
+   empty `XDG_CONFIG_HOME` and passes.
+6. **A pending 60s `setTimeout` keeps the `eh` process alive until it fires or
+   is cleared (timers are NOT unref'd).** VERIFIED — standard Node timer-ref
    semantics. Load-bearing: the invariant test proves cleanup by exiting
    promptly instead of hanging ~60s.
 7. **`SIGKILL` is uncatchable, so a child that traps `SIGTERM` still dies on the
@@ -83,15 +84,15 @@ same code. The timeout tests reuse this exit-code and event-ordering approach.
 
 ## File Map
 
-| Path | Change |
-| --- | --- |
-| `src/headless-run.ts` | edit — flag plumbing, `parseTimeoutSeconds`, grace constant/resolver, timer→SIGTERM→SIGKILL |
-| `src/headless-run.test.ts` | edit — validation, timeout, SIGKILL-escalation, invariant tests + fake harnesses |
-| `src/main.ts` | edit — `--timeout <seconds>` option on the `run` command |
-| `README.md` | edit — `### Headless runs` mentions `--timeout` |
-| `DESIGN.md` | edit — `Headless execution` mentions `--timeout` |
-| `docs/qa/eh-cli.md` | edit — `## I. Headless runs` gains a timeout QA step |
-| `package.json` | edit — version `0.11.0` → `0.12.0` |
+| Path                       | Change                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------- |
+| `src/headless-run.ts`      | edit — flag plumbing, `parseTimeoutSeconds`, grace constant/resolver, timer→SIGTERM→SIGKILL |
+| `src/headless-run.test.ts` | edit — validation, timeout, SIGKILL-escalation, invariant tests + fake harnesses            |
+| `src/main.ts`              | edit — `--timeout <seconds>` option on the `run` command                                    |
+| `README.md`                | edit — `### Headless runs` mentions `--timeout`                                             |
+| `DESIGN.md`                | edit — `Headless execution` mentions `--timeout`                                            |
+| `docs/qa/eh-cli.md`        | edit — `## I. Headless runs` gains a timeout QA step                                        |
+| `package.json`             | edit — version `0.11.0` → `0.12.0`                                                          |
 
 ## Tasks
 
@@ -167,10 +168,10 @@ timeout is a temporary no-op until Task 2, both land in one PR).
    ```
    - **AC1 (SIGTERM on expiry):** spawn `createFakeSleeper()` with
      `--timeout 1`, pipe `'hang forever'`. Assert `stderr === ''`,
-     `exitCode === 128 + os.constants.signals.SIGTERM`; find
-     `errorIndex` = first `run.error` whose `message` includes `'1s'`, and
-     `completedIndex` = the `run.completed` index; assert
-     `errorIndex > -1`, `completedIndex === events.length - 1` (final event),
+     `exitCode === 128 + os.constants.signals.SIGTERM`; find `errorIndex` =
+     first `run.error` whose `message` includes `'1s'`, and `completedIndex` =
+     the `run.completed` index; assert `errorIndex > -1`,
+     `completedIndex === events.length - 1` (final event),
      `errorIndex < completedIndex`, and the completed event equals
      `{ exitCode: 128 + os.constants.signals.SIGTERM, resultIsError: true, type: 'run.completed', v: 1 }`.
      Capture the `fake.args` `pid` and best-effort
@@ -185,11 +186,11 @@ timeout is a temporary no-op until Task 2, both land in one PR).
    - **AC4 (invariant — no effect when it completes in time):** run
      `createFakeCodex()` once with `--timeout 60` and once with no timeout flag
      (helper that spawns and returns `{ exitCode, events }`); assert both
-     `exitCode === 0` and `withTimeout.events` deep-equals `without.events`
-     (the flag never reaches child argv — Assumption 4). Give this test an
-     explicit timeout of `20_000` ms so a leaked 60s timer fails fast instead of
-     hanging: `test('...', async () => { ... }, 20_000)`. A prompt exit proves
-     the timer was cleared (Assumption 6).
+     `exitCode === 0` and `withTimeout.events` deep-equals `without.events` (the
+     flag never reaches child argv — Assumption 4). Give this test an explicit
+     timeout of `20_000` ms so a leaked 60s timer fails fast instead of hanging:
+     `test('...', async () => { ... }, 20_000)`. A prompt exit proves the timer
+     was cleared (Assumption 6).
 2. **Implement:** in `src/headless-run.ts`
    - add the constant near `PROTOCOL_VERSION` (line 17):
      ```ts
@@ -201,14 +202,17 @@ timeout is a temporary no-op until Task 2, both land in one PR).
        const raw = process.env.EH_TIMEOUT_KILL_GRACE_MS
        if (raw === undefined) return TIMEOUT_KILL_GRACE_MS
        const parsed = Number(raw)
-       return Number.isFinite(parsed) && parsed >= 0 ? parsed : TIMEOUT_KILL_GRACE_MS
+       return Number.isFinite(parsed) && parsed >= 0
+         ? parsed
+         : TIMEOUT_KILL_GRACE_MS
      }
      ```
-   - thread `timeoutSeconds` from `resolved` into the `executeHeadlessPlan({...})`
-     call in `runHeadless` (add `timeoutSeconds: resolved.timeoutSeconds,`), add
-     `timeoutSeconds?: number` to the `options` types of both
-     `executeHeadlessPlan` and `executePreparedHeadlessPlan`, and forward it in
-     `executeHeadlessPlan`'s inner call.
+   - thread `timeoutSeconds` from `resolved` into the
+     `executeHeadlessPlan({...})` call in `runHeadless` (add
+     `timeoutSeconds: resolved.timeoutSeconds,`), add `timeoutSeconds?: number`
+     to the `options` types of both `executeHeadlessPlan` and
+     `executePreparedHeadlessPlan`, and forward it in `executeHeadlessPlan`'s
+     inner call.
    - in `executePreparedHeadlessPlan`, declare before the `try` (after the
      `signalHandlers` array, line 226):
      ```ts
@@ -240,8 +244,8 @@ timeout is a temporary no-op until Task 2, both land in one PR).
      the invariant test genuinely proves cleanup.
    - suppress the duplicate generic signal error when the timeout already
      reported it: change the condition at line 262 to
-     `if (!state.resultIsError && childExitCode !== 0 && !timedOut) {` so exactly
-     one `run.error` (the timeout one) precedes `run.completed`.
+     `if (!state.resultIsError && childExitCode !== 0 && !timedOut) {` so
+     exactly one `run.error` (the timeout one) precedes `run.completed`.
    - in the `finally` (line 274), before the handler-removal loop, add:
      ```ts
      if (timeoutTimer) clearTimeout(timeoutTimer)
