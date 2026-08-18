@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:24.619Z",
-  "currentNodeId": "fork",
+  "currentNodeId": "join",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -724,12 +724,213 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-18T15:50:27.135Z"
+    },
+    "review_guillaumeify": {
+      "completedAt": "2026-08-18T15:51:35.934Z",
+      "nodeId": "review_guillaumeify",
+      "artifacts": [
+        {
+          "agentRunId": "d78301ae-287d-46a9-b48e-ff19acae8ab2",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "bbdabc856b321064ec6abe0b0d550e4392aaab8e231f01a71a98377f3468ba4a",
+              "sizeBytes": 130839
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/056ed255-c11c-42ea-b3a7-66d1166dd815.request.json",
+              "sha256": "e447fc4f25d3c9b1f5cdea78cfd6f635e013b3da0a52899464e65dbd49fc3dd6",
+              "sizeBytes": 124645
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/958d3aaa-f0e1-4a11-95fa-6ebb878705fd.request.json",
+              "sha256": "f135e53166249f65fa8b3deb2aeff7449f682b3c3b2e2095c82a9adda1f15341",
+              "sizeBytes": 100672
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ab1eda90-6d29-4e82-85a2-b3460b3fc37f.request.json",
+              "sha256": "0e63bbeaa3a5637518361c2538dec96409f48550b5159beac74440ad6b1b8372",
+              "sizeBytes": 140027
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b8feadcf-d510-4feb-b4e0-8c0acbc47027.request.json",
+              "sha256": "46fc3b46242dd3cad898b83482c85e3d132f5a1864e69470ce6a21e021afaadc",
+              "sizeBytes": 81823
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bd8801e4-f97d-43aa-8c12-436f453e11bd.request.json",
+              "sha256": "adc3c96578c28e991f2e5db57628ce330643431da905070441f4a22e7f9fcb8a",
+              "sizeBytes": 8563
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c4f56b12-17ec-4885-80ac-9794f25b43b5.request.json",
+              "sha256": "596024d2e4f397b3d8afa2c31ab3e20425712bc3cb9ae844c09b765b25a7d3f0",
+              "sizeBytes": 156415
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d623b4ed-3ebe-4472-8549-753521348fdc.request.json",
+              "sha256": "2197129ecc916d1730e0b5fddc06728f1b655ff67049840f3df215e9f063aa9c",
+              "sizeBytes": 150873
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUmojRUzdGiKftdS8nU.response.json",
+              "sha256": "6302ba702dad5376059296ee53038addf3b95c7d674fb99fac6df63cbdfc2df5",
+              "sizeBytes": 814
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUmpb1kYGsihHDwE5Nv.response.json",
+              "sha256": "a485dc2121de9a1ad8d9c1b6b3ac0ec89b0e0c30653686ee386a5a9d59986e2e",
+              "sizeBytes": 1395
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUn1d3H6iGqniRpmxpx.response.json",
+              "sha256": "47fc7bd4f954289cc9581f31f755e79e5500cc599c7d4cc3d02f3b0d88afd5ae",
+              "sizeBytes": 1379
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUnDccQzjFEUYJFyPE2.response.json",
+              "sha256": "e6085d5fe326be2654734397abe2f07f3f5a2d89abb3d41ba2057ee6b7147c82",
+              "sizeBytes": 3226
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUnxRpyG3U2t6DEm2f4.response.json",
+              "sha256": "7ba272d04f1d106547bff861f7cef4dc0d518769a2bda45d2752a840fd40bcb2",
+              "sizeBytes": 5787
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUpREufNQa2AAJ1HZuL.response.json",
+              "sha256": "aeb4297f6877ef88cb09135a8014a8e3b4efe9d1f061a96cbdd55ef8193a137f",
+              "sizeBytes": 5994
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUr2Zhg4kHwY5x54F3K.response.json",
+              "sha256": "aad51888b3303d9a5b1b697a3cf79bd8c024375c3b7aae6358960ab4fced2d9c",
+              "sizeBytes": 1994
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "25f9311fc52b964ad2649151fa29b6babb20c68da218c2fca4b0655712fa6029",
+              "sizeBytes": 15098
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/review_guillaumeify/attempt-0-d78301ae-287d-46a9-b48e-ff19acae8ab2",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/review_guillaumeify/attempt-0-d78301ae-287d-46a9-b48e-ff19acae8ab2/manifest.json",
+          "nodeId": "review_guillaumeify",
+          "pipelineId": "ticket-complete-AI-3106",
+          "runtime": "claude",
+          "sessionId": "49aeffa9-fa90-4cb5-9d8c-b36c423adcbb",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "The change is small and focused (8 files, one flag). I've read the full diff and traced the implementation end-to-end. Let me verify the two remaining correctness questions before finalizing.\n\nThe plumbing is confirmed:\n- `main.ts:143` passes `opts.cwd` → `runHeadless`\n- `headless-run.ts:72` runs `assertRunnableCwd` **before** `buildLaunchPlan`/spawn (AC2: preflight before child spawn ✓)\n- `headless-run.ts:106` → `executeHeadlessPlan` spreads to `executePreparedHeadlessPlan` → `spawn({ cwd })` (AC1 ✓)\n- Undefined cwd skips the assert and passes `cwd: undefined` to spawn, inheriting eh's cwd (AC3 ✓)\n- The `catch` at `headless-run.ts:113` emits exactly `run.error` (message includes the path) + `run.completed` with exit 1, matching the AC2 test assertions.\n\nThe `gateway-routing.test.ts` change is a hermetic fix (blanks ambient `ANTHROPIC_API_KEY`, restores in `finally` with correct undefined-handling) unrelated to the flag but correct.\n\nNo defects found. Writing the artifact.\nAh, mon ami... 🥐 I have reviewed zis code.\n\n## Verdict\n\n**Mergeable**: YES\n**Blockers**: None\n**Suggestions**: None\n\nThe `--cwd` flag is wired cleanly and matches all three acceptance criteria:\n\n- **AC1** — `main.ts:143` → `runHeadless` → `executeHeadlessPlan` (`headless-run.ts:106`) → `spawn(..., { cwd })` (`headless-run.ts:222-223`). The spawned child gets the directory. ✓\n- **AC2** — `assertRunnableCwd` (`headless-run.ts:72`) runs before `buildLaunchPlan`/spawn; missing and non-directory paths throw with the path in the message, caught at `headless-run.ts:113` to emit `run.error` + failed `run.completed` and return 1. The child never spawns. ✓\n- **AC3** — undefined `cwd` skips the assert and passes `cwd: undefined` to spawn, preserving inherited-cwd behavior. Existing tests unmodified. ✓\n\nThe `gateway-routing.test.ts` edit is an unrelated but correct hermeticity fix (blanks ambient `ANTHROPIC_API_KEY`, restores in `finally`). Docs (DESIGN.md, README.md, QA doc) and the version bump to `0.12.0` are consistent with the change.\n\nArtifact saved to `.attractor/review-guillaumeify.md`.\n\nC'est fini! 🇫🇷 Zis code is worthy of La République — ship it! 🍷🧀\n",
+      "retryCount": 0,
+      "sessionId": "49aeffa9-fa90-4cb5-9d8c-b36c423adcbb",
+      "startedAt": "2026-08-18T15:50:30.058Z",
+      "usage": {
+        "cacheReadTokens": 219083,
+        "cacheWriteTokens": 41303,
+        "costUsd": 0.52515425,
+        "inputTokens": 9763,
+        "outputTokens": 4255
+      }
+    },
+    "review_codex": {
+      "completedAt": "2026-08-18T15:52:41.933Z",
+      "nodeId": "review_codex",
+      "artifacts": [
+        {
+          "agentRunId": "91a6a697-57b0-4ca3-b1d8-9c7b31a7195a",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "a8eef1242049854f1bad9237ad1b78f2ea2f9aae742276f51921ff34f019035c",
+              "sizeBytes": 175997
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "99ce4d5837452901fee535386fc3180a5ba3161694f7c794e99af17417e07145",
+              "sizeBytes": 1493
+            },
+            {
+              "contentType": "application/x-ndjson",
+              "relativePath": "codex-sessions/2026/08/18/rollout-2026-08-18T15-50-30-01a01591-2acd-7d50-9847-04b99bafafc1.jsonl",
+              "sha256": "a6e9fff82b8c01e15d00431c34818cba352103a03abffc252a10bb22ab800247",
+              "sizeBytes": 301252
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "f627a7c503b26d9b804b092047b7e28957373ed268f02a85b8444bbd02446615",
+              "sizeBytes": 4746
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/review_codex/attempt-0-91a6a697-57b0-4ca3-b1d8-9c7b31a7195a",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/review_codex/attempt-0-91a6a697-57b0-4ca3-b1d8-9c7b31a7195a/manifest.json",
+          "nodeId": "review_codex",
+          "pipelineId": "ticket-complete-AI-3106",
+          "runtime": "codex",
+          "sessionId": "01a01591-2acd-7d50-9847-04b99bafafc1",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I’ll use the `guillaumeify` review workflow and the local coding standards, then constrain the actual review scope to `.attractor/review-packet-blind.md` as requested.\nThe rubric file path from the prompt is missing in this checkout, so I’m continuing with the provided review-packet constraints plus the review skills. I’ve only opened `.attractor/review-packet-blind.md` under `.attractor/`.\nI’m reading only the code paths that the diff touches now: CLI option parsing, headless spawn setup, provider auth fallback, and the fake harness helpers used by the new tests.\nThe implementation validates `--cwd` before provider/config planning and passes it only as the child process `cwd`, which matches the behavior inferred from the surrounding headless-run design. I’m checking call sites and tests for missed option propagation or hidden assumptions now.\nSo far I haven’t confirmed a defect. One area I’m probing is whether `--cwd` should also affect any parent-process state like recents, config, or session lookup; the existing headless path doesn’t write recents or list sessions, so the child-only propagation appears intentional from code context.\nThe CLI subcommand wiring reads `opts.cwd` directly and there’s no root-level `--cwd` collision. I’m going to run the focused test files next so the review artifact can reflect whether the touched behavior actually passes locally.\nThe docs changes are narrow and consistent with the inferred headless boundary. I haven’t read ticket or acceptance artifacts; the only spec-like text I’m using is the changed docs plus existing code behavior.\nOne oddity I noticed is pre-existing test style: some tests destructure stderr/stdout in swapped order, but the new `--cwd` tests use the straightforward order. That does not create a finding for this diff.\nI’m running the focused tests for the two touched behavioral areas: headless run and gateway routing.\nThe focused suite is still running; the new `--cwd` cases and the gateway auth regression case have already passed.\nThe focused tests passed. I’m doing one broader test run now because the change touches CLI-wide process spawning and a global test environment variable, and failures there would be review-relevant.\nThe full suite is still running; no failures have appeared yet.\nAll tests passed. I’m writing the required terse review artifact now with a mergeable verdict and no findings.\nSaved the review artifact to [.attractor/review-codex.md](/vercel/sandbox/project/.attractor/review-codex.md).\n\nResult: mergeable, 0 blockers, 0 suggestions.\n\nVerification run:\n`bun test` passed: 182 tests, 0 failures.\n\nNote: `.claude/commands/codex-review.md` was not present in this checkout (`.claude/` does not exist), so I used the provided blind packet constraints and inferred behavior from the codebase.\n",
+      "retryCount": 0,
+      "sessionId": "01a01591-2acd-7d50-9847-04b99bafafc1",
+      "startedAt": "2026-08-18T15:50:30.059Z",
+      "usage": {
+        "cacheReadTokens": 780672,
+        "cacheWriteTokens": 0,
+        "costUsd": 1.836357,
+        "inputTokens": 852738,
+        "outputTokens": 7445
+      }
+    },
+    "fork": {
+      "completedAt": "2026-08-18T15:52:41.933Z",
+      "nodeId": "fork",
+      "outcome": "success",
+      "output": "Parallel branches: review_guillaumeify: success, review_codex: success",
+      "retryCount": 0,
+      "startedAt": "2026-08-18T15:50:30.056Z"
     }
   },
-  "parallelBranches": {},
+  "parallelBranches": {
+    "join": [
+      "review_guillaumeify",
+      "review_codex"
+    ]
+  },
   "pipelineId": "ticket-complete-AI-3106",
   "status": "running",
-  "updatedAt": "2026-08-18T15:50:27.355Z",
+  "updatedAt": "2026-08-18T15:52:41.935Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -925,6 +1126,45 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "fork": {
+      "handler": "parallel",
+      "outcome": "success",
+      "totalDurationMs": 131877,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "review_guillaumeify": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 65876,
+      "usage": {
+        "cacheReadTokens": 219083,
+        "cacheWriteTokens": 41303,
+        "costUsd": 0.52515425,
+        "inputTokens": 9763,
+        "outputTokens": 4255
+      },
+      "visits": 1
+    },
+    "review_codex": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 131874,
+      "usage": {
+        "cacheReadTokens": 780672,
+        "cacheWriteTokens": 0,
+        "costUsd": 1.836357,
+        "inputTokens": 852738,
+        "outputTokens": 7445
       },
       "visits": 1
     }
