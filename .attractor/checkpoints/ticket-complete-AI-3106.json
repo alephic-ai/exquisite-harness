@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:24.619Z",
-  "currentNodeId": "classify_codex",
+  "currentNodeId": "evaluate_review",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -942,6 +942,91 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-18T15:52:45.126Z"
+    },
+    "classify_codex": {
+      "completedAt": "2026-08-18T15:52:56.055Z",
+      "nodeId": "classify_codex",
+      "artifacts": [
+        {
+          "agentRunId": "101f034e-0f3e-4bb8-a7d4-a5e440358446",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "5801f64a6c5546b0b3d91ddb10a630db4f5769b21b4c3afe8fa7679cd8b4668b",
+              "sizeBytes": 45421
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/419863c3-c2a1-4f5e-bcb0-feaa08effc9f.request.json",
+              "sha256": "38b193ed8b30394da81b23bdc522cb796194eb0aa76439fc4867d1288e7afa85",
+              "sizeBytes": 79309
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7f71d972-96e8-4788-811e-f5f95ff38aad.request.json",
+              "sha256": "de029fe8c6b862134ee0913e5d29002f68c146c82f8086dbed300d25fd10d0c6",
+              "sizeBytes": 98062
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c72872f6-4840-463d-a87f-37339c4201f0.request.json",
+              "sha256": "27b240d2fd55dfb28d99680ce83586738b0b939d7d2f5a29885de99582886546",
+              "sizeBytes": 6041
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUwtGJRoD96PsmxBb6Z.response.json",
+              "sha256": "695ac66c939a733fe887aa20756cd95e56d13eaa3d1090f53089a32ca3b8f88e",
+              "sizeBytes": 815
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUwtyxao79G67r2LN1T.response.json",
+              "sha256": "c4d134c1e87e1a8589253af408daba8f985e1a054f59b4af812d77f448771de3",
+              "sizeBytes": 1863
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUxBzetnzrbFwtENw7Y.response.json",
+              "sha256": "78e91848fa8f8b544223a9c74e6ecd69a018de436575ad8c403740347ae680a6",
+              "sizeBytes": 1831
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "beb84ab1512de1c5c332c41f6d0e84e80dd57dfbbd2bd598ef52bcb10598408a",
+              "sizeBytes": 8337
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/classify_codex/attempt-0-101f034e-0f3e-4bb8-a7d4-a5e440358446",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/classify_codex/attempt-0-101f034e-0f3e-4bb8-a7d4-a5e440358446/manifest.json",
+          "nodeId": "classify_codex",
+          "pipelineId": "ticket-complete-AI-3106",
+          "runtime": "claude",
+          "sessionId": "a965c038-296b-40f7-abb1-bf8dad7f87a7",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "The Codex review reports **0 issues, 0 blockers, 0 suggestions** — there are no findings to classify.\n\nI already cleared `.attractor/codex-correctness-fixes.md` at the start, so no stale artifact survives. With nothing adopted, no artifact is written.\n\nDone — no findings to adopt.\n",
+      "retryCount": 0,
+      "sessionId": "a965c038-296b-40f7-abb1-bf8dad7f87a7",
+      "startedAt": "2026-08-18T15:52:46.748Z",
+      "usage": {
+        "cacheReadTokens": 32232,
+        "cacheWriteTokens": 21392,
+        "costUsd": 0.211926,
+        "inputTokens": 9755,
+        "outputTokens": 474
+      }
     }
   },
   "parallelBranches": {
@@ -952,7 +1037,7 @@
   },
   "pipelineId": "ticket-complete-AI-3106",
   "status": "running",
-  "updatedAt": "2026-08-18T15:52:45.132Z",
+  "updatedAt": "2026-08-18T15:52:56.056Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1213,6 +1298,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "classify_codex": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 9307,
+      "usage": {
+        "cacheReadTokens": 32232,
+        "cacheWriteTokens": 21392,
+        "costUsd": 0.211926,
+        "inputTokens": 9755,
+        "outputTokens": 474
       },
       "visits": 1
     }
