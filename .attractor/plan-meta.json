@@ -1,1 +1,9 @@
-{"band":"small","deletedFilesPlanned":0,"filesPlanned":7,"heuristicVersion":7,"mirroredTestFilesPlanned":1,"parseable":true,"tasksPlanned":3}
+{
+  "band": "small",
+  "deletedFilesPlanned": 0,
+  "filesPlanned": 7,
+  "heuristicVersion": 7,
+  "mirroredTestFilesPlanned": 1,
+  "parseable": true,
+  "tasksPlanned": 3
+}

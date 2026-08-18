@@ -1,34 +1,34 @@
 {
   "acs": [
     {
-      "id": 1,
       "criterion": "`eh run` accepts `--timeout <seconds>`. On expiry: eh emits a `run.error` event naming the timeout and the configured limit, then sends SIGTERM; `run.completed` is still the final event. Proof: subprocess test with a fake harness that sleeps past the deadline, asserting the event sequence and child termination.",
-      "status": "pass",
-      "evidence": "src/headless-run.test.ts:1317 'sends SIGTERM and names the limit ...' passes: fake sleeper + `--timeout 1` yields exactly one `run.error` containing '1s' before a final `run.completed` with exitCode 128+SIGTERM (143), stderr empty."
+      "evidence": "src/headless-run.test.ts:1317 'sends SIGTERM and names the limit ...' passes: fake sleeper + `--timeout 1` yields exactly one `run.error` containing '1s' before a final `run.completed` with exitCode 128+SIGTERM (143), stderr empty.",
+      "id": 1,
+      "status": "pass"
     },
     {
-      "id": 2,
       "criterion": "If the child ignores SIGTERM, eh escalates to SIGKILL after a grace period of 10 seconds, defined as a named constant and injectable (option or env var) so the escalation test doesn't sleep 10 real seconds. Proof: subprocess test with a fake harness that traps SIGTERM, asserting SIGKILL termination and the same event-ordering guarantee.",
-      "status": "pass",
-      "evidence": "src/headless-run.test.ts:1323 'escalates to SIGKILL ...' passes: SIGTERM-trapping fake + `--timeout 1` and EH_TIMEOUT_KILL_GRACE_MS=100 yields exitCode 128+SIGKILL (137), one limit-naming `run.error` before final `run.completed`. Named constant TIMEOUT_KILL_GRACE_MS=10_000 in src/headless-run.ts:18, env-overridable via timeoutKillGraceMs()."
+      "evidence": "src/headless-run.test.ts:1323 'escalates to SIGKILL ...' passes: SIGTERM-trapping fake + `--timeout 1` and EH_TIMEOUT_KILL_GRACE_MS=100 yields exitCode 128+SIGKILL (137), one limit-naming `run.error` before final `run.completed`. Named constant TIMEOUT_KILL_GRACE_MS=10_000 in src/headless-run.ts:18, env-overridable via timeoutKillGraceMs().",
+      "id": 2,
+      "status": "pass"
     },
     {
-      "id": 3,
       "criterion": "A non-positive, non-integer, or non-numeric `--timeout` value fails preflight before spawn with a clear error and nonzero exit. Proof: subprocess tests for `0`, a negative value, and a non-numeric value, asserting the fake harness was never invoked.",
-      "status": "pass",
-      "evidence": "src/headless-run.test.ts:1261 'rejects the invalid --timeout %s ...' (test.each '0','-5','soon') passes: each emits exactly [run.error('--timeout must be a positive integer'), run.completed(1)], exit 1, and no 'fake.args' event (harness never spawned)."
+      "evidence": "src/headless-run.test.ts:1261 'rejects the invalid --timeout %s ...' (test.each '0','-5','soon') passes: each emits exactly [run.error('--timeout must be a positive integer'), run.completed(1)], exit 1, and no 'fake.args' event (harness never spawned).",
+      "id": 3,
+      "status": "pass"
     },
     {
-      "id": 4,
       "criterion": "Invariant: the timeout never affects a run that completes in time — a child that closes before the deadline produces the same events and exit code as a run without the flag, and the timer is cleaned up (no hanging process, no stray kill of a reused pid). Proof: subprocess test running a fast fake harness with a generous `--timeout`, asserting the event stream matches the no-flag run and the eh process exits promptly.",
-      "status": "pass",
-      "evidence": "src/headless-run.test.ts:1399 'leaves a run that finishes before the deadline unchanged' passes: `--timeout 60` run deep-equals the no-flag run's events (both exit 0). The explicit 20_000ms test bound proves timer cleanup — an uncleared, non-unref'd 60s timer would keep eh alive past 20s and fail the test."
+      "evidence": "src/headless-run.test.ts:1399 'leaves a run that finishes before the deadline unchanged' passes: `--timeout 60` run deep-equals the no-flag run's events (both exit 0). The explicit 20_000ms test bound proves timer cleanup — an uncleared, non-unref'd 60s timer would keep eh alive past 20s and fail the test.",
+      "id": 4,
+      "status": "pass"
     },
     {
-      "id": 5,
       "criterion": "Omitting the flag preserves today's behavior (no deadline).",
-      "status": "pass",
-      "evidence": "src/headless-run.test.ts:1399 exercises the no-flag path (runFast([])) and it deep-equals the timed run; all 26 pre-existing headless tests run without --timeout and still pass (29 pass total). When timeoutSeconds is undefined no setTimeout is installed (src/headless-run.ts:244)."
+      "evidence": "src/headless-run.test.ts:1399 exercises the no-flag path (runFast([])) and it deep-equals the timed run; all 26 pre-existing headless tests run without --timeout and still pass (29 pass total). When timeoutSeconds is undefined no setTimeout is installed (src/headless-run.ts:244).",
+      "id": 5,
+      "status": "pass"
     }
   ]
 }
