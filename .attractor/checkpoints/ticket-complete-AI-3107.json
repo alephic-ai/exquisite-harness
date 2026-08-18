@@ -1,0 +1,159 @@
+{
+  "createdAt": "2026-08-18T15:28:49.328Z",
+  "currentNodeId": "plan",
+  "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
+  "nodeStates": {
+    "start": {
+      "completedAt": "2026-08-18T15:28:49.885Z",
+      "nodeId": "start",
+      "outcome": "success",
+      "output": "Pipeline started",
+      "retryCount": 0,
+      "startedAt": "2026-08-18T15:28:49.884Z"
+    },
+    "scope_gate": {
+      "completedAt": "2026-08-18T15:29:13.950Z",
+      "nodeId": "scope_gate",
+      "artifacts": [
+        {
+          "agentRunId": "526237ea-4a81-437a-b480-4e38c853f233",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "559f4cd5a83230f02e04305d2610fb13a923f376205a2189b2e9268b79b958f3",
+              "sizeBytes": 20325
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0aa0c6ba-d227-4d6f-aad4-016d31911eec.request.json",
+              "sha256": "467707bc66e2e2185d321f133192f17d618c328b9fae09bd53ea5ebf65c5a341",
+              "sizeBytes": 85872
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/91277242-e5b8-428e-9fc1-296d1eab3701.request.json",
+              "sha256": "f89a124e6d953b0b6e6aa3e66fa347c3e123d0bb67afe61ab0207fa116240080",
+              "sizeBytes": 84182
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d68e1017-a1b6-42ac-a0b8-27c2746db621.request.json",
+              "sha256": "f800ec5710660d248580f428334fcd5504b9e35ff2bcdcb214b6a7b2655d3164",
+              "sizeBytes": 10837
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/df783dc8-dda4-4919-bcce-cf6fbe4c11d4.request.json",
+              "sha256": "0e61712aa7cd80ae59378efd5c20b0a26e4efa780b1f7c52d1f546f8e288caea",
+              "sizeBytes": 88387
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT7yvvBqkeDF2gDTmjs.response.json",
+              "sha256": "158b2aa94b45f5a0a0fca76f0a6840519474681b10ee7abc16bd92a495020fe1",
+              "sizeBytes": 810
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT7zV9cAmcP1W3TZPiA.response.json",
+              "sha256": "5f08c0b0f997e6c84b601c7d04a30d992754ea8d6c86f4a13e26267fc080265d",
+              "sizeBytes": 1975
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT8NL43Ap7LC72kc1eL.response.json",
+              "sha256": "ada19fab5d6df1ffdfbbde71347266faff52acbfd67d0b307067345dc3f57fa2",
+              "sizeBytes": 2128
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT8sz1Kf4rT8jPq5J6Z.response.json",
+              "sha256": "ee79f24ef6d11854111d1d1eadb2a01bdd046b263c77292f0d33ec1d30b182cc",
+              "sizeBytes": 3274
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "8fdc4d66541928f727a4903ecdea2e5d5a00dde363deee693a50b164b7b728e7",
+              "sizeBytes": 14185
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/scope_gate/attempt-0-526237ea-4a81-437a-b480-4e38c853f233",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/scope_gate/attempt-0-526237ea-4a81-437a-b480-4e38c853f233/manifest.json",
+          "nodeId": "scope_gate",
+          "pipelineId": "ticket-complete-AI-3107",
+          "runtime": "claude",
+          "sessionId": "21c414e9-488d-4358-8b3d-90c1dea2d572",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "The referenced files, test name, and signal-derivation code all exist exactly as described. Let me confirm `eh run` command wiring exists.\nEverything checks out. The ticket targets `runHeadless` in `src/headless-run.ts` (present), wired through `src/main.ts:141` (present), and the exact test and signal-derivation code it references exist as described.\n\nAssessment:\n\n- **Single deliverable** — one `--timeout <seconds>` flag on `eh run`. The multiple ACs are facets of the same feature (emit-then-SIGTERM, SIGKILL escalation, preflight validation, no-op-when-fast, omit-preserves-behavior), not independent deliverables.\n- **Scope of changes is identifiable** — `headless-run.ts` (timeout timer + escalation), `main.ts` (flag + preflight), plus docs (README, DESIGN.md, `docs/qa/eh-cli.md`) and tests. All in one focused region.\n- **Strong acceptance signal** — each AC names a concrete subprocess test proving it. Design freedom low, verification strength high per the delegability block.\n- **Right repository** — hooks into existing SIGINT/SIGTERM plumbing that verifiably lives here.\n- **Constraints are explicit** — no new deps (`setTimeout`/`AbortController` only), 10s grace as injectable named constant, exit-code remapping out of scope.\n\nOpen questions (e.g. exact injection mechanism for the grace period — env var vs option) are documented judgment calls resolvable during planning, not blockers.\n\nSTATUS:proceed\n",
+      "retryCount": 0,
+      "sessionId": "21c414e9-488d-4358-8b3d-90c1dea2d572",
+      "startedAt": "2026-08-18T15:28:49.887Z",
+      "usage": {
+        "cacheReadTokens": 63952,
+        "cacheWriteTokens": 16538,
+        "costUsd": 0.22001149999999997,
+        "inputTokens": 9750,
+        "outputTokens": 1332
+      }
+    }
+  },
+  "parallelBranches": {},
+  "pipelineId": "ticket-complete-AI-3107",
+  "status": "running",
+  "updatedAt": "2026-08-18T15:29:13.953Z",
+  "variables": {
+    "repo.defaultBranch": "main",
+    "repo.fullName": "alephic-ai/exquisite-harness",
+    "repo.lintCommand": "pnpm lint",
+    "repo.packageManager": "pnpm",
+    "repo.testCommand": "pnpm test",
+    "repo.verificationCommand": "echo \"Verification skipped: no verification command configured for this repository\"",
+    "branch": "intelligencev2/ai-3107-eh-run-add-timeout-seconds-so-hung-lanes-fail-loudly",
+    "ticket.comments": "",
+    "ticket.description": "# eh run: add `--timeout <seconds>` so hung lanes fail loudly\n\n## Problem\n\n`eh run` has no deadline on the spawned harness. A lane that hangs (harness bug, dead provider connection, stuck tool call) blocks forever, and every orchestrator must implement its own external watchdog-and-kill. Multi-lane review orchestration currently documents \"kill it by hand after ~15 minutes\" as the workaround.\n\n## Context\n\n* Branch from `origin/main` (local main is 7 commits behind).\n* SIGINT/SIGTERM *forwarding* to the child already exists in `src/headless-run.ts` (handler installed/removed around the child lifecycle) and is exercised by the test named \"forwards termination signals and removes the Grok prompt file\" in `src/headless-run.test.ts` — locate by test name, not line number. The timeout hooks into this exact plumbing point.\n* A SIGTERM'd child already yields exit code `128 + signal` via the existing derivation (`completed.code ?? (signalNumber ? 128 + signalNumber : 1)`), so a timed-out run is distinguishable today without new exit-code machinery. The reserved-exit-codes ticket owns any future remapping; do not add one here. Note the accepted limitation: by exit code alone, a timeout is indistinguishable from any other SIGTERM (both `143`) — orchestrators that need certainty read the `run.error` event.\n* The `--cwd` and exit-codes tickets touch the same region of `headless-run.ts`. Land serially — suggested order: cwd, then this ticket, then exit codes.\n* No new runtime deps (repo rule) — `setTimeout`/`AbortController` only.\n\n## Acceptance Criteria\n\n- [ ] `eh run` accepts `--timeout <seconds>`. On expiry: eh emits a `run.error` event naming the timeout and the configured limit, then sends SIGTERM; `run.completed` is still the final event. Proof: subprocess test with a fake harness that sleeps past the deadline, asserting the event sequence and child termination.\n- [ ] If the child ignores SIGTERM, eh escalates to SIGKILL after a grace period of 10 seconds, defined as a named constant and injectable (option or env var) so the escalation test doesn't sleep 10 real seconds. Proof: subprocess test with a fake harness that traps SIGTERM, asserting SIGKILL termination and the same event-ordering guarantee.\n- [ ] A non-positive, non-integer, or non-numeric `--timeout` value fails preflight before spawn with a clear error and nonzero exit. Proof: subprocess tests for `0`, a negative value, and a non-numeric value, asserting the fake harness was never invoked.\n- [ ] Invariant: the timeout never affects a run that completes in time — a child that closes before the deadline produces the same events and exit code as a run without the flag, and the timer is cleaned up (no hanging process, no stray kill of a reused pid). Proof: subprocess test running a fast fake harness with a generous `--timeout`, asserting the event stream matches the no-flag run and the eh process exits promptly.\n- [ ] Omitting the flag preserves today's behavior (no deadline).\n\n## Out of Scope\n\n* Token/cost budgets (a different resource limit).\n* A config-level default timeout; per-invocation flag only.\n* Reserved exit-code assignment for timeouts (see the exit-codes ticket).\n\n## Verification\n\n* `pnpm lint:ci`; `bun test src/headless-run.test.ts`; full `pnpm test`.\n* Version bump required; update README `### Headless runs`, DESIGN.md `Headless execution`, `docs/qa/eh-cli.md`.\n\n## Delegability\n\n```yaml\ndesign_freedom: low\nverification_strength: high\nsilent_failure_cost: medium\ncontext_volatility: low\nrecommended_tier: medium\nrecommended_effort: medium\n```",
+    "ticket.id": "AI-3107",
+    "ticket.state": "Triage",
+    "ticket.title": "eh run: add --timeout <seconds> so hung lanes fail loudly",
+    "ticket.url": "https://linear.app/alephic/issue/AI-3107/eh-run-add-timeout-seconds-so-hung-lanes-fail-loudly"
+  },
+  "nodeVisitTotals": {
+    "start": {
+      "handler": "start",
+      "outcome": "success",
+      "totalDurationMs": 1,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "scope_gate": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 24063,
+      "usage": {
+        "cacheReadTokens": 63952,
+        "cacheWriteTokens": 16538,
+        "costUsd": 0.22001149999999997,
+        "inputTokens": 9750,
+        "outputTokens": 1332
+      },
+      "visits": 1
+    }
+  }
+}
