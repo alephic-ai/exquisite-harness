@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:49.328Z",
-  "currentNodeId": "fork",
+  "currentNodeId": "join",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -748,12 +748,201 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-18T16:02:00.342Z"
+    },
+    "review_guillaumeify": {
+      "completedAt": "2026-08-18T16:03:26.451Z",
+      "nodeId": "review_guillaumeify",
+      "artifacts": [
+        {
+          "agentRunId": "8af6a71d-7801-4849-b7e4-b4ecf8043204",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "b4cc1d443e87ad205e8619d4bffbe4d261f459904299cc1c7edba269ace749a4",
+              "sizeBytes": 120188
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3a138f40-fa2d-4afd-a199-52a75d42707d.request.json",
+              "sha256": "a98147c93ffd7c589bca65539a4e919735954bacd2f8b21f407cbc7640be1683",
+              "sizeBytes": 82102
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4132e96e-a904-4ee9-96a1-5b3c89512390.request.json",
+              "sha256": "df05c2ebb11de75790b7c383c9ee78a0a24c2bf844251dfd9afd8d4be268adea",
+              "sizeBytes": 145880
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/47020d58-9d67-44a0-bfe2-49184518afaa.request.json",
+              "sha256": "c9c900111c95f90f706dcd9507d23b61db1b7ae68cbf5086daa8bb3181eb4010",
+              "sizeBytes": 8516
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4c2847c9-19c6-4f69-ac08-6ef5dd56e904.request.json",
+              "sha256": "47e5d7cc536ed94f59a30655e0d43afd77a9951fd7756a58e349eaa17524792c",
+              "sizeBytes": 153678
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5cdb766c-5d85-4617-88d7-2262dcabbb73.request.json",
+              "sha256": "279164538f61f364011e93575f2aef1fa689b49ea18fef8309c917e96d002a97",
+              "sizeBytes": 118833
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5d203872-e016-43cb-a1aa-016a26dbf937.request.json",
+              "sha256": "21112b2f12bd9c1b782b7fa26364118b396efe6ea2f9e901939967687a693fee",
+              "sizeBytes": 106384
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVep1xTUYhoMXvX9puG.response.json",
+              "sha256": "9e9ab8792cb1570060fb0fb3b9874ad33e8f870acc1b7de71a6f5ce9891964e8",
+              "sizeBytes": 810
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVepm6uHQBHE3saCaBg.response.json",
+              "sha256": "67112cd4bb1cceb2ca80950695873b46dc2f7b040ae5789124ad6903e99ba58c",
+              "sizeBytes": 1387
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVf1K72j6GB3dpyTskB.response.json",
+              "sha256": "867868355ff2bb914af16227065319a468d614876a84794fd616d9706decf053",
+              "sizeBytes": 8299
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVh9Wn74aUjk4NenXwY.response.json",
+              "sha256": "a8254f0a1a1ab8a6e1e2e4a580fe07b5ee92ceec0b08b922f369937f7843c2ad",
+              "sizeBytes": 4451
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAViBGihN2FMJPYGppxw.response.json",
+              "sha256": "f253963ccd24bb300c05ec7b38f7aec308428f7a8a019329aa56d85514820108",
+              "sizeBytes": 8250
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVkSnvXoswCphEBij5j.response.json",
+              "sha256": "abd8739588e94192d53f0cfbf1dbfd2e1a109ab74832d02d902c77479327a472",
+              "sizeBytes": 1920
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "567acb55401b6b7970bc9fc8228e23640434524ff5d9f9c15ae74413d2b1441f",
+              "sizeBytes": 13993
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/review_guillaumeify/attempt-0-8af6a71d-7801-4849-b7e4-b4ecf8043204",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/review_guillaumeify/attempt-0-8af6a71d-7801-4849-b7e4-b4ecf8043204/manifest.json",
+          "nodeId": "review_guillaumeify",
+          "pipelineId": "ticket-complete-AI-3107",
+          "runtime": "claude",
+          "sessionId": "1318389d-507b-45de-a989-50a768776e38",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "Let me read the actual implementation file to verify the timeout logic in full context.\nThe implementation is clean and correct. Let me invoke the guillaumeify skill as instructed.\nI've read the full diff, the actual `headless-run.ts` implementation, and the acceptance criteria. This is a small, focused 8-file changeset (well under the batching threshold), so I'll verify it directly against the ACs rather than fan out.\n\nLet me trace each AC against the code:\n\n**AC1** (SIGTERM on expiry, limit-naming `run.error`, `run.completed` last): `headless-run.ts:246-263` — timer emits `run.error` with `exceeded the --timeout limit of ${seconds}s`, then `child.kill('SIGTERM')`. The `for await` loop on a hung child keeps stdout open so the timer fires mid-loop; `run.completed` is emitted only after `await completion` at line 305. ✓\n\n**AC2** (SIGKILL after 10s named+injectable grace): `TIMEOUT_KILL_GRACE_MS = 10_000` (line 371 in diff), `timeoutKillGraceMs()` reads `EH_TIMEOUT_KILL_GRACE_MS`. ✓\n\n**AC3** (preflight rejects 0/negative/non-numeric before spawn): `parseTimeoutSeconds` runs during `resolved` construction in `runHeadless`, before `executeHeadlessPlan`/`spawn`. Throws → caught → `run.error` + failed `run.completed`, exit 1. Test asserts `fake.args` never emitted. ✓\n\n**AC4** (no effect when fast; timers cleaned up): fast run never fires the timer; `finally` (lines 307-309) clears both timers. `timeout.fired` gates the generic error suppression (line 295) so a timed-out run emits exactly one `run.error`. The kill-guard checks `exitCode === null && signalCode === null` — no stray kill of a reused pid. ✓\n\n**AC5** (omitting flag = no deadline): `timeoutSeconds === undefined` → no timer scheduled. ✓\n\nThe `timeout = { fired: false }` object wrapper is correct and correctly commented (avoids TS narrowing the `let` at the read site). The two fake fixtures are near-duplicates but that's 2 occurrences (below rule-of-three) and test code — fine per house standards. The gateway-routing test fix is a legitimate hermeticity fix for the ambient `ANTHROPIC_API_KEY` (matches the saved memory). Docs (DESIGN/README/QA) and the version bump to 0.12.0 are consistent with the change.\n\nNo blockers, no suggestions worth raising. Writing the artifact:\nBonjour! 🥖 I have reviewed zis code...\n\nThe `--timeout` implementation is clean and satisfies all five acceptance criteria:\n\n- **AC1** — `headless-run.ts:246-263`: on expiry, one limit-naming `run.error` (`exceeded the --timeout limit of Ns`), then SIGTERM; `run.completed` remains the final event.\n- **AC2** — `TIMEOUT_KILL_GRACE_MS = 10_000`, injectable via `EH_TIMEOUT_KILL_GRACE_MS` through `timeoutKillGraceMs()`.\n- **AC3** — `parseTimeoutSeconds` runs before spawn, rejecting `0`/negative/non-numeric; error → failed `run.completed` + exit 1.\n- **AC4** — fast runs never arm the timer; `finally` clears both timers; `timeout.fired` suppresses the duplicate generic error and the kill-guards check `exitCode/signalCode` to avoid a stray kill.\n- **AC5** — undefined `timeoutSeconds` schedules no timer.\n\nThe gateway-routing test change is a valid hermeticity fix for the ambient `ANTHROPIC_API_KEY` injection, and the docs + version bump to 0.12.0 are consistent. No blockers, no suggestions.\n\n**Mergeable: YES** — artifact written to `.attractor/review-guillaumeify.md`.\n\nC'est fini! 🍷🧀 Go ship zis one.\n",
+      "retryCount": 0,
+      "sessionId": "1318389d-507b-45de-a989-50a768776e38",
+      "startedAt": "2026-08-18T16:02:01.890Z",
+      "usage": {
+        "cacheReadTokens": 166820,
+        "cacheWriteTokens": 40069,
+        "costUsd": 0.52761025,
+        "inputTokens": 9761,
+        "outputTokens": 5710
+      }
+    },
+    "review_codex": {
+      "completedAt": "2026-08-18T16:04:49.847Z",
+      "nodeId": "review_codex",
+      "artifacts": [
+        {
+          "agentRunId": "057aa4dc-ad9d-4a3f-9ae0-f88dc772210b",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "b43f47659ea1270b27d445d3eb56af813456f52e5f8323b5d6cca441046774eb",
+              "sizeBytes": 175388
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "20603e471e1feea144fb818db92c1610d1ea3f62beff95aa121af1f325e487ba",
+              "sizeBytes": 1493
+            },
+            {
+              "contentType": "application/x-ndjson",
+              "relativePath": "codex-sessions/2026/08/18/rollout-2026-08-18T16-02-02-01a0159b-b978-7e61-bc24-ea476a3a9019.jsonl",
+              "sha256": "4f9d29b9eda05af9594d184c4f7899dbad166383cd82ce044f16c30cc3d89c94",
+              "sizeBytes": 322351
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "a91d0a4300ce93cfa63d80c0373d4058619f893cc21a711bf0056b77a8d3ae8a",
+              "sizeBytes": 4755
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/review_codex/attempt-0-057aa4dc-ad9d-4a3f-9ae0-f88dc772210b",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/review_codex/attempt-0-057aa4dc-ad9d-4a3f-9ae0-f88dc772210b/manifest.json",
+          "nodeId": "review_codex",
+          "pipelineId": "ticket-complete-AI-3107",
+          "runtime": "codex",
+          "sessionId": "01a0159b-b978-7e61-bc24-ea476a3a9019",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I’ll use the review-oriented skills for this pass, then constrain the review source exactly to the blind packet plus targeted code reads needed to validate the hunks. I’ll avoid all other `.attractor` files and only write the requested `.attractor/review-codex.md` artifact.\nThe initial rubric path is missing at `.claude/commands/codex-review.md`, so I’m checking the repo layout for where that command file actually lives before proceeding with the packet review.\nThere is no `.claude` directory in this checkout and no `codex-review.md` under the parent workspace, so I can’t apply that file’s rubric verbatim. I’ll continue with the structure and severity rules from your prompt, plus the review skills, and keep the basis to code-inferred behavior only.\nI’ve got the changed-file list and the diff. The main behavior is in `src/headless-run.ts`, so I’m reading the exact execution path, parser, and signal handling it interacts with before deciding whether any timeout findings are real.\nSo far, the implementation wires timeout through the CLI and headless execution path directly. I’m checking the adjacent test helpers and harness event normalization now, mostly to verify whether the new tests actually cover “not spawned,” SIGTERM/SIGKILL, and final event semantics.\nThe timeout tests are tied to the normalized `harness.event` wrapper, so the spawn/no-spawn assertions are meaningful. I’m doing one more targeted pass over the gateway routing test change because it mutates `process.env`, and those tend to hide order-dependent test problems if not restored exactly.\nThe gateway change matches the code path: validation looks at both `plan.env` and ambient `process.env`, and the test restores the ambient value in `finally`. I’m going to run the focused tests next; failures there would be review findings only if they expose a defect in the branch.\nThe focused headless and gateway tests pass. I’m running the type check as a final guard because the timeout state comment hints at TypeScript control-flow concerns that Bun’s test runner may not catch the same way.\nType checking passes as well. I’m checking one edge case in the timer implementation now: large accepted second values can be mishandled by some runtimes if converted straight to milliseconds.\nThe timer overflow is real in both Bun and Node: a timeout above roughly 24.8 days fires almost immediately after being accepted. I’m checking whether the codebase has an existing CLI numeric-validation pattern before deciding severity and wording.\nI found a more consequential timeout path to verify: if the child handles SIGTERM and exits `0` after the deadline, the timeout error has already been emitted, but the final completion calculation currently only looks at the child exit status. I’m reproducing that with a temporary fake harness before writing it up.\nI’ve got one confirmed blocker and one documentation suggestion. I’m writing the requested review artifact now, scoped to the eight files listed in the blind packet.\nSaved [review-codex.md](/vercel/sandbox/project/.attractor/review-codex.md).\n\nResult: **Mergeable: NO**. Found 1 blocker in [src/headless-run.ts](/vercel/sandbox/project/src/headless-run.ts:303): a timed-out child that catches SIGTERM and exits `0` emits `run.error` but final `run.completed` reports success. Also noted 1 README suggestion about documenting SIGKILL timeout exits as `137`, not always `143`.\n\nVerification run:\n`bun test src/headless-run.test.ts`\n`bun test src/gateway-routing.test.ts`\n`pnpm exec tsc --noEmit`\n\nNote: `.claude/commands/codex-review.md` is not present in this checkout, so I could not read that rubric file.\n",
+      "retryCount": 0,
+      "sessionId": "01a0159b-b978-7e61-bc24-ea476a3a9019",
+      "startedAt": "2026-08-18T16:02:01.891Z",
+      "usage": {
+        "cacheReadTokens": 950400,
+        "cacheWriteTokens": 0,
+        "costUsd": 2.1936999999999998,
+        "inputTokens": 1028407,
+        "outputTokens": 10294
+      }
+    },
+    "fork": {
+      "completedAt": "2026-08-18T16:04:49.847Z",
+      "nodeId": "fork",
+      "outcome": "success",
+      "output": "Parallel branches: review_guillaumeify: success, review_codex: success",
+      "retryCount": 0,
+      "startedAt": "2026-08-18T16:02:01.889Z"
     }
   },
-  "parallelBranches": {},
+  "parallelBranches": {
+    "join": [
+      "review_guillaumeify",
+      "review_codex"
+    ]
+  },
   "pipelineId": "ticket-complete-AI-3107",
   "status": "running",
-  "updatedAt": "2026-08-18T16:02:00.616Z",
+  "updatedAt": "2026-08-18T16:04:49.850Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -949,6 +1138,45 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "fork": {
+      "handler": "parallel",
+      "outcome": "success",
+      "totalDurationMs": 167958,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "review_guillaumeify": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 84561,
+      "usage": {
+        "cacheReadTokens": 166820,
+        "cacheWriteTokens": 40069,
+        "costUsd": 0.52761025,
+        "inputTokens": 9761,
+        "outputTokens": 5710
+      },
+      "visits": 1
+    },
+    "review_codex": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 167956,
+      "usage": {
+        "cacheReadTokens": 950400,
+        "cacheWriteTokens": 0,
+        "costUsd": 2.1936999999999998,
+        "inputTokens": 1028407,
+        "outputTokens": 10294
       },
       "visits": 1
     }
