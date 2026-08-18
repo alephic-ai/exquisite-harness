@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:34.652Z",
-  "currentNodeId": "lint_fix",
+  "currentNodeId": "lint",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1611,6 +1611,343 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-18T16:02:59.796Z"
+    },
+    "lint_fix": {
+      "completedAt": "2026-08-18T16:06:56.483Z",
+      "nodeId": "lint_fix",
+      "artifacts": [
+        {
+          "agentRunId": "6cffc5d5-b4dc-4e01-a585-007dfc9aae4f",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "8ddd50455f3efe17c6a6628bf418e308d8ac321eb89827e4844f7a3c2e912498",
+              "sizeBytes": 802942
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0091f735-9b55-401c-8de5-5490329c6182.request.json",
+              "sha256": "8da51f62b852ea7f4cc149331e958c57fc7af9363c78348f920abd498975edfa",
+              "sizeBytes": 128468
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2653a4cd-31ae-45d6-a22c-94adbd0a5f7f.request.json",
+              "sha256": "a6792ed2f8421887c5c892f6a35ecc8144e5c999cf4130f92206715f9b4f9438",
+              "sizeBytes": 106891
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/26c0f874-6e5e-41aa-b857-876bbce61968.response.json",
+              "sha256": "6dc8d413c733a14461a41a3c8e3d0405656c9f9c9149eca883faec1ffa724ec9",
+              "sizeBytes": 978
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2bbd53e2-d121-4dde-a84c-d2859aa04301.response.json",
+              "sha256": "1c0b544dfe2aff983857b21b4791c2ac976417e0347dde83ae0ad48e562eab58",
+              "sizeBytes": 922
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2ceeacb4-4c6b-41bc-b8f6-38b7c79ad7a1.response.json",
+              "sha256": "7782cb68dca15385d3b147726dbca5e55a5d36fb6fead3d6946cbb5cc94cd679",
+              "sizeBytes": 1037
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/31368f58-2526-4848-a466-c29a93bff450.request.json",
+              "sha256": "c8cd411cb0ce73a1e7f40a2225d7eb3ef50b42dd77552469c902456ef92f5b87",
+              "sizeBytes": 113617
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3fee5670-ecfb-49fe-907a-ca7bc6d16141.request.json",
+              "sha256": "ad4eb2fa27686743e7c631d51d813773289caef5af46947b723fb43daf19c64e",
+              "sizeBytes": 130615
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4795b040-47de-4184-a0f2-d4dee71b7ee8.response.json",
+              "sha256": "2228af9671c6f19d38374e74cf4cf2ee8bea1a38eff27c7e18e2b8e7924e69ed",
+              "sizeBytes": 851
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/48f5e2f0-4fbe-4aaa-9dcd-acb06e862647.response.json",
+              "sha256": "36e9b7f3dff0f8f96afb094334a08707ea742a2ad024bf30dd09dd661ed6f749",
+              "sizeBytes": 948
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4d0d07fd-951b-4122-a1d8-c1d9ec9f8ae5.response.json",
+              "sha256": "62893fa056a9e4ba03e664c4a2c5c59e5a3366cf3afee928fd5e369e14c1b7e7",
+              "sizeBytes": 710
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4da73531-d233-42cf-8e5e-9e3f55addece.request.json",
+              "sha256": "672b62a3da8529fc596ab46f9ff81eaa1936168bcab99f010c11b97181d152c4",
+              "sizeBytes": 129521
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/50a6d726-2fac-4e3d-a437-4e528b182b41.response.json",
+              "sha256": "36465d0679688db78f804d8d4ac213fa5871212708f32f3939b0f2e5d18679cf",
+              "sizeBytes": 933
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/576f1275-fdfe-443f-bff4-c8e2ac701abc.response.json",
+              "sha256": "6fdbab5c2312294cf737db1eddc0f5caf8af53f4bcab196ee0a4a4d7d457c58c",
+              "sizeBytes": 1379
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/60723e3f-7f64-4f2c-a424-90c1fc9b8936.request.json",
+              "sha256": "f30c80ca41e190707db035c93992c5c2dd892d8bdb51ab7e69a84a63fcbc24a2",
+              "sizeBytes": 121698
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/662d3f42-df16-4499-ae4d-ca3bcb2861cc.response.json",
+              "sha256": "ca533da6a750aa9a262cec72c2f1a4f7d4e43f1820b8f98836a650ba2314dfa1",
+              "sizeBytes": 1006
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6b1c6248-3671-4248-b522-1cfb8e9dc518.response.json",
+              "sha256": "613e5db0f3874079a80361cd64b20221d96768af7c9a95f41d34f89646fd10aa",
+              "sizeBytes": 1981
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/72514e31-a6b9-41f0-b383-09b16e3de219.request.json",
+              "sha256": "352401acac5da427ff02cdad165513388362c6b79773c4426fc0dfd5209c3dd3",
+              "sizeBytes": 111149
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/769dcfc0-0032-4777-9aba-6d612a245010.request.json",
+              "sha256": "3b24dd98ca3f9bb009f0f65db11c592116bf3fe5fcee23a06e211aad7bab64c7",
+              "sizeBytes": 122516
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/777ec60c-d715-498b-af88-3c95407f7032.request.json",
+              "sha256": "af6bdc356a936800056d188d6ffd4341aeb3fb1d5d4ced98859841e54d5689ce",
+              "sizeBytes": 131021
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7d25d646-819e-41ab-adf5-aed2a9c9469b.response.json",
+              "sha256": "92f21f3f27d51eb6450b5cd23009e3053a40bde236163ca7a04e522a7decc382",
+              "sizeBytes": 1095
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8d55e478-d648-47ef-bb36-696e9a0cb5bf.request.json",
+              "sha256": "453a23bc111a5762a220799847d1fc421336c0a59e762b056dd651086f375dd9",
+              "sizeBytes": 109059
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8e17c3b7-c44d-4c5f-b1d5-83e8db1d3c00.response.json",
+              "sha256": "b26b9e1d2e079d52e9fd35e8814abbc3a8df34965497299691bb02554a472be7",
+              "sizeBytes": 764
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8f6cd172-1796-4a1e-97ae-22c45cba77c5.response.json",
+              "sha256": "b664ad6ad621f24a5b977a0ac77284f5b4d03a94a474b0544b02380e4653b650",
+              "sizeBytes": 769
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/973c87c7-d9c5-409b-8cdb-5e83d04f50fc.request.json",
+              "sha256": "3dfa7b32da97d98ec541305d78b76b35a0ea72c8251e189294859fd09ba7e065",
+              "sizeBytes": 118312
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/98d8b4c1-4979-49a6-9e0b-7e4c91dccdb0.response.json",
+              "sha256": "d8907f845e48c60ef7ebceb8f9211a4e6ba84076974f218f42968a4a093e9ec7",
+              "sizeBytes": 705
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9c78a0f6-dd46-4db3-9001-a2c702aa2c17.request.json",
+              "sha256": "875881a6a74c61378df50e44f0a9ccb99c817d7537832f59f78561cff885d53a",
+              "sizeBytes": 135277
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ac121de4-30af-4034-92c5-1e04a65405b0.request.json",
+              "sha256": "754108975468567c303a7dec35d76f651954e3fa62c554e4d7278966d9d16ce3",
+              "sizeBytes": 130058
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/acc630ef-5deb-4b7c-b45c-263b046fabbb.response.json",
+              "sha256": "0074d92ba19f9046868196ba90dd0fa6fea3d9e73e3bcca115ddcdd5eb785f6e",
+              "sizeBytes": 704
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b173df9a-60e1-489c-9716-88ae7b445696.request.json",
+              "sha256": "686cfa69500e225a0b00198a3b5a29c67c65fa8d19699ae9002c7b8efa8d7e73",
+              "sizeBytes": 14035
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b2131ea4-2a85-44dc-8ade-f35d78499606.response.json",
+              "sha256": "1e61cbc126abfb0a75f22a575e4f7ba4b1634c91071067e9f8e334a34fc62905",
+              "sizeBytes": 742
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b2eb5484-3d67-4e0f-a02c-17544f85d33f.request.json",
+              "sha256": "7d3edef4797a08257dfa0262d278ab7cd9bebe3725060ed3cbf4df8569f2a9fb",
+              "sizeBytes": 120986
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b57ac88b-ac8e-4e6a-a516-f84088c909a3.response.json",
+              "sha256": "9dd77ec8347575eb612ab88b6ddc3954f9b4cedad409b7a3fa737afb53e19abc",
+              "sizeBytes": 1385
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b8ca1e47-e60e-4774-9cf5-2814012e69b2.request.json",
+              "sha256": "7324a68854862653de10631487295650a586024b35ce4fb2d137e85e1ef14911",
+              "sizeBytes": 132089
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bdb9c69f-d6e5-4c3c-a857-d23bd0cd2c84.request.json",
+              "sha256": "cc45c29d8189dbd21edaacb1a39648b386cead7827cd130e3029feeacc03459e",
+              "sizeBytes": 114564
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bf97baa9-e938-4cb0-9626-b57d5d7ebd58.response.json",
+              "sha256": "863f4c75605e180b72608cf548ff8d4004fc6f0914131cb03d90e7102a6a5c5b",
+              "sizeBytes": 1075
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c18095cc-39f4-4c8a-aafa-9616167f8d7c.request.json",
+              "sha256": "a24e5895fd6a903fd18d24c10d624adccbbf869af0d24f7e2f1a7e4c16b7c5e1",
+              "sizeBytes": 123356
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c2d2cf73-756c-441a-a782-743c13eac869.response.json",
+              "sha256": "de502e741f1945e43bfba907c538b60727804d91971098fc8117cd1948c9ab3c",
+              "sizeBytes": 660
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c4e38800-dd8d-4280-9e5e-f613f586af27.request.json",
+              "sha256": "e4a0917ea89f37a073f7ec587c5a0947fa67dbf418d585e53f30da1ce8b98f0a",
+              "sizeBytes": 135925
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c8dcae3e-ab14-4c4a-86a4-9f940350f2f0.request.json",
+              "sha256": "4f6f2627ce40ca4d2ec498e27036ffe62d09979beb31afffc5198ef8b57ea511",
+              "sizeBytes": 120223
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d0036f0b-0193-481a-aa09-b29f5b42e2cb.response.json",
+              "sha256": "4a9da16b552fa6abadf254c0b4f01b6a651947e7e9b0be0c9da582ddfb8c3c8a",
+              "sizeBytes": 1287
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d1129aba-749d-4c58-9bc2-997ddc2ac8df.response.json",
+              "sha256": "a31da5810980625f5cb6bb4351d1fd9b7e8da91fcbef2bcf290e4347a48080f5",
+              "sizeBytes": 874
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/db3ff3cf-a372-4402-95c5-d696f83a3f1b.response.json",
+              "sha256": "2b8ca8db54b90a394190773ffc4c9e1b2be91e6e2d51a777a9cfe8e31d5a43b0",
+              "sizeBytes": 773
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/df7862ab-256d-49df-a9d5-46773ddb633c.request.json",
+              "sha256": "3a1521aec84f1b40802cbc4c21a8009518a87461b4f5a41919069f86e5b6d147",
+              "sizeBytes": 131641
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e195fbc3-7751-4ecf-9291-acb19bd3a47d.request.json",
+              "sha256": "1e59f25476105449d36da4a4845eb75cec9b2c51db907943fa252a059251fbfc",
+              "sizeBytes": 108464
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e205e8f1-4b7c-4263-b4fe-c1d831275832.request.json",
+              "sha256": "d3f4ada1ec4dab295bb5ed53ef9125975bf7be5a89fa1219c4ba1cbc1550ffd2",
+              "sizeBytes": 125723
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e67535a9-aa04-43ba-b563-e006d72f45a8.response.json",
+              "sha256": "af0768245f3b0a08bf6e92403841e2687d939dfe2c7e3e4536cf67b89b3ca8fd",
+              "sizeBytes": 1268
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f0c04308-b414-4f51-b40e-03609023a4fb.response.json",
+              "sha256": "08fb2f50e0851e5108528146668807b804b09a79d1df9b1bf0acb318cdfead36",
+              "sizeBytes": 792
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f219326a-9d1d-442c-a280-969f638ba4a6.request.json",
+              "sha256": "16e795c113c14a9798286fdec9ddfcaa556d1c1ff1e2a7f2c94e77087573c7d5",
+              "sizeBytes": 134439
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "d3030e8bbbc5062777d9ebdac82407ec0c638703e13d271ff4a0df59d3455043",
+              "sizeBytes": 38905
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/lint_fix/attempt-0-6cffc5d5-b4dc-4e01-a585-007dfc9aae4f",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/lint_fix/attempt-0-6cffc5d5-b4dc-4e01-a585-007dfc9aae4f/manifest.json",
+          "nodeId": "lint_fix",
+          "pipelineId": "ticket-complete-AI-3109",
+          "runtime": "claude",
+          "sessionId": "da77e81e-b640-4ed8-a7d1-2af3c2178dae",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "Let me find where `executionStarted` is declared\nLine 123 is `if (executionStarted) throw error` in the `catch`. The linter says `executionStarted` is always falsy there. Let me check the review fix that introduced this and read `executeHeadlessPlan\nThe flag `executionStarted = true` is assigned inside a nested async closure, so TypeScript's control-flow analysis narrows `executionStarted` to `false` at the outer `catch` — making the guard \"always falsy\" to the type-aware linter. I need a lint-safe mechanical fix that preserves the intended behavior (distinguish preflight vs runtime/teardown errors).\n\nLet me understand what `executeHeadlessPlan` does to pick the right mechanical fix.\n\n\nNow I understand the behavior. `executeHeadlessPlan` distinguishes failures internally and returns exit codes, but `withGatewayRouting`'s `finally { await proxy.close() }` and `withCleanup`'s cleanup can reject *after* `run.completed` was already emitted. The `executionStarted` guard rethrows those rather than emitting a duplicate preflight `run.completed` — behaviorally meaningful, but TS narrows the closure-assigned flag to `false` at the outer `catch`, so the type-aware linter flags it as always-falsy.\n\nLet me find the eslint command for a single file and check the workflow script\nLet me reproduce the lint error on just this file to confirm a fix works (targeted, not the full gate):\n\n\nReproduces. Let me try Candidate 1: explicit `boolean` annotation on the flag\nExplicit annotation adds a warning and doesn't fix it. Let me revert and look at the actual structure. Let me check `withCleanup` and `withGatewayRouting` to understand the cleanup/teardown rejections:\n\n\nNow I understand the root cause: TypeScript's control-flow analysis does **not** track writes to a `let` that happen inside a nested async closure, so at the outer `catch` it narrows `executionStarted` to `false` — the guard is \"always falsy\" to the type-aware linter. The explicit annotation didn't help because TS still narrows.\n\nLet me check what `prepareHeadlessPlan` does (is it preflight?) to find a correct restructure:\n\n\n`prepareHeadlessPlan` is preflight (builds the child command). The flag must be set after it but before `executeHeadlessPlan`, both inside the nested async closures — so TS keeps narrowing the `let` to `false` at the outer catch.\n\nThe known workaround for this exact TS CFA limitation is to avoid narrowing a closure-mutated `let`. Let me test an object-property approach (TS doesn't narrow object properties to \"always falsy\" the same way):\n\n\nObject-property approach works — TS doesn't narrow object properties the way it narrows closure-mutated `let` bindings. Lint is clean. Let me verify the full test file still passes with the fix, and that tsc passes:\n\n\nAll green: eslint clean, tsc clean, tests pass. The fix is behavior-preserving — I only changed `executionStarted` (a `let` flag) into `state.executionStarted` (an object property) to sidestep TS's CFA narrowing of closure-mutated `let` bindings. Same runtime behavior.\n\nLet me view the final diff and commit:\n\n\nMinimal, mechanical, behavior-preserving. Let me verify formatting matches the gate (which runs prettier) on the changed file\neslint --fix made no changes (diff already clean), prettier passes. Let me commit\nCommitted as `f83696f`.\n\n## Summary\n\n**Problem:** `src/headless-run.ts:123` — `@typescript-eslint/no-unnecessary-condition`: \"Unnecessary conditional, value is always falsy.\"\n\n**Root cause:** The `executionStarted` flag is a `let` reassigned to `true` inside a nested async closure (`withCleanup`'s callback), but read in the outer `catch`. TypeScript's control-flow analysis doesn't propagate writes to closure-nested `let` bindings back to the outer scope, so at line 123 it narrows the value to `false` → the guard is \"always falsy\" to the type-aware linter. An explicit `boolean` annotation was tried and rejected (added a `no-inferrable-types` warning and didn't fix the error).\n\n**Fix (minimal, mechanical, behavior-preserving):** Changed the plain `let executionStarted` flag into a mutable object property `const state = { executionStarted: false }`. TS doesn't apply the same \"always falsy\" narrowing to object properties, so the guard survives — while runtime behavior is byte-for-byte identical.\n\n**Verification:**\n- `npx eslint src/headless-run.ts` → exit 0 (no errors, no warnings)\n- `npx tsc --noEmit` → exit 0\n- `bun test src/headless-run.test.ts` → 23 pass / 0 fail\n- `npx prettier --check src/headless-run.ts` → clean\n- `eslint --fix` made no further changes\n\nNo behavior change, no refactor — this is purely the reported lint violation resolved. Committed as `f83696f`.\n",
+      "retryCount": 0,
+      "sessionId": "da77e81e-b640-4ed8-a7d1-2af3c2178dae",
+      "startedAt": "2026-08-18T16:03:02.325Z",
+      "usage": {
+        "cacheReadTokens": 580864,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.047401142,
+        "inputTokens": 217445,
+        "outputTokens": 11035
+      }
     }
   },
   "parallelBranches": {
@@ -1621,7 +1958,7 @@
   },
   "pipelineId": "ticket-complete-AI-3109",
   "status": "running",
-  "updatedAt": "2026-08-18T16:02:59.801Z",
+  "updatedAt": "2026-08-18T16:06:56.484Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1947,6 +2284,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "lint_fix": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 234158,
+      "usage": {
+        "cacheReadTokens": 580864,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.047401142,
+        "inputTokens": 217445,
+        "outputTokens": 11035
       },
       "visits": 1
     }
