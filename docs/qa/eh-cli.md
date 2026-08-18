@@ -346,8 +346,8 @@ Drive each with the PTY; assert on screen text.
    automated suite runs a fake codex under `--cwd <scratch>` and asserts the
    child reports that directory as its cwd, plus preflight failures for a
    nonexistent path and a file-not-directory path (each emits only `run.error` +
-   failed `run.completed` on stdout, exits `64`, and never spawns the
-   child). For a live check with a real provider and key:
+   failed `run.completed` on stdout, exits `64`, and never spawns the child).
+   For a live check with a real provider and key:
 
    ```bash
    printf 'run pwd and print it' |
