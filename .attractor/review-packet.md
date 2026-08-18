@@ -4,13 +4,30 @@
 
 Ticket AI-3107: eh run: add --timeout <seconds> so hung lanes fail loudly
 
-- AC1: `eh run` accepts `--timeout <seconds>`. On expiry: eh emits a `run.error` event naming the timeout and the configured limit, then sends SIGTERM; `run.completed` is still the final event. Proof: subprocess test with a fake harness that sleeps past the deadline, asserting the event sequence and child termination.
-- AC2: If the child ignores SIGTERM, eh escalates to SIGKILL after a grace period of 10 seconds, defined as a named constant and injectable (option or env var) so the escalation test doesn't sleep 10 real seconds. Proof: subprocess test with a fake harness that traps SIGTERM, asserting SIGKILL termination and the same event-ordering guarantee.
-- AC3: A non-positive, non-integer, or non-numeric `--timeout` value fails preflight before spawn with a clear error and nonzero exit. Proof: subprocess tests for `0`, a negative value, and a non-numeric value, asserting the fake harness was never invoked.
-- AC4: Invariant: the timeout never affects a run that completes in time — a child that closes before the deadline produces the same events and exit code as a run without the flag, and the timer is cleaned up (no hanging process, no stray kill of a reused pid). Proof: subprocess test running a fast fake harness with a generous `--timeout`, asserting the event stream matches the no-flag run and the eh process exits promptly.
+- AC1: `eh run` accepts `--timeout <seconds>`. On expiry: eh emits a `run.error`
+  event naming the timeout and the configured limit, then sends SIGTERM;
+  `run.completed` is still the final event. Proof: subprocess test with a fake
+  harness that sleeps past the deadline, asserting the event sequence and child
+  termination.
+- AC2: If the child ignores SIGTERM, eh escalates to SIGKILL after a grace
+  period of 10 seconds, defined as a named constant and injectable (option or
+  env var) so the escalation test doesn't sleep 10 real seconds. Proof:
+  subprocess test with a fake harness that traps SIGTERM, asserting SIGKILL
+  termination and the same event-ordering guarantee.
+- AC3: A non-positive, non-integer, or non-numeric `--timeout` value fails
+  preflight before spawn with a clear error and nonzero exit. Proof: subprocess
+  tests for `0`, a negative value, and a non-numeric value, asserting the fake
+  harness was never invoked.
+- AC4: Invariant: the timeout never affects a run that completes in time — a
+  child that closes before the deadline produces the same events and exit code
+  as a run without the flag, and the timer is cleaned up (no hanging process, no
+  stray kill of a reused pid). Proof: subprocess test running a fast fake
+  harness with a generous `--timeout`, asserting the event stream matches the
+  no-flag run and the eh process exits promptly.
 - AC5: Omitting the flag preserves today's behavior (no deadline).
 
-Changed files in review scope (vs `origin/main`, pipeline artifacts filtered out):
+Changed files in review scope (vs `origin/main`, pipeline artifacts filtered
+out):
 
 - DESIGN.md
 - README.md
@@ -51,7 +68,7 @@ index 7ab2607..e8b947a 100644
 +`streaming-json`, pi `--mode json`, and opencode `run --format json`; pi and
 +opencode keep prompt input on stdin and expose their native session IDs, text,
 +usage, cost, and semantic errors through the same normalized contract.
- 
+
  **Phase 2 (later): local router.** An opt-in localhost proxy that receives
  Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
 diff --git a/README.md b/README.md
@@ -68,9 +85,9 @@ index 723bdc3..dc89f7a 100644
 +`run.error` naming the limit, sends `SIGTERM`, then escalates to `SIGKILL` after
 +a 10s grace period; `run.completed` is still the final event and a timed-out
 +child exits `143`. Omitting the flag keeps today's no-deadline behavior.
- 
+
  ### Keys
- 
+
 diff --git a/docs/qa/eh-cli.md b/docs/qa/eh-cli.md
 index 8468b22..40e9dc2 100644
 --- a/docs/qa/eh-cli.md
@@ -88,7 +105,7 @@ index 8468b22..40e9dc2 100644
 +   no-effect invariant when a run finishes before the deadline.
  2. With Ollama running and a pulled model declared for the `ollama` provider in
     pi's `models.json`, run a short real pi request (replace `<model>`):
- 
+
 diff --git a/package.json b/package.json
 index b09077d..b29f006 100644
 --- a/package.json
@@ -108,7 +125,7 @@ index def570f..86f5cd1 100644
 @@ -428,6 +428,11 @@ describe('gateway provider routing', () => {
        )
      })
- 
+
 +    // gatewayValidationHeaders also falls back to the ambient process.env value
 +    // for the key, so clear it here to keep the "deliberately blank" case blank
 +    // even when the environment injects a real ANTHROPIC_API_KEY.
@@ -313,12 +330,12 @@ index 63965f6..9b8d5e4 100644
 +    expect(withTimeout.events).toEqual(without.events)
 +  }, 20_000)
  })
- 
+
  function asRecord(value: unknown) {
 @@ -1520,6 +1698,30 @@ emit({
    return fixture
  }
- 
+
 +function createFakeSigtermTrap() {
 +  // Like the sleeper but ignores SIGTERM, forcing the SIGKILL grace escalation.
 +  return createFakeHarness(
@@ -366,7 +383,7 @@ index 76acfe8..6a00ea0 100644
 +++ b/src/headless-run.ts
 @@ -15,6 +15,7 @@ import { buildLaunchPlan } from './harnesses.js'
  import { EFFORT_LEVELS } from './types.js'
- 
+
  const PROTOCOL_VERSION = 1
 +const TIMEOUT_KILL_GRACE_MS = 10_000
  const PROMPT_STDIN_HELP =
@@ -378,7 +395,7 @@ index 76acfe8..6a00ea0 100644
    resumeSessionId?: string
 +  timeout?: string
  }
- 
+
  interface NormalizerState {
 @@ -43,6 +45,7 @@ interface ResolvedHeadlessRunOptions {
    nativeArgs: string[]
@@ -386,7 +403,7 @@ index 76acfe8..6a00ea0 100644
    resumeSessionId: string | undefined
 +  timeoutSeconds: number | undefined
  }
- 
+
  export async function runHeadless(options: HeadlessRunOptions) {
 @@ -65,6 +68,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
            : parseNativeArgsJson(options.nativeArgsJson),
@@ -423,7 +440,7 @@ index 76acfe8..6a00ea0 100644
 @@ -225,11 +232,37 @@ async function executePreparedHeadlessPlan(options: {
      return { handler, signal }
    })
- 
+
 +  // Held in an object so the deferred callback's mutation is visible to the
 +  // read below — a plain `let` boolean would be narrowed to its initial value.
 +  const timeout = { fired: false }
@@ -434,7 +451,7 @@ index 76acfe8..6a00ea0 100644
      child.stderr.pipe(process.stderr)
      child.stdin.on('error', () => undefined)
      child.stdin.end(options.stdin)
- 
+
 +    if (options.timeoutSeconds !== undefined) {
 +      timeoutTimer = setTimeout(() => {
 +        // Only act while the child is still running; if it already finished, the
@@ -479,7 +496,7 @@ index 76acfe8..6a00ea0 100644
 @@ -546,6 +581,17 @@ function parseNativeArgsJson(value: string) {
    return parsed.data
  }
- 
+
 +function parseTimeoutSeconds(value: string | undefined) {
 +  if (value === undefined) return undefined
 +  const seconds = Number(value)
