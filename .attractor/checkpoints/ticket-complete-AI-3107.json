@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:49.328Z",
-  "currentNodeId": "build_review_packet",
+  "currentNodeId": "fork",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -734,12 +734,26 @@
       "output": "Conditional branch at \"review_mode\"",
       "retryCount": 0,
       "startedAt": "2026-08-18T16:01:59.033Z"
+    },
+    "build_review_packet": {
+      "completedAt": "2026-08-18T16:02:00.614Z",
+      "nodeId": "build_review_packet",
+      "outcome": "success",
+      "output": "Wrote .attractor/review-packet.md and .attractor/review-packet-blind.md: 8 file(s) in scope",
+      "outputCapture": {
+        "capturedLength": 91,
+        "lengthUnit": "utf16_code_units",
+        "originalLength": 91,
+        "truncated": false
+      },
+      "retryCount": 0,
+      "startedAt": "2026-08-18T16:02:00.342Z"
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3107",
   "status": "running",
-  "updatedAt": "2026-08-18T16:01:59.035Z",
+  "updatedAt": "2026-08-18T16:02:00.616Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -916,6 +930,19 @@
       "handler": "conditional",
       "outcome": "success",
       "totalDurationMs": 1,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "build_review_packet": {
+      "handler": "tool",
+      "outcome": "success",
+      "totalDurationMs": 272,
       "usage": {
         "cacheReadTokens": 0,
         "cacheWriteTokens": 0,
