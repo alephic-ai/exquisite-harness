@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:34.652Z",
-  "currentNodeId": "evaluate_review",
+  "currentNodeId": "fix_count_gate",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1195,6 +1195,151 @@
         "inputTokens": 9767,
         "outputTokens": 9555
       }
+    },
+    "evaluate_review": {
+      "completedAt": "2026-08-18T15:58:19.998Z",
+      "nodeId": "evaluate_review",
+      "artifacts": [
+        {
+          "agentRunId": "de954e27-71f9-445d-be9d-d0c9ecd30caf",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "fe42a35a3e20b66d360308218a44a616523c6a2ee7bf7dbda9d93f0c0fc60dc1",
+              "sizeBytes": 267915
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/19286711-4a12-47aa-8c01-938d6234a621.request.json",
+              "sha256": "f319a819684dac79937bfbc304e6b2c77f865227e21cb4794cebc2585cab9ddf",
+              "sizeBytes": 25110
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2a6d14db-8382-4c87-b592-ae22ae68fd1d.request.json",
+              "sha256": "c499e4023ee125e39a4e1b467887a09c053161b14d73a4bba01b9670bce32b5f",
+              "sizeBytes": 235617
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3fa16505-c927-4281-9815-3cee405319bb.request.json",
+              "sha256": "244207abe01fd785749a29434deb2c37ce17e61598e35335967acabebf43ab54",
+              "sizeBytes": 152114
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/490d592c-488a-40b3-8b9b-7ca36b8abd13.request.json",
+              "sha256": "0ecf11d4e9a3d5c1ce0039861ed11fd152ef40d01876657fd50b91b5a57eacdc",
+              "sizeBytes": 237368
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/961de680-d6db-4e61-b5e4-f8b2ac6c9b69.request.json",
+              "sha256": "935e9e4386fd4b4eef58f4325f0fdb4d3e871093cb0e9373ced21cdb097bc27e",
+              "sizeBytes": 106092
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9bce3b38-fecc-47cd-a020-007e33168a89.request.json",
+              "sha256": "542531050977fcd499f5e84fe03b180fa0ef094088c48ce943e39086b99907bb",
+              "sizeBytes": 185558
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a4e93763-f410-4cd5-9f04-f8f8ac590c2c.request.json",
+              "sha256": "8c2653a55990a6dc56030960ecfefb2a0697c48d5cb81fbc642ab44a549bb35a",
+              "sizeBytes": 98750
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e97cb7f8-5cb6-4b31-9d96-16f2c3e37ccb.request.json",
+              "sha256": "988cf20218604ea0c19da3726dc3be98e2968aa6f8f3d6571c9d0270f49d7cfd",
+              "sizeBytes": 241768
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAV1aN968H9RSKTJttER.response.json",
+              "sha256": "d39452afdf987b23b1b29280a6bf8e08ed2c446cfc0b32aa24dd8b60e3bb8e30",
+              "sizeBytes": 817
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAV1b16HrGd6k27Yh2Mc.response.json",
+              "sha256": "9d2103e634f45b9a715fdd7d6efe21b2ad8fec33dbc821a0e00044029aa93736",
+              "sizeBytes": 3467
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAV2LvY1u2XRtazDQxMC.response.json",
+              "sha256": "650aa743a4f17632e42c605b6de7a257c3ed9c7aecda879ab03e76b4dd2ae424",
+              "sizeBytes": 7728
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAV46MzLs1BiE6Nsp6fJ.response.json",
+              "sha256": "51411ee0017f2fbbee06f03751ad9f4ac5a5f4243d94735dfebb49074d6cfb00",
+              "sizeBytes": 12423
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAV78c1o5na897t3Gmgu.response.json",
+              "sha256": "29d381e8c755fb25fd3df6f4f417d37c7ecc0cd18601b65ca68f803ee8420bda",
+              "sizeBytes": 50139
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVL5sAozJd9d8Bz5Vwc.response.json",
+              "sha256": "48c4835cb25de9a9aa30dccb440ca1d7bf39ed7fbcc92c3f4024070d36b8ca1b",
+              "sizeBytes": 2125
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVLXT47Pamx5huboLcL.response.json",
+              "sha256": "2c2c6f8c788cfd6818b4a7144c3d1522782fe9970471ea9133f87c3dfcd6e8c3",
+              "sizeBytes": 3802
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVMKENCUwR3Ln4Pb4yz.response.json",
+              "sha256": "b61378de959106b4f788bb1ca74ebfd0277bf4cdb28b61e4c445e37319c5acee",
+              "sizeBytes": 4049
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "473fb59f36230aba1d7be55420b8b5b8b594e784bfc0ad048a1f76dfaf78597d",
+              "sizeBytes": 32705
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/evaluate_review/attempt-0-de954e27-71f9-445d-be9d-d0c9ecd30caf",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/evaluate_review/attempt-0-de954e27-71f9-445d-be9d-d0c9ecd30caf/manifest.json",
+          "nodeId": "evaluate_review",
+          "pipelineId": "ticket-complete-AI-3109",
+          "runtime": "claude",
+          "sessionId": "8d832f48-09fd-4a81-bef6-e2b5805e44b5",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "fail",
+      "output": "I'll start by reading all the review artifacts and context files in parallel.\nNow let me read the plan (for load-bearing assumptions), the source code referenced by the Codex findings, and the review packet to understand the full scope.\nNow let me examine the gateway-routing code and test (Codex Blocker 2), plus the cleanup helper to understand the Cat-1 fix context.\nI now have a complete picture. Let me analyze the two Codex blockers:\n\n**Codex Blocker 1** (`headless-run.ts:118` — broad catch mislabels post-spawn/cleanup failures as `64`): Already adopted as Category-1 by the blind `classify_codex` node. I confirmed it against the code: the outer `try` (lines 56–115) wraps `executeHeadlessPlan` and both `withCleanup` layers; `cleanup.ts:19` awaits cleanup **uncaught** on the success path, so grok's `rm` cleanup or `withGatewayRouting`'s `finally { await proxy.close() }` (gateway-routing.ts:58) can reject *after* a successful child already emitted its `run.completed`, propagating to the catch which emits a **second** `run.completed` returning `64`. Real. This block is immutable → copy verbatim.\n\n**Codex Blocker 2** (`gateway-routing.test.ts:423` / `gatewayValidationHeaders`): NOT adopted by the blind node → at most Cat-2/3 for me. Tracing `gatewayValidationHeaders` (gateway-routing.ts:236–241): position 2 (`process.env[routing.apiKeyEnvKey]`, line 238) outranks the plan's `ANTHROPIC_AUTH_TOKEN` (position 3), so a deliberately-blank plan key falls through to the ambient shell value — which the child never sees, since the child runs with `{ ...process.env, ...plan.env }` where the blank plan value overrides. That's a genuine, narrow, **pre-existing** validation/runtime credential-divergence issue, untouched by this PR (which only made the test hermetic). Out of scope for reserved-exit-codes → **Category 2**.\n\n**guillaumeify**: no findings.\n\n**Load-bearing assumptions**: all six in the plan are marked **VERIFIED**; no UNVERIFIED assumptions to probe. Note: the \"preflight errors all funnel through one catch\" assumption is exactly what the Codex Cat-1 fix refines (the catch is too broad) — already covered by the immutable block, so no new blocker needed.\n\nLet me write the artifacts.\nNow the required producer self-validation, run from the target workdir.\nBoth self-validation checks pass (exit 0). Let me do a final confirmation of all three artifacts' state.\n## Review evaluation complete\n\n**Classification:**\n\n| Finding | Reviewer | Category | Action |\n|---|---|---|---|\n| `headless-run.ts:118` broad catch mislabels post-spawn/cleanup failures as `64` | Codex | **Cat-1** (blind-adopted, immutable) | Copied verbatim → `review-fixes.md` |\n| `gateway-routing.ts:238` `gatewayValidationHeaders` ranks ambient env above the plan's `ANTHROPIC_AUTH_TOKEN` when the plan owns a blank provider key | Codex | **Cat-2** (pre-existing, out of scope) | `follow-up-candidates.json` |\n| (none) | guillaumeify | — | Mergeable: YES, no findings |\n\n**Codex Blocker 2 rationale (Cat-2, not Cat-1):** the blind `classify_codex` node declined it; it targets pre-existing, untouched `gatewayValidationHeaders` logic (this PR only made the test hermetic). But it is a genuine validation/runtime credential-divergence issue — the child runs with `{ ...process.env, ...plan.env }` where a blank plan key overrides the ambient value the validation headers still fall back to — so it has real value as a standalone follow-up.\n\n**Load-bearing assumption check:** all six plan assumptions are marked VERIFIED; no UNVERIFIED ones to probe. The \"preflight errors funnel through one catch\" assumption is precisely what the Codex Cat-1 fix refines (the catch is too broad) — already covered by the immutable block, so no additional `evaluate_review` blocker was warranted.\n\n**Artifacts written:**\n- `review-fixes.md` — 1 `## Fix:` block (verbatim Codex Cat-1)\n- `review-fixes-meta.json` — `{\"fixCount\":1,\"band\":\"tactical\"}`\n- `follow-up-candidates.json` — 1 Cat-2 candidate (version 1, parent AI-3109)\n\n**Self-validation:** `test -s` → pass; `pipeline-script validate-follow-up-candidates` → exit 0 (\"valid (1 candidate(s))\").\n\n`review-fixes.md` contains a `## Fix:` block, so the merge-readiness gate fails and routes to the fix step.\n\nSTATUS:fail\n",
+      "retryCount": 0,
+      "sessionId": "8d832f48-09fd-4a81-bef6-e2b5805e44b5",
+      "startedAt": "2026-08-18T15:53:36.844Z",
+      "usage": {
+        "cacheReadTokens": 364574,
+        "cacheWriteTokens": 69990,
+        "costUsd": 1.2599925,
+        "inputTokens": 9894,
+        "outputTokens": 23370
+      }
     }
   },
   "parallelBranches": {
@@ -1205,7 +1350,7 @@
   },
   "pipelineId": "ticket-complete-AI-3109",
   "status": "running",
-  "updatedAt": "2026-08-18T15:53:35.583Z",
+  "updatedAt": "2026-08-18T15:58:20.002Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1479,6 +1624,19 @@
         "costUsd": 0.72855525,
         "inputTokens": 9767,
         "outputTokens": 9555
+      },
+      "visits": 1
+    },
+    "evaluate_review": {
+      "handler": "codergen",
+      "outcome": "fail",
+      "totalDurationMs": 283154,
+      "usage": {
+        "cacheReadTokens": 364574,
+        "cacheWriteTokens": 69990,
+        "costUsd": 1.2599925,
+        "inputTokens": 9894,
+        "outputTokens": 23370
       },
       "visits": 1
     }
