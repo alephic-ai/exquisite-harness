@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:24.619Z",
-  "currentNodeId": "evaluate_review",
+  "currentNodeId": "validate_followups",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1027,6 +1027,151 @@
         "inputTokens": 9755,
         "outputTokens": 474
       }
+    },
+    "evaluate_review": {
+      "completedAt": "2026-08-18T15:54:45.346Z",
+      "nodeId": "evaluate_review",
+      "artifacts": [
+        {
+          "agentRunId": "1dd46086-d5a6-4cc2-a1b1-2f217385fa85",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "2ae95c9c428ece433cf6d6b08226e71a7a56a0d726ca336f8248d33d708c3c8c",
+              "sizeBytes": 98082
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0eab7481-ea01-4bf7-887b-d8456a7da73e.request.json",
+              "sha256": "a7a86f1319270479a6dad4bb32fa475ecfbee9f317389fe96e4f564e52edbf49",
+              "sizeBytes": 100765
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/424b2b67-94fe-4009-9d0f-1c0b0b35736d.request.json",
+              "sha256": "c1309f465fe5461fde0dbd3829a917babd6d4bfdfe613986c8f46035c5d2287e",
+              "sizeBytes": 128656
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4b7019da-0e56-4e9a-9756-559d89a14bb2.request.json",
+              "sha256": "4fce5c8152321d341b7edeac6abdaf8cd02e0639dd8ccd2fef255e2b0a6a0516",
+              "sizeBytes": 115622
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7a2ddcec-874f-4301-add8-a6c3c2545df5.request.json",
+              "sha256": "50f99ca209d3a16286b3aea7b9042a0dbeeb23caadbcd058a2ae3971d7176f73",
+              "sizeBytes": 122692
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/80b40532-6fcc-493d-9ee8-8c95031ccdfe.request.json",
+              "sha256": "36ee26692ea4e3617422e0b002242e4e1eb0135d806fbbbb6baa6d2e6614f1fa",
+              "sizeBytes": 96211
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b77ab5fc-aa07-4c1d-b5c4-fd2f107eba31.request.json",
+              "sha256": "4834a5d7052b45a43096d049b732974e6ccf5d0406f9464f9ff674f3acc0c171",
+              "sizeBytes": 22943
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d2742dac-8b8b-43d4-991f-d74968832e6c.request.json",
+              "sha256": "cdc249e57864ebde9837865e230f633e1a1a9a5e4931425dbd63cb7939e7903a",
+              "sizeBytes": 141944
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d3c11644-1d5a-4946-aa23-1901ce5048e9.request.json",
+              "sha256": "7da30f28ec8d1c59c8b0ea4f2fcf1c241ac0ff9ed720103707a0b21c3c3ecb02",
+              "sizeBytes": 139648
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUxfKxZT6FkdPGSFJeL.response.json",
+              "sha256": "8ed1e082dfa419f6c7243612f35250c898236776e60e275651183f273918f638",
+              "sizeBytes": 806
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUxg1P9gZaBG4XhNhrS.response.json",
+              "sha256": "c8ec452423fd6be55a1283447cba375b672c307f01c568760dd80a4bee7df4c4",
+              "sizeBytes": 3717
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUyVNCs6BgL5Tx981MF.response.json",
+              "sha256": "d4a9591c49c7073864835d3539f1bfdbd96dc0af3d9caecaa96c40d564af73c2",
+              "sizeBytes": 3735
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUzJsT9i5PR5hLwcM2n.response.json",
+              "sha256": "9bb0804b61ab3036879c33041db8f4ede8397bc1bcba4ad40acd453178760323",
+              "sizeBytes": 5734
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAV1bDEvzntCqTySMCeM.response.json",
+              "sha256": "48cfced90d2643947253497cd133e3c5659442b9f8230052a87e0bc7e8ca1fa7",
+              "sizeBytes": 2981
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAV2EUqfX6wkmXj5TMnP.response.json",
+              "sha256": "f471e2ea9e94a7d1d450868d6765a3a3d2a3f086b37b506a570ce8d9587a48c3",
+              "sizeBytes": 11445
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAV578AEcqpcZiT77t73.response.json",
+              "sha256": "e4e1accc558d173cf724ac18f830157151cc0e43b1b21e9fa8fa147044fba459",
+              "sizeBytes": 2628
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAV5dMLoR7hhT72vBqRm.response.json",
+              "sha256": "7b221167289f246b92cd55fe765adfbf492f45d1c26e649c2a6675e376ba3fcf",
+              "sizeBytes": 4051
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "8225ebada19b8dd8ac8e511159c2ee4d8c45c5a004a428cbd5e135f61b6df143",
+              "sizeBytes": 30533
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/evaluate_review/attempt-0-1dd46086-d5a6-4cc2-a1b1-2f217385fa85",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/evaluate_review/attempt-0-1dd46086-d5a6-4cc2-a1b1-2f217385fa85/manifest.json",
+          "nodeId": "evaluate_review",
+          "pipelineId": "ticket-complete-AI-3106",
+          "runtime": "claude",
+          "sessionId": "89fd6cbf-b2f9-4512-8aa3-c458444637ed",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll start by reading all the relevant artifacts and context files in parallel.\nBoth review files exist and are non-empty. Both report **zero findings** (guillaumeify: no blockers/suggestions; Codex: 0 issues). `codex-correctness-fixes.md` does not exist — no verbatim Codex blocks to preserve. This is the clean path, not degraded.\n\nNow I must run the **load-bearing assumption check** independently. Let me read the plan and supporting context.\nThe plan has a `## Load-Bearing Assumptions` section with **5 assumptions, all marked VERIFIED** (each with inline recorded verification — grep results, test line refs, zod behavior). The instruction requires probing only **UNVERIFIED** assumptions. None are unverified. Still, since this node exists precisely because reviewers don't read the plan, I'll cheaply confirm the highest-leverage claims against the actual changed code — the spawn passing `cwd`, the preflight running before spawn, and the no-op-when-omitted behavior.\nImplementation matches the plan's assumptions: `statSync` imported, `cwd` on both option interfaces, `assertRunnableCwd` defined, preflight call at line 72, and `spawn` passing `cwd: options.cwd`. Let me confirm the critical ordering — preflight before spawn (AC2) — and the no-op-when-undefined path.\nControl flow confirmed. The load-bearing assumption check **passes** against the actual changed code:\n\n- **Preflight before spawn (AC2)** ✓ — `assertRunnableCwd` at line 72 runs inside `runHeadless`'s `try`, before `buildLaunchPlan`/`prepareHeadlessPlan`/`executeHeadlessPlan` (which owns `spawn` at line 222). A throw is caught at line 113 → `run.error` + failed `run.completed` (exit 1); child never spawns.\n- **`cwd` not on `LaunchPlan`** ✓ — rides `HeadlessRunOptions`/`ResolvedHeadlessRunOptions` and the exec option types; diff stat shows no `src/types.ts` change.\n- **Omitting `--cwd` is a no-op (AC3)** ✓ — validation guarded by `!== undefined`; `spawn` gets `cwd: undefined` → Node inherits parent cwd.\n- The two test-infra assumptions (zod strips unknown keys; fake-harness reports `fake.args`) are proven by the green suite (182 pass / 0 fail).\n\n**Classification result:** guillaumeify 0 findings, Codex 0 findings, no `codex-correctness-fixes.md` to carry forward, and the independent load-bearing check surfaced no new blockers. Zero Category 1, zero Category 2, zero Category 3.\n\nThis is the clean, no-blockers path. I'll write the empty follow-up-candidates artifact, clear any stale fix files, then run self-validation.\nNow clear any stale fix/meta files (safe — no `codex-correctness-fixes.md` exists) and run both required self-validation checks.\nBoth self-validation checks passed (`test -s` → non-empty; `validate-follow-up-candidates` → exit 0, valid, 0 candidates).\n\n**Evaluation result:**\n\n- **Reviews consumed:** both `review-guillaumeify.md` and `review-codex.md` present and non-empty — clean path, not degraded. Both report zero blockers/suggestions.\n- **Codex correctness:** no `codex-correctness-fixes.md` (classify_codex adopted nothing) — no verbatim blocks to carry forward.\n- **Load-bearing assumption check (run independently):** plan's 5 assumptions all marked VERIFIED; I re-probed the 3 the diff actually relies on against changed code — preflight-before-spawn (`headless-run.ts:72` inside `try`, before `spawn` at `:222`), `cwd` off `LaunchPlan` (no `types.ts` change), and no-op-when-omitted (`!== undefined` guard + `cwd: undefined` inherits). All pass. The 2 test-infra assumptions are proven by the green suite. No new blocker.\n- **Classification:** 0 Category 1, 0 Category 2, 0 Category 3.\n\n**Artifacts:** `review-fixes.md` / `review-fixes-meta.json` cleared (no `## Fix:` blocks, no Codex blocks to preserve — safe). `follow-up-candidates.json` overwritten with version 1, `parentTicketId` AI-3106, empty candidates array.\n\nNo blockers, and `review-fixes.md` contains no `## Fix:` blocks.\n\nSTATUS:success\n",
+      "retryCount": 0,
+      "sessionId": "89fd6cbf-b2f9-4512-8aa3-c458444637ed",
+      "startedAt": "2026-08-18T15:52:57.356Z",
+      "usage": {
+        "cacheReadTokens": 254453,
+        "cacheWriteTokens": 35694,
+        "costUsd": 0.6205879999999999,
+        "inputTokens": 9894,
+        "outputTokens": 8589
+      }
     }
   },
   "parallelBranches": {
@@ -1037,7 +1182,7 @@
   },
   "pipelineId": "ticket-complete-AI-3106",
   "status": "running",
-  "updatedAt": "2026-08-18T15:52:56.056Z",
+  "updatedAt": "2026-08-18T15:54:45.355Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1311,6 +1456,19 @@
         "costUsd": 0.211926,
         "inputTokens": 9755,
         "outputTokens": 474
+      },
+      "visits": 1
+    },
+    "evaluate_review": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 107990,
+      "usage": {
+        "cacheReadTokens": 254453,
+        "cacheWriteTokens": 35694,
+        "costUsd": 0.6205879999999999,
+        "inputTokens": 9894,
+        "outputTokens": 8589
       },
       "visits": 1
     }
