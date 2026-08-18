@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:49.328Z",
-  "currentNodeId": "evaluate_review",
+  "currentNodeId": "fix_count_gate",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1075,6 +1075,139 @@
         "inputTokens": 9761,
         "outputTokens": 3548
       }
+    },
+    "evaluate_review": {
+      "completedAt": "2026-08-18T16:08:56.333Z",
+      "nodeId": "evaluate_review",
+      "artifacts": [
+        {
+          "agentRunId": "4595223d-aeec-4578-944a-ca01dd7d8aac",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "3cb3ae2a88415c4785290351841628989f968c112bf9888e378a543d847c3100",
+              "sizeBytes": 157079
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/046f4e6a-711a-4a25-a8ab-273be38f39c5.request.json",
+              "sha256": "c84b445869794674e6f607ddf9d9cf8ed9a5de5bc2c68f90a2fe84ce003733c7",
+              "sizeBytes": 104118
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2d4af42c-5ad7-4843-b533-db6b24950a97.request.json",
+              "sha256": "7c4acb9df797041b21a1fb00957897074086697cd687892030f42ef065cbd2e1",
+              "sizeBytes": 178844
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5fb2a127-bde9-49de-b641-618be0187343.request.json",
+              "sha256": "b2d341919007bd27e1693bf9b918864510875517c678badddc6daf03dd88fdf0",
+              "sizeBytes": 139769
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8cd73653-4e89-456a-85e8-0722893ee741.request.json",
+              "sha256": "94263a7ee587e37e0c880f1dae98cc04adb281c103b05b9ddbdf8e8352888f93",
+              "sizeBytes": 97673
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c44c9105-314f-4aa0-a53b-f81575808541.request.json",
+              "sha256": "42e1df72688e8677d7d0557e159c62b690ccc8e23feae36e13220325f7a54a9c",
+              "sizeBytes": 125124
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cf0d0655-f71a-4d5e-b480-066a2984abe5.request.json",
+              "sha256": "9dfc54e0595d58710efecf86ed4189ccde70f3e538aa2ecc0edb88abf2878021",
+              "sizeBytes": 24079
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/de3090c9-0eec-4722-9f31-af0c1fad79a8.request.json",
+              "sha256": "45b7b69d47130b2415a5041eb29abb3fe038c79eb238233c3a667c738a067c66",
+              "sizeBytes": 177371
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVwQ4XUoaJeFN9e66PD.response.json",
+              "sha256": "7cb678325ee0f0c7ffab33034ed8151727828b95066cef38aae93a55b4a05cf5",
+              "sizeBytes": 810
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVwQhULoRnpcVG5y9YL.response.json",
+              "sha256": "0212ca2fd018ef20629cbaeab22ce881994a0960f2950d24ecb29df3491fe649",
+              "sizeBytes": 2908
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVwxUfzBjuRckgukoSS.response.json",
+              "sha256": "2e236cbc0ac4363a8cbce255db024703988ec8c3c664d8fe5da1b5d35bcfc448",
+              "sizeBytes": 3291
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVxikwzUvGp83KpQf4g.response.json",
+              "sha256": "c559a5525371710afabafabc077009fb7d4cc6f9828e76b8fd76cfbaa02cd0ef",
+              "sizeBytes": 6487
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVzCu9VBW6dPhfna6is.response.json",
+              "sha256": "4d96f6557a8b33b687ae75f2a2f98ae40e13a37e898ae5dd2ee4e73d55bed84a",
+              "sizeBytes": 37660
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAWA7ZhaRa9XNDvipcmE.response.json",
+              "sha256": "c2aae959f9f40b520101d851600229e0a0d104b243bb344508145f95b94765c3",
+              "sizeBytes": 1905
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAWATHrcTq1n8mcR6qYh.response.json",
+              "sha256": "8c0893dffefe8cf976e90dba5d34f95273ec2aecaa400c7b15adb484a80e2c18",
+              "sizeBytes": 3510
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "839c9c32b1bb75878fc03f047da40dad08b059044247ef2989d767cfdacb0fff",
+              "sizeBytes": 30614
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/evaluate_review/attempt-0-4595223d-aeec-4578-944a-ca01dd7d8aac",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/evaluate_review/attempt-0-4595223d-aeec-4578-944a-ca01dd7d8aac/manifest.json",
+          "nodeId": "evaluate_review",
+          "pipelineId": "ticket-complete-AI-3107",
+          "runtime": "claude",
+          "sessionId": "3ac3f22d-4e5b-4b00-8ed4-7febe7a79227",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "fail",
+      "output": "I'll start by reading all the relevant artifacts and context files in parallel.\nBoth reviews and the Codex correctness fix are clear. Let me read the plan, check for ARCHITECTURE.md, and see the current state of the fix artifacts.\nNow let me read the actual implementation to confirm the current state of the code the Codex fix targets.\nI now have the complete picture. Let me confirm my analysis:\n\n**Reviews:**\n- **guillaumeify**: Mergeable YES — no blockers, no suggestions. Nothing to classify.\n- **Codex**: 1 blocker (SIGTERM-trap-exit-0 → false success) + 1 suggestion (README exit-code precision).\n\n**Codex correctness fix** (`codex-correctness-fixes.md`): ONE `## Fix:` block, already adopted blind by classify_codex → immutable, copy verbatim.\n\nI confirmed the blocker is real against the live code: `src/headless-run.ts:303` `const resultIsError = state.resultIsError || childExitCode !== 0` — a child that traps SIGTERM and exits 0 gives `childExitCode=0`, `timeout.fired=true`, so `resultIsError=false`, `exitCode=0` → reports success despite emitting `run.error`.\n\n**Load-bearing assumptions**: All 7 in the plan are marked VERIFIED with recorded evidence (line refs / POSIX-Node semantics / test assertions). Assumption 7 (SIGKILL escalation → 137) is covered by the AC2 test. None are UNVERIFIED → no probe needed, no blocker to add.\n\n**README:181 suggestion** (Codex non-correctness): docs say \"exits 143\" but escalation can yield 137. classify_codex rejected it as a doc nit. The ticket itself directs orchestrators to read the `run.error` event, *not* the exit code (\"indistinguishable by exit code… read the run.error event\"), so exit-code doc precision is explicitly secondary. → **Category 3 (skip)**, not a follow-up. Category 2 explicitly excludes minor nits.\n\nResult: 1 Cat-1 fix (verbatim Codex), 0 Cat-2 candidates. Let me write the artifacts.\nArtifacts written. Now the required producer self-validation:\nBoth self-validation checks pass. Final state:\n\n**Classification outcome:**\n- **Cat-1 (blocker):** 1 — `src/headless-run.ts:295-306` timed-out child that traps SIGTERM and exits 0 reports `run.completed{exitCode:0,resultIsError:false}` despite emitting `run.error`. Verbatim Codex fix copied to `review-fixes.md` (adopted blind by classify_codex; confirmed real against live code — `const resultIsError = state.resultIsError || childExitCode !== 0` omits `timeout.fired`).\n- **Cat-3 (skip):** README:181 exit-code precision (143 vs 137/1). Ticket directs orchestrators to the `run.error` event, not exit code, so doc precision is secondary; Codex marked it a Suggestion and classify_codex rejected it. No follow-up.\n- **guillaumeify:** no findings.\n- **Load-bearing check:** all 7 plan assumptions marked VERIFIED with recorded evidence; assumption 7 (SIGKILL→137) covered by the AC2 test. No UNVERIFIED assumption the diff relies on → no probe needed, no blocker added.\n\n**Artifacts:**\n- `.attractor/review-fixes.md` — 1 `## Fix:` block (verbatim Codex Cat-1).\n- `.attractor/review-fixes-meta.json` — `{\"fixCount\":1,\"band\":\"tactical\"}`.\n- `.attractor/follow-up-candidates.json` — version 1, `AI-3107`, 0 candidates. Both self-validation checks exit 0.\n\n`review-fixes.md` contains a `## Fix:` block, so per the contract:\n\nSTATUS:fail\n",
+      "retryCount": 0,
+      "sessionId": "3ac3f22d-4e5b-4b00-8ed4-7febe7a79227",
+      "startedAt": "2026-08-18T16:05:47.103Z",
+      "usage": {
+        "cacheReadTokens": 232729,
+        "cacheWriteTokens": 47412,
+        "costUsd": 0.8392135000000001,
+        "inputTokens": 9892,
+        "outputTokens": 14832
+      }
     }
   },
   "parallelBranches": {
@@ -1085,7 +1218,7 @@
   },
   "pipelineId": "ticket-complete-AI-3107",
   "status": "running",
-  "updatedAt": "2026-08-18T16:05:45.543Z",
+  "updatedAt": "2026-08-18T16:08:56.335Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1359,6 +1492,19 @@
         "costUsd": 0.38136425,
         "inputTokens": 9761,
         "outputTokens": 3548
+      },
+      "visits": 1
+    },
+    "evaluate_review": {
+      "handler": "codergen",
+      "outcome": "fail",
+      "totalDurationMs": 189230,
+      "usage": {
+        "cacheReadTokens": 232729,
+        "cacheWriteTokens": 47412,
+        "costUsd": 0.8392135000000001,
+        "inputTokens": 9892,
+        "outputTokens": 14832
       },
       "visits": 1
     }
