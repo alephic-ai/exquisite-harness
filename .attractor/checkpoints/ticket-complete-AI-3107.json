@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:49.328Z",
-  "currentNodeId": "tactical_fix",
+  "currentNodeId": "lint",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1223,6 +1223,151 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-18T16:08:57.954Z"
+    },
+    "tactical_fix": {
+      "completedAt": "2026-08-18T16:09:36.388Z",
+      "nodeId": "tactical_fix",
+      "artifacts": [
+        {
+          "agentRunId": "f0e8f091-1193-4396-8070-ca04e5f0b41c",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "2c5ee6b61f4968a02d284b7920de5d00dc268f49d95b8e25c26405d181cc852f",
+              "sizeBytes": 162601
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/077cb8c5-931f-450f-9aad-94f5d746e00a.response.json",
+              "sha256": "2209037d3496051bf4a347bf01b8fac6811245bcf64c211eab30974cf88601d6",
+              "sizeBytes": 1104
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2f1a2901-9609-4d18-a2c9-d4a618dadf04.response.json",
+              "sha256": "5de0cf4be05c9707a43c4bfa20cfff98db76177c65fe8927590a4c11caea57e7",
+              "sizeBytes": 2093
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5cfeebcb-9029-4e73-aa2a-a56a2fc82e00.request.json",
+              "sha256": "49dba0c30539a231e962044eb573721ff814cabcb45d440de8f430283cd6b407",
+              "sizeBytes": 109934
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6694cc0c-2466-4b0b-b516-f853f937ab71.response.json",
+              "sha256": "bd6fbccfaf9ed7da8814c00bccf7df47096c674ab12885fea097f8bbb186ca91",
+              "sizeBytes": 856
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6ae8b934-9311-4997-87f6-14a3a3cc0686.response.json",
+              "sha256": "f2d06dcf5db016d355741981a07f4d9567251054ee1b6471c4f03587c94d80da",
+              "sizeBytes": 784
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6d8becf3-8537-4484-81bd-0dee5d636592.response.json",
+              "sha256": "1a1538dcce1b1f07d08c240036b0cdb16a24e95ee6065772ba98ab318a88213a",
+              "sizeBytes": 661
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7b0bec10-1df5-4613-9706-6fa4a3bad489.request.json",
+              "sha256": "6cac9c522f10c6846962310f60e5bd04c6b5bda45fa06be8c9135bd20d6753aa",
+              "sizeBytes": 113801
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7d2c7b6c-0838-4706-b1e3-cab39331ff70.response.json",
+              "sha256": "0dfb73065e58bcf52cee9477d7b2e42577ef0f00d7bae006f7f2605e2b5ac49f",
+              "sizeBytes": 835
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9881282b-ff73-4ab5-a5f2-71b52cba2222.response.json",
+              "sha256": "9747fae7ab8051c659f179517cfed29253e02daf555979348e6aec65852e48c5",
+              "sizeBytes": 964
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a339187a-5c52-423d-bc31-746761a57911.request.json",
+              "sha256": "9155a5b5f4440b138bd232830023a98f11c2988e01c0f08301c795521bfaf046",
+              "sizeBytes": 116310
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/af5a8a38-9a63-421d-9800-60d0b1f85615.request.json",
+              "sha256": "c14be45be3a3eba7e0b324037ff301a21bae1a29e617cf4b6c67a761e8309821",
+              "sizeBytes": 115269
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c143758c-4bd8-4fab-8791-799038ce914b.request.json",
+              "sha256": "499c65a336810f512f7ab792c3700caaceca8b9fd6ef0c3b839cb9526803a225",
+              "sizeBytes": 105120
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cf5299ab-277e-4f83-9c61-e3791e9447a7.request.json",
+              "sha256": "43b706b5685d4acc8bbb9a9e5c6f74c83543eccd39b8bc82d1f6d5032ec54b80",
+              "sizeBytes": 112664
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e60d69ad-0e91-418f-9002-2d6fb3616f43.response.json",
+              "sha256": "545455a47f2e23eafa20247631ee169f2c6a5d63e37c7a17ff099f54bffa9f3a",
+              "sizeBytes": 1373
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ed00a0e5-1ab8-479b-ac99-efcb8925c61a.request.json",
+              "sha256": "c9e7a5d60f7d9c9d646a18e354416a413bce0565e2a1f17e3608d91aefce78d3",
+              "sizeBytes": 12290
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f1c8e083-a68b-4f0a-86f2-cd403a41611b.request.json",
+              "sha256": "0ed54f0570e87aa133af104b1afe4da7608a0796f9eba07619f04e12d285e8f3",
+              "sizeBytes": 116882
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "374a852229417a6eeabf7d6accebba18a6b2591ab8b3a5e0c27584051a45a257",
+              "sizeBytes": 19999
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/tactical_fix/attempt-0-f0e8f091-1193-4396-8070-ca04e5f0b41c",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/tactical_fix/attempt-0-f0e8f091-1193-4396-8070-ca04e5f0b41c/manifest.json",
+          "nodeId": "tactical_fix",
+          "pipelineId": "ticket-complete-AI-3107",
+          "runtime": "claude",
+          "sessionId": "719a4f45-d30b-452d-935f-ddbf31965d64",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll start by reading the review fixes file and the relevant context\nNow let me look at the fix region in headless-run.ts.\n\n\nThe fix is on line 303-304. Since `exitCode = resultIsError && childExitCode === 0 ? 1 : childExitCode` already forces a non-zero exit code when `resultIsError` is true, adding `|| timeout.fired` to `resultIsError` satisfies both prescribed changes minmally\nThe fix is applied. The `timeout.fired` variable is in scope (used on line 295), and the existing line 304 logic already forces a non-zero exit code when `resultIsError` is true, so this single minimal change fulfills both parts of the prescription.\n\nLet me verify the change region reads cleanly and check the impact on ACs\nThe change is clean. Now let me commit with the required message\nApplied the review fix and committed as `a559607`.\n\n## Summary\n\n**Fix applied** — one code change in `src/headless-run.ts:303-304`:\n\nThe Codex blocker was that a child that traps SIGTERM and exits cleanly with code 0 would emit `run.error` (from the timeout path) yet report `run.completed { exitCode: 0, resultIsError: false }` — a timed-out lane that \"succeeded.\" The prescription (fold `timeout.fired` in and force a non-zero exitCode) is satisfied by a single minimal edit:\n\n```ts\nconst resultIsError =\n  state.resultIsError || childExitCode !== 0 || timeout.fired\nconst exitCode = resultIsError && childExitCode === 0 ? 1 : childExitCode\n```\n\nBecause the existing line 305 already forces `exitCode = 1` whenever `resultIsError` is true with a 0 child exit code, the `|| timeout.fired` addition makes a timed-out-but-clean-exit child report `run.error` → `run.completed { exitCode: 1, resultIsError: true }`, failing loudly as the ticket wants. No test was prescribed by this fix, so none added.\n\n**AC evidence**: unchanged. All five ACs and their evidence line numbers in `src/headless-run.test.ts` are unaffected — the code edit was in `headless-run.ts`, and AC 1's SIGTERM case (exit 143) and AC 2's SIGKILL case (exit 137) hit the non-zero-exit paths, not this new edge case. Did not update ac.json since no AC status or evidence changed.\n\n**Committed**: `fix: apply review fixes` with the `Co-Authored-By` trailer. Working tree clean. Did not run the full-repo lint/test/verify gates per instructions.\n",
+      "retryCount": 0,
+      "sessionId": "719a4f45-d30b-452d-935f-ddbf31965d64",
+      "startedAt": "2026-08-18T16:08:59.737Z",
+      "usage": {
+        "cacheReadTokens": 141312,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.012192886,
+        "inputTokens": 58913,
+        "outputTokens": 2221
+      }
     }
   },
   "parallelBranches": {
@@ -1233,7 +1378,7 @@
   },
   "pipelineId": "ticket-complete-AI-3107",
   "status": "running",
-  "updatedAt": "2026-08-18T16:08:58.211Z",
+  "updatedAt": "2026-08-18T16:09:36.388Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1533,6 +1678,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "tactical_fix": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 36651,
+      "usage": {
+        "cacheReadTokens": 141312,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.012192886,
+        "inputTokens": 58913,
+        "outputTokens": 2221
       },
       "visits": 1
     }
