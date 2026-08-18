@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:49.328Z",
-  "currentNodeId": "plan",
+  "currentNodeId": "verify_plan",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -107,12 +107,193 @@
         "inputTokens": 9750,
         "outputTokens": 1332
       }
+    },
+    "plan": {
+      "completedAt": "2026-08-18T15:34:49.373Z",
+      "nodeId": "plan",
+      "artifacts": [
+        {
+          "agentRunId": "da1669e7-2de4-4c87-9377-64a99ddf811b",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "2b7994cbbecbf535afd50796d190032dee1e12965914ce544b218f72579696de",
+              "sizeBytes": 411881
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0379b3db-d22f-4f9b-ab25-a28599192685.request.json",
+              "sha256": "c5d295852654ee28a273d19e90b07e5564acad434499642b64672df292749778",
+              "sizeBytes": 211361
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/320a781a-466c-4b7b-b099-cddc7caf994d.request.json",
+              "sha256": "83f6aa11e08628dc19b5dec13fd6114229eeca6934c49acbf7e3f699fbe8d637",
+              "sizeBytes": 305651
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/42283100-043e-4339-bc14-12dcce3b215a.request.json",
+              "sha256": "09a95c1ba01ca68b3aeb3bf5a03206bae20056e6a7676db58aab34212061374b",
+              "sizeBytes": 301115
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4729c021-a1bb-4dc9-a05e-3e8bf25fa7ec.request.json",
+              "sha256": "ddce45f29d9fcd206e049ec53f5081d9594038d5f5e015731bebc8cd7e4c1307",
+              "sizeBytes": 250149
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5a63907d-c073-46d8-8f93-b634d7479372.request.json",
+              "sha256": "7cd42bdc929c58a88097a8f6bc7d48ae0c1038ffbd399d064815ca37458b29e2",
+              "sizeBytes": 236935
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5e97d93d-a7a6-480a-a283-d7c4f91412c7.request.json",
+              "sha256": "6cff345be8dd8dd2cae4eb08e73339f1b4ddab08ea2cae2eaa0b12aa91990de6",
+              "sizeBytes": 246777
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9cd79f67-74c4-4583-93e6-a8c9293dff4b.request.json",
+              "sha256": "059938047f29ed846cc3f35d8736faafcb4b0118bfa80811f48c49e2d863a5bd",
+              "sizeBytes": 302068
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b46fa143-6a44-4b25-8cd5-a1ba79da4589.request.json",
+              "sha256": "eb74455694b6c9b2d164fbdde18ce8777c2b77178b3d5a739ae683ddc3492751",
+              "sizeBytes": 251816
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b75a41e6-3850-42b2-992c-d972e05e065d.request.json",
+              "sha256": "5a8852afb4469c26405f454a32a9186d899f142f998f8a0641372ae1b5eb4197",
+              "sizeBytes": 14746
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d1cd519e-da6c-445b-b8b1-6c0d9bf9d815.request.json",
+              "sha256": "560114711864120ea99bced137bb2c1acaa60240cd71e3d4308e78b18e825b7b",
+              "sizeBytes": 88089
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/edd0bf56-d828-4027-ae41-c6b45ad9253c.request.json",
+              "sha256": "df27e58688bc7f5649c332834e2d7115ffdaed1db9ff6a8a4d98bb8e621ab309",
+              "sizeBytes": 146018
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT9s1zhurEM1YE3FBqN.response.json",
+              "sha256": "04a55d1fbeba86f09b86401d2a856db45234288cb6406f63196885595085de4f",
+              "sizeBytes": 1779
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT9s6xNDukwSsRP4BkE.response.json",
+              "sha256": "24c02bbfd7bdf6659a73e976a07b83d9130b7e24a9c009c27a8918b7efbf607f",
+              "sizeBytes": 810
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATA7kGihc26RYUyWreA.response.json",
+              "sha256": "1c40166b9ec662c7cc1ca7e31e0e9bfabf8755be2f2f546267f6b5eb002d69d0",
+              "sizeBytes": 1677
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATAYv6TXiweBS64YAED.response.json",
+              "sha256": "26216b0e85783fbc79705b8368063c66817d1389047fb24ce02a13d3bad6dcce",
+              "sizeBytes": 24182
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATGtdBKiCTSfGn1uWWC.response.json",
+              "sha256": "4629b580bd25ea81e450fa1ef2dbde563961e69ee962904f72b29ec434fd50ae",
+              "sizeBytes": 2071
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATHTqwq3caguah2vene.response.json",
+              "sha256": "cf4d0ab32e134d7a685e986e17d235f986c3efa61b3bea827869d13b9ad2a981",
+              "sizeBytes": 1481
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATHmXKS7KtRFKRvv7CB.response.json",
+              "sha256": "eec5c2abd3b3b71dd7e9bea282e94c41294197834cee0a0bc87988255a44f806",
+              "sizeBytes": 2021
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATJ9867YkSPncMmYNGK.response.json",
+              "sha256": "756678190710e69656c8a7a371d57564419c9d6bcce79980b1caf3aa6bfd7e76",
+              "sizeBytes": 49745
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATYTZ1Ap5WVkgoo88pg.response.json",
+              "sha256": "aef68e554e6cf652b0fa130c7bf9ed43567c9cec3ae31b77af3731dae2190d59",
+              "sizeBytes": 1504
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATYiY9rfWWrVELtEoMV.response.json",
+              "sha256": "68d77d355cb2c393ea5d4206122bfc72e6af698f69156533d426eee70c863c64",
+              "sizeBytes": 3812
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATZXZstAFZYLhAF5Ldc.response.json",
+              "sha256": "edab45d1e26ae36c93c7de64029d7c32f6589327c4d3e64d218f649dde7d0e6c",
+              "sizeBytes": 2686
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "e1fb49b17a1fbee8f3051d90810848b77162d6d446558089627a7ef0170a4e91",
+              "sizeBytes": 25505
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/plan/attempt-0-da1669e7-2de4-4c87-9377-64a99ddf811b",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/plan/attempt-0-da1669e7-2de4-4c87-9377-64a99ddf811b/manifest.json",
+          "nodeId": "plan",
+          "pipelineId": "ticket-complete-AI-3107",
+          "runtime": "claude",
+          "sessionId": "caf9eb81-0b7d-4d6a-bbc6-f3758d1e4457",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll start by exploring the codebase to verify the ticket's claims before writing the plan.\nNow let me examine the test file and the main.ts command wiring.\nLet me verify the remaining claims: docs, README, package.json version, and check for any existing timeout references.\nAll claims verified. The branch is already based on `origin/main` (0 behind, 1 ahead — the checkpoint). No existing timeout logic in `headless-run.ts`. Now writing the plan and sidecars.\nNow the sidecar files. Let me verify the plan's line count first.\nUnder 300. Now the sidecars:\nPlan and sidecars written. Summary of what I produced:\n\n## Plan: AI-3107 — `eh run --timeout <seconds>`\n\n**Verification against the codebase** (Phase 1) confirmed every ticket claim:\n- `runHeadless` / `executePreparedHeadlessPlan` and the signal-forwarding plumbing exist exactly as described (`src/headless-run.ts:198-278`).\n- The `128 + signal` exit derivation is real (`:257-261`), and the referenced signal test (`:1180-1258`) asserts `128 + SIGTERM`.\n- Preflight throws before `emit(run.started)` produce exactly `[run.error, run.completed(1)]` — the shape the existing `test.each` already checks.\n- I verified a **non-obvious load-bearing fact**: `--timeout` never reaches the child's argv (`prepareHeadlessPlan` builds args only from effort/harness/model/nativeArgs/resume), which is why the invariant test can deep-equal the with-flag and no-flag event streams.\n- Branch note: local main being \"7 commits behind\" is moot — the working branch is already based on `origin/main` (0 behind).\n\n**Design decisions documented in the plan:**\n- Grace period as named constant `TIMEOUT_KILL_GRACE_MS = 10_000`, injectable via `EH_TIMEOUT_KILL_GRACE_MS` (env var chosen over option — simplest for subprocess tests).\n- Suppress the duplicate generic signal `run.error` when `timedOut`, so exactly one limit-naming `run.error` precedes `run.completed`.\n- Timers are **not** `.unref()`'d — deliberately, so the invariant test proves cleanup by exiting promptly (with a 20s test timeout) instead of masking a leaked timer.\n\n**Structure:** 3 independently-committable tasks (validation → enforcement → docs/version bump), 7 authored files (6 units), well within budget — no staging needed, no `plan-remainder.json`.\n\nFiles written:\n- `.plans/AI-3107-run-timeout-seconds.md` (288 lines)\n- `.attractor/ac.json` (5 acceptance criteria, verbatim)\n- `.attractor/plan-meta-draft.json`\n",
+      "retryCount": 0,
+      "sessionId": "caf9eb81-0b7d-4d6a-bbc6-f3758d1e4457",
+      "startedAt": "2026-08-18T15:29:15.555Z",
+      "usage": {
+        "cacheReadTokens": 741030,
+        "cacheWriteTokens": 95603,
+        "costUsd": 1.69592975,
+        "inputTokens": 14467,
+        "outputTokens": 26079
+      }
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3107",
   "status": "running",
-  "updatedAt": "2026-08-18T15:29:13.953Z",
+  "updatedAt": "2026-08-18T15:34:49.374Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -154,6 +335,20 @@
         "outputTokens": 1332
       },
       "visits": 1
+    },
+    "plan": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 333818,
+      "usage": {
+        "cacheReadTokens": 741030,
+        "cacheWriteTokens": 95603,
+        "costUsd": 1.69592975,
+        "inputTokens": 14467,
+        "outputTokens": 26079
+      },
+      "visits": 1
     }
-  }
+  },
+  "workPushed": true
 }
