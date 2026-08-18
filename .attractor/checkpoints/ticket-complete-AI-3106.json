@@ -1,0 +1,147 @@
+{
+  "createdAt": "2026-08-18T15:28:24.619Z",
+  "currentNodeId": "plan",
+  "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
+  "nodeStates": {
+    "start": {
+      "completedAt": "2026-08-18T15:28:24.900Z",
+      "nodeId": "start",
+      "outcome": "success",
+      "output": "Pipeline started",
+      "retryCount": 0,
+      "startedAt": "2026-08-18T15:28:24.899Z"
+    },
+    "scope_gate": {
+      "completedAt": "2026-08-18T15:28:39.510Z",
+      "nodeId": "scope_gate",
+      "artifacts": [
+        {
+          "agentRunId": "9753595a-2474-4d59-9c3a-b2201dd6007c",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "d189b1192e74b7f94686408e51741150601615ce2379597b33f9f83cab019cf9",
+              "sizeBytes": 16379
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/13db42ae-952d-49c0-969a-578c3510845a.request.json",
+              "sha256": "ad504fc6420348f0dcfca3e039969231c97797a3a0aac709125837037cb1108c",
+              "sizeBytes": 10171
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/36b62d35-b9f2-458f-a8a8-19f2db6c380e.request.json",
+              "sha256": "7b5fbfcdc305981e4cb57ffbbcd83fcac52a0da5c2bbdbe573221e9c2ea5feda",
+              "sizeBytes": 83506
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b01ed325-0a1d-45e4-b065-8da409bf1904.request.json",
+              "sha256": "cf309c1cd29d668dca267f5516cecc3c28ab88f1bdeb6c6f11861c984755757c",
+              "sizeBytes": 87045
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT6AVrfh6Vzc5ejoGaD.response.json",
+              "sha256": "a41bccb74dad10f13f2734d6f6de76aef309760d81d2e2c817abb6f9c1c48c6d",
+              "sizeBytes": 806
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT6AoxKPQSayPMjMQMk.response.json",
+              "sha256": "66c1d514a3561a505a21216ef02342be5800d3ebda865cb17efbc07e66f9743a",
+              "sizeBytes": 2046
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT6cKsSxY439Spo3r7e.response.json",
+              "sha256": "7383c044c90bacb5c2df299d43b14f0e0d0a32eacaa66a6ad2fa68d381a83c05",
+              "sizeBytes": 2561
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "f52691bd2d97d1c3a0ca18204fb57b425fa5f6415209558d618c3fe45ff9805b",
+              "sizeBytes": 12463
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/scope_gate/attempt-0-9753595a-2474-4d59-9c3a-b2201dd6007c",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/scope_gate/attempt-0-9753595a-2474-4d59-9c3a-b2201dd6007c/manifest.json",
+          "nodeId": "scope_gate",
+          "pipelineId": "ticket-complete-AI-3106",
+          "runtime": "claude",
+          "sessionId": "3f28b42f-f9e7-4423-bad9-00fa30d38826",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "All referenced files, symbols (`resumeSessionId`, `--resume-session`, `createFakeHarness`, `executePreparedHeadlessPlan`), and patterns exist in this checkout. This is the correct repository.\n\nThe ticket is well-scoped:\n- **Single deliverable**: add a `--cwd <dir>` flag that sets the spawned harness child's working directory.\n- **Clear scope of changes**: `src/main.ts` (option), `src/headless-run.ts` (plumb through options → spawn), `src/types.ts`, plus tests and docs.\n- **Strong acceptance signal**: three concrete ACs with named proof tests, an explicit existing pattern to mirror (`--resume-session`), and defined out-of-scope (interactive launcher, config default cwd, Grok temp-file location).\n- **Low design freedom / high verification** per the delegability block — exactly the profile of a proceed.\n\nNo signs of over-breadth (one focused flag), no underspecification (author made the decisions), and it targets code that verifiably exists here.\n\nSTATUS:proceed\n",
+      "retryCount": 0,
+      "sessionId": "3f28b42f-f9e7-4423-bad9-00fa30d38826",
+      "startedAt": "2026-08-18T15:28:24.901Z",
+      "usage": {
+        "cacheReadTokens": 33797,
+        "cacheWriteTokens": 16482,
+        "costUsd": 0.191661,
+        "inputTokens": 9748,
+        "outputTokens": 819
+      }
+    }
+  },
+  "parallelBranches": {},
+  "pipelineId": "ticket-complete-AI-3106",
+  "status": "running",
+  "updatedAt": "2026-08-18T15:28:39.514Z",
+  "variables": {
+    "repo.defaultBranch": "main",
+    "repo.fullName": "alephic-ai/exquisite-harness",
+    "repo.lintCommand": "pnpm lint",
+    "repo.packageManager": "pnpm",
+    "repo.testCommand": "pnpm test",
+    "repo.verificationCommand": "echo \"Verification skipped: no verification command configured for this repository\"",
+    "branch": "intelligencev2/ai-3106-eh-run-add-cwd-dir-for-the-spawned-harness",
+    "ticket.comments": "",
+    "ticket.description": "# eh run: add `--cwd <dir>` for the spawned harness\n\n## Problem\n\n`eh run` spawns the harness child with eh's own working directory — `spawn()` in `executePreparedHeadlessPlan` (`src/headless-run.ts` ~line 202) passes no `cwd` option. Orchestrators that run review/worker lanes in per-lane git worktrees must subshell-`cd` before every invocation, which composes badly with scripted dispatch and process supervisors. This is the top ask from the multi-lane code-review orchestration now driving `eh run` (and the same shape an envoy dispatch pipeline will need).\n\n## Context\n\n* Branch from `origin/main` — the local `exquisite-harness-main` checkout is 7 commits behind and missing the approval-defaults work (#42).\n* `LaunchPlan` (`src/types.ts`) has no `cwd` field today; thread the value via `HeadlessRunOptions` → `ResolvedHeadlessRunOptions` the same way `resumeSessionId` is plumbed.\n* Grok's prompt-file handling uses `mkdtemp` under `os.tmpdir()` and is independent of cwd — unaffected.\n* Follow the flag-addition pattern of `--resume-session` (`src/main.ts` `run` command options → `runHeadless`).\n* The `--timeout` and exit-codes tickets touch the same region of `headless-run.ts` (spawn call, signal handlers, exit derivation). Land these serially — suggested order: this ticket, then timeout, then exit codes — rather than in parallel branches.\n\n## Acceptance Criteria\n\n- [ ] `eh run` accepts `--cwd <dir>`; the spawned harness child process runs with that directory as its working directory (`spawn(..., { cwd })` in `executePreparedHeadlessPlan`, `src/headless-run.ts`). Proof: subprocess test in `src/headless-run.test.ts` using a fake harness (per the existing `createFakeHarness` pattern) that reports `process.cwd()`.\n- [ ] A nonexistent or non-directory `--cwd` value fails preflight before spawn with a clear error on stderr and a nonzero exit — the child is never spawned against a missing directory. Proof: subprocess tests for both a missing path and a file-not-directory path, asserting the error, the nonzero exit, and that the fake harness was never invoked.\n- [ ] Omitting the flag preserves today's behavior exactly (child inherits eh's cwd); existing headless-run tests stay green unmodified.\n\n## Out of Scope\n\n* cwd support for the interactive launcher (`src/launch.ts`) or a config-level default cwd.\n* Any change to Grok's temp prompt-file location.\n\n## Verification\n\n* `pnpm lint:ci`; `bun test src/headless-run.test.ts`; full `pnpm test`.\n* Manual: `printf 'run pwd and print it' | pnpm dev run claude vercel-ai-gateway anthropic/claude-opus-5 --cwd /tmp`.\n* Version bump required (`scripts/check-version-guard.sh --staged`); update README `### Headless runs`, DESIGN.md `Headless execution`, and `docs/qa/eh-cli.md`.\n\n## Delegability\n\n```yaml\ndesign_freedom: low\nverification_strength: high\nsilent_failure_cost: low\ncontext_volatility: low\nrecommended_tier: low\nrecommended_effort: low\n```",
+    "ticket.id": "AI-3106",
+    "ticket.state": "Triage",
+    "ticket.title": "eh run: add --cwd <dir> for the spawned harness",
+    "ticket.url": "https://linear.app/alephic/issue/AI-3106/eh-run-add-cwd-dir-for-the-spawned-harness"
+  },
+  "nodeVisitTotals": {
+    "start": {
+      "handler": "start",
+      "outcome": "success",
+      "totalDurationMs": 1,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "scope_gate": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 14610,
+      "usage": {
+        "cacheReadTokens": 33797,
+        "cacheWriteTokens": 16482,
+        "costUsd": 0.191661,
+        "inputTokens": 9748,
+        "outputTokens": 819
+      },
+      "visits": 1
+    }
+  }
+}
