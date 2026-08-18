@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:34.652Z",
-  "currentNodeId": "ac_verify",
+  "currentNodeId": "review_mode",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -774,7 +774,7 @@
       "startedAt": "2026-08-18T15:47:35.402Z"
     },
     "ac_verify": {
-      "completedAt": "2026-08-18T15:47:37.078Z",
+      "completedAt": "2026-08-18T16:07:19.139Z",
       "nodeId": "ac_verify",
       "outcome": "success",
       "output": "All ACs have status and evidence",
@@ -784,7 +784,7 @@
         "originalLength": 32,
         "truncated": false
       },
-      "retryCount": 0,
+      "retryCount": 1,
       "startedAt": "2026-08-18T15:47:36.795Z"
     },
     "review_mode": {
@@ -1958,7 +1958,7 @@
   },
   "pipelineId": "ticket-complete-AI-3109",
   "status": "running",
-  "updatedAt": "2026-08-18T16:07:17.662Z",
+  "updatedAt": "2026-08-18T16:07:19.140Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -2121,7 +2121,7 @@
     "ac_verify": {
       "handler": "tool",
       "outcome": "success",
-      "totalDurationMs": 283,
+      "totalDurationMs": 506,
       "usage": {
         "cacheReadTokens": 0,
         "cacheWriteTokens": 0,
@@ -2129,7 +2129,7 @@
         "inputTokens": 0,
         "outputTokens": 0
       },
-      "visits": 1
+      "visits": 2
     },
     "review_mode": {
       "handler": "conditional",
