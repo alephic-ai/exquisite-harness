@@ -1,0 +1,147 @@
+{
+  "createdAt": "2026-08-18T15:28:34.652Z",
+  "currentNodeId": "plan",
+  "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
+  "nodeStates": {
+    "start": {
+      "completedAt": "2026-08-18T15:28:34.979Z",
+      "nodeId": "start",
+      "outcome": "success",
+      "output": "Pipeline started",
+      "retryCount": 0,
+      "startedAt": "2026-08-18T15:28:34.978Z"
+    },
+    "scope_gate": {
+      "completedAt": "2026-08-18T15:28:52.539Z",
+      "nodeId": "scope_gate",
+      "artifacts": [
+        {
+          "agentRunId": "aa3c9de7-d24d-4cc5-95a0-174f477f028b",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "e89ab58cf33947090ca9916bade34bc2dadf7a75e00bd9dd1325a4f43c3a8b5d",
+              "sizeBytes": 18503
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/02ebd6c0-02bd-4b8d-a0c7-70f217ba8921.request.json",
+              "sha256": "35c2ccc429a0846689166c1738585814d97bc7e2bfe672ee233cb63b07db7740",
+              "sizeBytes": 10812
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4587ab02-6751-4b65-a89d-9b5f31968d71.request.json",
+              "sha256": "9bd73863c057f2fc1eb8c9a26d8159f2c000c47ebf9a55a543d33725a604c73e",
+              "sizeBytes": 87646
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9de1c5fb-a54d-450f-bf39-e87f4cc48903.request.json",
+              "sha256": "964adbc3e6bf7762accbdfa8802a43c4bb707c7da95a9723f31c195615fb3b67",
+              "sizeBytes": 84155
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT6u4waYRCRfMQeVrgR.response.json",
+              "sha256": "a997b43c1546282ed8908bbe0c54e7bd257a7f9abf4f3fdd3c5f26ee1a653d25",
+              "sizeBytes": 827
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT6upLYbQQMu3wPPrZq.response.json",
+              "sha256": "facb16ad736d8e1033cef7681e5dd5a5b2e513c050f774820dbf00bb436f7155",
+              "sizeBytes": 2013
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT7LNxFfFejFXDWrobH.response.json",
+              "sha256": "9bfdb3f5c6ebb6d6e136c2b0d3e74a8d0baf4a21c16b2be6e21c3c973608f75c",
+              "sizeBytes": 2855
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "45f307b033318cf8367bfb4d4bc1703bbb0881a6b419c4a1361553cc284f85be",
+              "sizeBytes": 13104
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/scope_gate/attempt-0-aa3c9de7-d24d-4cc5-95a0-174f477f028b",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/scope_gate/attempt-0-aa3c9de7-d24d-4cc5-95a0-174f477f028b/manifest.json",
+          "nodeId": "scope_gate",
+          "pipelineId": "ticket-complete-AI-3109",
+          "runtime": "claude",
+          "sessionId": "a3ffc468-c79c-4534-a0f9-6cd9aba8e1a9",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll verify the ticket's referenced code exists in this checkout before deciding.\nAll referenced files and code regions exist and match the ticket exactly — `executePreparedHeadlessPlan`'s exit-code derivation, the `resultIsError` forcing `1`, the spawn-error path, and the `runHeadless` preflight catch are all present.\n\nThis ticket is a strong **proceed**:\n\n- **Single, focused deliverable** — introduce a reserved contiguous exit-code block (≥64) for three eh-detected failure categories (spawn failure, semantic harness failure, preflight/usage errors), preserve raw passthrough + `128+signal`, and document it. All in one region of `headless-run.ts` plus docs.\n- **Clear acceptance signal** — exact codes are the implementer's choice but must be documented; the passthrough invariant is pinned by an existing test that must stay green; verification commands are spelled out.\n- **Decisions already made** — the block-at-≥64 approach, passthrough rule, and explicit deferral of provider/auth classification and `errorCategory` are all resolved with the repo owner. Open questions (exact numbers) are documented judgment calls, not blockers.\n- **Right repository** — this is the `exquisite-harness` repo (`eh` CLI), and every named artifact is present.\n\nScope is well within a single coherent PR (three behavior-changing categories in one function + docs), not a greenfield build.\n\nSTATUS:proceed\n",
+      "retryCount": 0,
+      "sessionId": "a3ffc468-c79c-4534-a0f9-6cd9aba8e1a9",
+      "startedAt": "2026-08-18T15:28:34.981Z",
+      "usage": {
+        "cacheReadTokens": 33927,
+        "cacheWriteTokens": 16458,
+        "costUsd": 0.193229,
+        "inputTokens": 9748,
+        "outputTokens": 883
+      }
+    }
+  },
+  "parallelBranches": {},
+  "pipelineId": "ticket-complete-AI-3109",
+  "status": "running",
+  "updatedAt": "2026-08-18T15:28:52.543Z",
+  "variables": {
+    "repo.defaultBranch": "main",
+    "repo.fullName": "alephic-ai/exquisite-harness",
+    "repo.lintCommand": "pnpm lint",
+    "repo.packageManager": "pnpm",
+    "repo.testCommand": "pnpm test",
+    "repo.verificationCommand": "echo \"Verification skipped: no verification command configured for this repository\"",
+    "branch": "intelligencev2/ai-3109-eh-run-reserved-exit-codes-for-eh-detected-failure",
+    "ticket.comments": "",
+    "ticket.description": "# eh run: reserved exit codes for eh-detected failure categories\n\n## Problem\n\n`eh run` collapses distinct failures into indistinguishable exit codes: a missing harness binary (spawn `ENOENT`), a semantic harness failure (`resultIsError` with child exit 0), and preflight errors all become `1`, while raw child codes pass through. An orchestrator supervising many lanes cannot classify a dead lane (retry? reconfigure? report?) without parsing stderr.\n\n## Context\n\n* Branch from `origin/main` (local main is 7 commits behind).\n* Current derivation lives in `executePreparedHeadlessPlan` (`src/headless-run.ts` ~lines 246–272: `completed.code ?? (signalNumber ? 128 + signalNumber : 1)`, `resultIsError` forcing `1`, spawn-error path) and the preflight catch in `runHeadless` (~lines 105–108).\n* Decision (made with repo owner): eh owns a small reserved, documented, contiguous exit-code block at ≥64; raw harness codes pass through unchanged when eh has no better category; `run.completed.exitCode` keeps meaning \"the raw child exit code\". Provider/auth-error classification is explicitly deferred — it requires per-harness error-shape parsing.\n* The existing test \"emits a run error when a harness exits non-zero without a semantic error\" expects raw passthrough (`7`) and must stay green — this test staying green unmodified is the proof for the passthrough invariant below.\n* The `--cwd` and `--timeout` tickets touch the same region of `headless-run.ts`. Land serially — suggested order: cwd, timeout, then this ticket.\n* Accepted limitation (documentable, not fixable here): a timed-out run and any other SIGTERM'd run both surface as `128+15` — orchestrators that need to distinguish them read the `run.error` event.\n\n## Acceptance Criteria\n\n- [ ] eh-detected categories exit with distinct documented codes from one reserved contiguous block at ≥64 (exact numbers implementer's choice, recorded in the README table): at minimum spawn failure (binary missing/unspawnable), semantic harness failure (`resultIsError` with child exit 0), and preflight/usage errors (TTY or empty stdin, invalid flag values). Clean completion remains 0. Proof: extend the existing missing-binary / semantic-failure / preflight subprocess tests to assert the reserved codes.\n- [ ] Invariant: a raw child exit code is never remapped when eh has no category for the failure — the existing nonzero-passthrough and `128 + signal` behaviors are unchanged, and `run.completed.exitCode` continues to carry the raw child code (its field semantics do not change).\n- [ ] README gains an \"Exit codes\" table (mirrored in DESIGN.md's headless section) documenting the reserved block, the passthrough rule, and the caveat that a harness's own code may numerically collide with the reserved block only in the passthrough case.\n\n## Out of Scope\n\n* Provider/auth-error classification (deferred by decision — per-harness error-shape parsing).\n* An `errorCategory` field on `run.completed` (may come later; exit codes are the contract for now).\n* Timeout's exit code: if the `--timeout` ticket has landed, its `128 + signal` shape may optionally be documented in the table, but remapping it is not required here.\n\n## Verification\n\n* `pnpm lint:ci`; `bun test src/headless-run.test.ts`; full `pnpm test`.\n* Version bump required; update README, DESIGN.md, `docs/qa/eh-cli.md`.\n\n## Delegability\n\n```yaml\ndesign_freedom: medium\nverification_strength: high\nsilent_failure_cost: medium\ncontext_volatility: low\nrecommended_tier: medium\nrecommended_effort: medium\n```",
+    "ticket.id": "AI-3109",
+    "ticket.state": "Triage",
+    "ticket.title": "eh run: reserved exit codes for eh-detected failure categories",
+    "ticket.url": "https://linear.app/alephic/issue/AI-3109/eh-run-reserved-exit-codes-for-eh-detected-failure-categories"
+  },
+  "nodeVisitTotals": {
+    "start": {
+      "handler": "start",
+      "outcome": "success",
+      "totalDurationMs": 1,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "scope_gate": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 17558,
+      "usage": {
+        "cacheReadTokens": 33927,
+        "cacheWriteTokens": 16458,
+        "costUsd": 0.193229,
+        "inputTokens": 9748,
+        "outputTokens": 883
+      },
+      "visits": 1
+    }
+  }
+}
