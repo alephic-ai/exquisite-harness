@@ -162,10 +162,14 @@ Picker flow (via `@clack/prompts`, skipped per already-specified args):
    per 1M) and p50 throughput (tps), plus `automatic` (the default), `ZDR only`
    (restrict routing to zero-data-retention providers), and manual entry.
    Selecting a provider pins the run with no fallback to another upstream.
-6. **Web access** (Claude only) — Native (default), or Firecrawl with the same
+6. **Effort** — `auto` plus the intersection of the harness's accepted levels
+   and the model's reported efforts (Vercel `reasoning_options`, OpenRouter
+   `reasoning.supported_efforts`). Skipped when the intersection is empty
+   (including opencode). Models that omit the field keep the harness list.
+7. **Web access** (Claude only) — Native (default), or Firecrawl with the same
    inline key-status and masked key-entry behavior as model providers. Explicit
    `--search` skips this picker; Codex and Grok stay native.
-7. **Confirm** — `note()` with resolved env/args → go / save as profile / back.
+8. **Confirm** — `note()` with resolved env/args → go / save as profile / back.
 
 First run (no config file): mini-wizard detects harness binaries, probes
 `localhost:11434`, detects `OPENROUTER_API_KEY` / `AI_GATEWAY_API_KEY` /
@@ -374,8 +378,9 @@ model. Provider cost/throughput hints come from the same
 
 - **codex**: `-c` TOML overrides — `model`, `model_provider=eh`,
   `model_providers.eh.{name,base_url,wire_api,env_key}`, plus
-  `model_reasoning_effort=<level>` (codex caps at `high`, so `xhigh`/`max` map
-  down). No writes to `~/.codex/config.toml`.
+  `model_reasoning_effort=<level>` (the value is passed through; the picker and
+  `-e` only offer levels the model and Codex both accept). No writes to
+  `~/.codex/config.toml`.
 - **grok**: env `XAI_API_KEY`, `GROK_MODELS_BASE_URL`, args `--model <id>` and
   optional `--reasoning-effort <level>`. These are Grok Build's documented
   custom-model and CLI interfaces; `eh doctor` reports the installed binary.
@@ -408,11 +413,15 @@ model. Provider cost/throughput hints come from the same
   the var to inject, while keyless local servers use a dummy literal. Unknown
   model ids pass through — pi prints its own generic-limits warning.
 
-**Effort** is an optional part of a selection (`auto`, `low`, `medium`, `high`,
-`xhigh`, `max`), resolved flag → profile → interactive default (`auto` = model
-default, sends nothing). Vercel AI Gateway also exposes the OpenAI
-`reasoning.effort` pass-through, so effort works end-to-end for Vercel AI
-Gateway–backed codex/OpenAI models.
+**Effort** is an optional part of a selection (`auto`, plus provider-reported
+values from `none` / `minimal` / `low` / `medium` / `high` / `xhigh` / `max`),
+resolved flag → profile → interactive default (`auto` = model default, sends
+nothing). The picker and `-e` intersect the harness's accepted levels with the
+model's reported set; an explicit level that survives that filter is passed
+through (Codex no longer remaps `xhigh`/`max` to `high`). OpenRouter
+`supported_efforts: null` means every gateway effort; `mandatory: true` drops
+`none`. Vercel AI Gateway also exposes the OpenAI `reasoning.effort`
+pass-through, so effort works end-to-end for Gateway-backed Codex/OpenAI models.
 
 **Resume** (`-r`): an eh-owned picker over this directory's sessions across all
 harnesses, then resume the pick by session id — claude `--resume <id>`, codex

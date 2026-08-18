@@ -67,6 +67,38 @@ describe('profile Gateway routing', () => {
   })
 })
 
+describe('Codex effort pass-through', () => {
+  test('print-env keeps xhigh instead of remapping it to high', () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'eh-flow-test-'))
+    tempDirs.push(root)
+    const result = spawnSync(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        '--print-env',
+        'codex',
+        'ollama',
+        'qwen3-coder',
+        '-e',
+        'xhigh',
+      ],
+      {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          XDG_CONFIG_HOME: path.join(root, 'xdg'),
+        },
+      },
+    )
+    expect(result.status).toBe(0)
+    expect(result.stderr).toBe('')
+    expect(result.stdout).toContain('model_reasoning_effort="xhigh"')
+    expect(result.stdout).not.toContain('model_reasoning_effort="high"')
+  })
+})
+
 describe('--print-env temporary launch artifacts', () => {
   test('rejects Grok exports and removes the isolated home', () => {
     const root = mkdtempSync(path.join(os.tmpdir(), 'eh-flow-test-'))

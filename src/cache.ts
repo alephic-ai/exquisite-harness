@@ -1,15 +1,22 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { z } from 'zod'
 
-import type { ModelInfo } from './types.js'
-
 import { cachePath, configDir } from './config.js'
+import { MODEL_EFFORT_LEVELS, type ModelInfo } from './types.js'
 
 const cacheSchema = z.record(
   z.string(),
   z.object({
     fetchedAt: z.number(),
-    models: z.array(z.object({ hint: z.string().optional(), id: z.string() })),
+    models: z.array(
+      z.object({
+        costLabel: z.string().optional(),
+        efforts: z.array(z.enum(MODEL_EFFORT_LEVELS)).optional(),
+        hint: z.string().optional(),
+        id: z.string(),
+        throughputLabel: z.string().optional(),
+      }),
+    ),
   }),
 )
 

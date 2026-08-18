@@ -280,6 +280,111 @@ test('lists OpenRouter models with cost and context hints', async () => {
   }
 })
 
+test('lists OpenRouter models with supported_efforts, null, and mandatory', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        data: [
+          {
+            id: 'openai/gpt-5',
+            reasoning: { supported_efforts: ['high', 'medium', 'low'] },
+          },
+          {
+            id: 'openai/o3',
+            reasoning: { supported_efforts: null },
+          },
+          {
+            id: 'google/gemini-3.5-flash',
+            reasoning: {
+              mandatory: true,
+              supported_efforts: ['high', 'medium', 'low', 'none'],
+            },
+          },
+          {
+            id: 'vendor/empty',
+            reasoning: { supported_efforts: [] },
+          },
+          {
+            id: 'vendor/none-only',
+            reasoning: { mandatory: true, supported_efforts: ['none'] },
+          },
+          { id: 'meta/llama-3' },
+        ],
+      }),
+    )
+  })
+
+  try {
+    const models = await listModels({
+      baseURL: `${upstream.baseURL}/api/v1`,
+      name: 'openrouter',
+      type: 'openrouter',
+    })
+    expect(models).toEqual([
+      {
+        efforts: ['low', 'medium', 'high'],
+        id: 'google/gemini-3.5-flash',
+      },
+      { id: 'meta/llama-3' },
+      {
+        efforts: ['low', 'medium', 'high'],
+        id: 'openai/gpt-5',
+      },
+      {
+        efforts: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+        id: 'openai/o3',
+      },
+      {
+        efforts: [],
+        id: 'vendor/empty',
+      },
+      {
+        efforts: [],
+        id: 'vendor/none-only',
+      },
+    ])
+  } finally {
+    await upstream.close()
+  }
+})
+
+test('lists Gateway models with reasoning_options effort values', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        data: [
+          {
+            id: 'openai/gpt-5',
+            reasoning_options: [
+              { type: 'effort', values: ['minimal', 'low', 'medium', 'high'] },
+            ],
+          },
+          { id: 'anthropic/claude-sonnet-4.6' },
+        ],
+      }),
+    )
+  })
+
+  try {
+    const models = await listModels({
+      baseURL: `${upstream.baseURL}/gateway`,
+      name: 'test-gateway',
+      type: 'vercel-gateway',
+    })
+    expect(models).toEqual([
+      { id: 'anthropic/claude-sonnet-4.6' },
+      {
+        efforts: ['minimal', 'low', 'medium', 'high'],
+        id: 'openai/gpt-5',
+      },
+    ])
+  } finally {
+    await upstream.close()
+  }
+})
+
 test('lists OpenRouter endpoints by tag with 30m throughput', async () => {
   let requestedPath = ''
   const upstream = await startUpstream((request, response) => {

@@ -3,12 +3,6 @@ import os from 'node:os'
 import path from 'node:path'
 
 import type { ResolvedProvider } from './config.js'
-import type {
-  ApprovalMode,
-  LaunchPlan,
-  Protocol,
-  SearchBackend,
-} from './types.js'
 
 import { approvalArgsForHarness } from './approval-mode.js'
 import { prepareGrokApiKeyHome } from './grok-home.js'
@@ -19,16 +13,29 @@ import {
   anthropicBaseURLFor,
   codexWireApiFor,
   isRoutingProvider,
+  listModelsCached,
   openAIBaseURLFor,
   resolveKey,
 } from './providers.js'
 import { statuslineEnv, writeClaudeStatuslineSettings } from './statusline.js'
+import {
+  type ApprovalMode,
+  type EffortLevel,
+  type LaunchPlan,
+  MODEL_EFFORT_LEVELS,
+  type ModelEffortLevel,
+  type Protocol,
+  type SearchBackend,
+} from './types.js'
 
 export interface HarnessDef {
   bin: string
   // false = the interactive picker skips effort; explicit options may still
   // be handled by the launch plan (grok) or ignored with a note (opencode).
   effort?: false
+  // Levels this harness can send. Intersected with the model's reported
+  // efforts before the picker. Omitted = every MODEL_EFFORT_LEVELS value.
+  efforts?: readonly ModelEffortLevel[]
   label: string
   plan: (
     provider: ResolvedProvider,
@@ -186,10 +193,7 @@ async function planCodex(
   }
   const notes: string[] = []
   if (effort && effort !== 'auto') {
-    // codex caps at high — map xhigh/max down.
-    const level = effort === 'xhigh' || effort === 'max' ? 'high' : effort
-    args.push('-c', `model_reasoning_effort=${tomlString(level)}`)
-    if (level !== effort) notes.push(`effort ${effort} → codex max is high`)
+    args.push('-c', `model_reasoning_effort=${tomlString(effort)}`)
   }
   args.push(...approvalArgsForHarness('codex', options.approvalMode))
   return {
@@ -357,9 +361,28 @@ async function planOpencode(
 
 // Exported for iteration (picker options). For lookups use getHarness —
 // Record index access would claim every key exists.
+const CLAUDE_LIKE_EFFORTS = [
+  'low',
+  'medium',
+  'high',
+  'xhigh',
+  'max',
+] as const satisfies readonly ModelEffortLevel[]
+
+const CODEX_EFFORTS = [
+  'none',
+  'minimal',
+  'low',
+  'medium',
+  'high',
+  'xhigh',
+  'max',
+] as const satisfies readonly ModelEffortLevel[]
+
 export const HARNESSES: Record<string, HarnessDef> = {
   claude: {
     bin: 'claude',
+    efforts: CLAUDE_LIKE_EFFORTS,
     label: 'Claude Code',
     plan: planClaude,
     protocols: ['anthropic'],
@@ -367,6 +390,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
   },
   codex: {
     bin: 'codex',
+    efforts: CODEX_EFFORTS,
     label: 'Codex CLI',
     plan: planCodex,
     protocols: ['openai-chat', 'openai-responses'],
@@ -376,6 +400,7 @@ export const HARNESSES: Record<string, HarnessDef> = {
   },
   grok: {
     bin: 'grok',
+    efforts: CLAUDE_LIKE_EFFORTS,
     label: 'Grok Build',
     plan: planGrok,
     protocols: ['openai-chat'],
@@ -391,12 +416,55 @@ export const HARNESSES: Record<string, HarnessDef> = {
   },
   pi: {
     bin: 'pi',
+    efforts: CLAUDE_LIKE_EFFORTS,
     label: 'pi',
     plan: planPi,
     protocols: ['openai-chat'],
     providerCompat: piProviderCompat,
     resumeArgs: (id) => (id ? ['--session', id] : ['--continue']),
   },
+}
+
+// Harness capabilities intersected with the model's reported set. `undefined`
+// model efforts means the model does not expose a list — show the harness's
+// own levels. An empty result means skip the picker (auto only).
+export function assertEffortAllowed(
+  effort: EffortLevel | undefined,
+  available: readonly ModelEffortLevel[],
+) {
+  if (effort === undefined || effort === 'auto') return
+  if (available.includes(effort)) return
+  throw new Error(
+    available.length === 0
+      ? `effort is not available for this model`
+      : `effort "${effort}" is not available for this model (available: auto, ${available.join(', ')})`,
+  )
+}
+
+export function availableEfforts(
+  def: HarnessDef,
+  modelEfforts: readonly ModelEffortLevel[] | undefined,
+) {
+  if (def.effort === false) return []
+  const harnessEfforts = def.efforts ?? MODEL_EFFORT_LEVELS
+  if (modelEfforts === undefined) return [...harnessEfforts]
+  return harnessEfforts.filter((level) => modelEfforts.includes(level))
+}
+
+export async function resolveAvailableEfforts(
+  def: HarnessDef,
+  provider: ResolvedProvider,
+  modelId: string,
+) {
+  try {
+    return availableEfforts(
+      def,
+      (await listModelsCached(provider)).find((model) => model.id === modelId)
+        ?.efforts,
+    )
+  } catch {
+    return availableEfforts(def, undefined)
+  }
 }
 
 // Single lookup chokepoint — this keeps the `| undefined` honest.

@@ -26,6 +26,9 @@ export interface LaunchPlan {
 export interface ModelInfo {
   // Cost label ($ in/out per 1M) shown on the model picker row.
   costLabel?: string
+  // Provider-reported effort values. Omitted when the model does not expose
+  // effort selection.
+  efforts?: ModelEffortLevel[]
   hint?: string
   id: string
   // Throughput label (tokens/sec) shown on the model picker row.
@@ -73,15 +76,21 @@ export interface Selection {
   gatewayZdr?: boolean
 }
 
-// Reasoning/effort levels, normalized across harnesses. `auto` means the
-// model default (no override sent). claude, grok, and pi accept xhigh/max;
-// codex maps xhigh/max→high; opencode has no knob.
-export const EFFORT_LEVELS = [
-  'auto',
+// Provider-reported effort values. Harnesses intersect these with what their
+// CLIs accept before showing the picker. OpenRouter's documented set is
+// none/minimal/low/medium/high/xhigh/max; `null` supported_efforts means all
+// of them.
+export const MODEL_EFFORT_LEVELS = [
+  'none',
+  'minimal',
   'low',
   'medium',
   'high',
   'xhigh',
   'max',
 ] as const
+export type ModelEffortLevel = (typeof MODEL_EFFORT_LEVELS)[number]
+
+// `auto` means the model default: no override is sent.
+export const EFFORT_LEVELS = ['auto', ...MODEL_EFFORT_LEVELS] as const
 export type EffortLevel = (typeof EFFORT_LEVELS)[number]
