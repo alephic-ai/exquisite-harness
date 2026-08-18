@@ -190,11 +190,13 @@ statusline. Claude, Codex, pi, and opencode receive the prompt over stdin; pi
 runs with `--mode json`, and opencode uses `run --format json`. Grok receives a
 private temporary prompt file because its headless CLI exposes `--prompt-file`;
 `eh` removes that file after the child exits. Native session resume is available
-for all five harnesses with `--resume-session <id>`. Orchestrators that must
-preserve harness-specific policy flags can pass a JSON string array with
-`--native-args-json`; those args are prepended before `eh`'s required
-machine-output flags. OpenRouter and Vercel AI Gateway runs through Claude,
-Codex, Grok, opencode, or pi may also use `--gateway-provider <slug>`.
+for all five harnesses with `--resume-session <id>`. Pass `--cwd <dir>` to run
+the spawned harness child in `<dir>`; a missing or non-directory value fails
+before launch. Orchestrators that must preserve harness-specific policy flags
+can pass a JSON string array with `--native-args-json`; those args are prepended
+before `eh`'s required machine-output flags. OpenRouter and Vercel AI Gateway
+runs through Claude, Codex, Grok, opencode, or pi may also use
+`--gateway-provider <slug>`.
 
 ### Keys
 

@@ -7,6 +7,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
@@ -125,6 +126,164 @@ describe('eh run', () => {
     ])
     expect(args).not.toContain('fix the parser')
     expect(args).not.toContain('--dangerously-bypass-approvals-and-sandbox')
+  })
+
+  test('runs the spawned harness in the --cwd directory', async () => {
+    const fixture = createFakeCodex()
+    const scratch = mkdtempSync(path.join(tmpdir(), 'eh-cwd-test-'))
+    tempDirs.push(scratch)
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'codex',
+        'ollama',
+        'qwen3-coder',
+        '--cwd',
+        scratch,
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('fix the parser')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+
+    const argsEvent = parseEvents(stdout)
+      .map((event) =>
+        z
+          .object({
+            event: z.object({
+              cwd: z.string(),
+              type: z.literal('fake.args'),
+            }),
+            type: z.literal('harness.event'),
+          })
+          .safeParse(event),
+      )
+      .find((result) => result.success)
+    const childCwd = argsEvent?.data.event.cwd
+    // /tmp is a symlink on macOS, so compare resolved real paths.
+    expect(childCwd && realpathSync(childCwd)).toBe(realpathSync(scratch))
+  })
+
+  test('fails preflight when --cwd does not exist, without spawning the child', async () => {
+    const fixture = createFakeCodex()
+    const scratch = mkdtempSync(path.join(tmpdir(), 'eh-cwd-test-'))
+    tempDirs.push(scratch)
+    const missing = path.join(scratch, 'does-not-exist')
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'codex',
+        'ollama',
+        'qwen3-coder',
+        '--cwd',
+        missing,
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('fix the parser')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(64)
+    // Exactly these two events prove the child never spawned (no fake.args).
+    expect(parseEvents(stdout)).toEqual([
+      {
+        message: expect.stringContaining(missing),
+        type: 'run.error',
+        v: 1,
+      },
+      {
+        exitCode: 64,
+        resultIsError: true,
+        type: 'run.completed',
+        v: 1,
+      },
+    ])
+  })
+
+  test('fails preflight when --cwd is a file, without spawning the child', async () => {
+    const fixture = createFakeCodex()
+    const scratch = mkdtempSync(path.join(tmpdir(), 'eh-cwd-test-'))
+    tempDirs.push(scratch)
+    const file = path.join(scratch, 'a-file')
+    writeFileSync(file, 'not a directory')
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'codex',
+        'ollama',
+        'qwen3-coder',
+        '--cwd',
+        file,
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('fix the parser')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(64)
+    expect(parseEvents(stdout)).toEqual([
+      {
+        message: expect.stringContaining(file),
+        type: 'run.error',
+        v: 1,
+      },
+      {
+        exitCode: 64,
+        resultIsError: true,
+        type: 'run.completed',
+        v: 1,
+      },
+    ])
   })
 
   test('applies the global approval default to headless runs', async () => {
@@ -1403,7 +1562,7 @@ for await (const chunk of process.stdin) chunks.push(chunk)
 const prompt = Buffer.concat(chunks).toString('utf8')
 const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
 emit({ type: 'thread.started', thread_id: 'thread-123' })
-emit({ type: 'fake.args', args: process.argv.slice(2) })
+emit({ type: 'fake.args', args: process.argv.slice(2), cwd: process.cwd() })
 if (process.env.EH_TEST_CODEX_EXIT_CODE) {
   process.stderr.write('native failure\\n')
   process.exit(Number(process.env.EH_TEST_CODEX_EXIT_CODE))

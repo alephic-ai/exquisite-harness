@@ -89,18 +89,20 @@ events inside a versioned NDJSON envelope, and emits normalized session, text,
 usage, and completion events. It does not open UI, write recents, or install the
 Claude statusline. The caller owns cwd, scratch/config roots, process timeouts,
 and lifecycle policy; `eh` owns provider wiring and harness protocol parsing.
-Callers can preserve harness-specific policy with a validated JSON string array
-of native arguments, which `eh` prepends before its mandatory machine-mode
-arguments. The five native adapters are Claude `stream-json`, Codex `--json`,
-Grok `streaming-json`, pi `--mode json`, and opencode `run --format json`; pi
-and opencode keep prompt input on stdin and expose their native session IDs,
-text, usage, cost, and semantic errors through the same normalized contract. For
-failures `eh` detects itself it reserves a contiguous exit-code block at `>=64`:
-`64` (preflight/usage error — nothing spawned), `65` (spawn failure — binary
-missing/unspawnable), and `66` (semantic harness failure — `resultIsError` while
-the child exited `0`). Every other code is the raw child exit code passed
-through unchanged (including `128 + signal`), so a harness's own code can
-collide with the reserved block only in that passthrough case.
+`--cwd <dir>` lets the caller set the spawned child's working directory,
+validated to be an existing directory before spawn. Callers can preserve
+harness-specific policy with a validated JSON string array of native arguments,
+which `eh` prepends before its mandatory machine-mode arguments. The five native
+adapters are Claude `stream-json`, Codex `--json`, Grok `streaming-json`, pi
+`--mode json`, and opencode `run --format json`; pi and opencode keep prompt
+input on stdin and expose their native session IDs, text, usage, cost, and
+semantic errors through the same normalized contract. For failures `eh` detects
+itself it reserves a contiguous exit-code block at `>=64`: `64` (preflight/usage
+error — nothing spawned), `65` (spawn failure — binary missing/unspawnable),
+and `66` (semantic harness failure — `resultIsError` while the child exited
+`0`). Every other code is the raw child exit code passed through unchanged
+(including `128 + signal`), so a harness's own code can collide with the
+reserved block only in that passthrough case.
 
 **Phase 2 (later): local router.** An opt-in localhost proxy that receives
 Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK

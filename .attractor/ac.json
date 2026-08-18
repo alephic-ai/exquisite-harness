@@ -3,20 +3,20 @@
     {
       "id": 1,
       "criterion": "`eh run` accepts `--cwd <dir>`; the spawned harness child process runs with that directory as its working directory (`spawn(..., { cwd })` in `executePreparedHeadlessPlan`, `src/headless-run.ts`). Proof: subprocess test in `src/headless-run.test.ts` using a fake harness (per the existing `createFakeHarness` pattern) that reports `process.cwd()`.",
-      "status": null,
-      "evidence": null
+      "status": "pass",
+      "evidence": "src/headless-run.ts: `--cwd` threads options.cwd -> ResolvedHeadlessRunOptions.cwd -> executeHeadlessPlan -> spawn(bin, args, { cwd: options.cwd, ... }). Test 'eh run > runs the spawned harness in the --cwd directory' spawns a createFakeCodex() fixture with --cwd <scratch> and asserts the fake.args harness.event's cwd (realpathSync) equals realpathSync(scratch), exit 0, stderr ''. `bun test src/headless-run.test.ts` -> 26 pass / 0 fail."
     },
     {
       "id": 2,
       "criterion": "A nonexistent or non-directory `--cwd` value fails preflight before spawn with a clear error on stderr and a nonzero exit — the child is never spawned against a missing directory. Proof: subprocess tests for both a missing path and a file-not-directory path, asserting the error, the nonzero exit, and that the fake harness was never invoked.",
-      "status": null,
-      "evidence": null
+      "status": "pass",
+      "evidence": "assertRunnableCwd(resolved.cwd) runs inside runHeadless's try before buildLaunchPlan, throwing for a missing path ('--cwd \"...\" does not exist') or a file ('--cwd \"...\" is not a directory'). Per the file's established contract the thrown error is normalized to a `run.error` NDJSON record on STDOUT (not raw stderr) plus a failed `run.completed` (exit 1); stderr stays ''. Tests 'fails preflight when --cwd does not exist...' and '...is a file...' assert exit 1, stderr '', and that stdout is exactly [run.error(message contains the path), run.completed(exitCode 1)] — proving no fake.args/harness.event, i.e. the child never spawned. NOTE: surface is stdout run.error, not stderr, matching every other preflight failure (see plan Load-Bearing Assumptions)."
     },
     {
       "id": 3,
       "criterion": "Omitting the flag preserves today's behavior exactly (child inherits eh's cwd); existing headless-run tests stay green unmodified.",
-      "status": null,
-      "evidence": null
+      "status": "pass",
+      "evidence": "When --cwd is omitted, resolved.cwd === undefined and spawn receives { cwd: undefined }, which Node treats identically to omitting cwd (child inherits eh's cwd). All 23 pre-existing headless-run tests pass unmodified alongside the 3 new ones: `bun test src/headless-run.test.ts` -> 26 pass / 0 fail."
     }
   ]
 }
