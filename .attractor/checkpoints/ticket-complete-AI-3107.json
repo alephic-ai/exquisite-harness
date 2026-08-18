@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:49.328Z",
-  "currentNodeId": "classify_codex",
+  "currentNodeId": "evaluate_review",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -954,6 +954,127 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-18T16:04:53.033Z"
+    },
+    "classify_codex": {
+      "completedAt": "2026-08-18T16:05:45.542Z",
+      "nodeId": "classify_codex",
+      "artifacts": [
+        {
+          "agentRunId": "cc90d306-b569-4f42-9f39-e140d78fc196",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "77b44b80258505f13de9eb344218f79b334f2e0912752f351d51a9bf1d95b624",
+              "sizeBytes": 80278
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/24124d5a-0c59-4be2-a0e5-f14e0251fd3e.request.json",
+              "sha256": "4ccceecf2adcfc06a7e06960458b524f4e6fa2cd64629746a68fe47bec0a97f3",
+              "sizeBytes": 117631
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/398a6eb7-a9d4-48bc-8821-4470e5d2461f.request.json",
+              "sha256": "d2c02f0219583ff7953bee165dcd8ac49674f6548a6f72f223ea972118964428",
+              "sizeBytes": 79635
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/47142564-638e-494e-a9c4-c9ba7379574c.request.json",
+              "sha256": "1773c8f3fed4ef6400e3806d00a5d07eab85b879f212526cd668536fa7a75dbe",
+              "sizeBytes": 104814
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/72d66d8e-d2fc-4d32-9f1d-e0b1cdbfc9b4.request.json",
+              "sha256": "e3835e24815768ea95feda50c1ded90f62ea7160ff528e1e452bb7ac1f34e844",
+              "sizeBytes": 82119
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8f4e2717-3605-4394-863f-ab40b31d639e.request.json",
+              "sha256": "263e526eedf2246cea8898017ab44a5cfa52694a2eb3f7b3bb750cf00fef6aae",
+              "sizeBytes": 109419
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d5ceb535-fc0f-4c80-b038-9fd663df996c.request.json",
+              "sha256": "8a561b6b207acdc0f40dc66597af6d5b68c258c139216f51bcf0a5c761e1eedf",
+              "sizeBytes": 6041
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVsYp2MM236RNfyWJfH.response.json",
+              "sha256": "20861085452e2ea9f6d45cf363cb1b73d96ecf14831af702664da810310f5809",
+              "sizeBytes": 820
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVsZUxGnEDhK9wqEChF.response.json",
+              "sha256": "2d604a4f14c86f1014c171aef40f721c1fc72641cd8876be84c50af0d4606ce3",
+              "sizeBytes": 1677
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVsrcLWguyp2JbmH6kd.response.json",
+              "sha256": "51873ad7934aafa2da36f3697d702c7ea0720aef4f9925d2e2e159c2c14b1363",
+              "sizeBytes": 1419
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVt2JkPdinAZZ9iSsfp.response.json",
+              "sha256": "55e14f56a86a20e536ec0c59e820a1f796285b1bc93f6567a745f4f41166aa3b",
+              "sizeBytes": 2963
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVtaCth33ek3Zio6jPR.response.json",
+              "sha256": "ea1c0c0d4a0cfd7f81ba091888eda9b3ed7741a555e76d79735954258478e931",
+              "sizeBytes": 8660
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAVvr3wWEy5jh3ebMoN2.response.json",
+              "sha256": "720f5fa30196c3fb08ae03546b0be19e1257a438c8de777c3e05cff49faa5921",
+              "sizeBytes": 1588
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "57dd8dc8f25668b715216452edf8b4c3a2ef248b429e17609ec48d4c99a4988c",
+              "sizeBytes": 11511
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/classify_codex/attempt-0-cc90d306-b569-4f42-9f39-e140d78fc196",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/classify_codex/attempt-0-cc90d306-b569-4f42-9f39-e140d78fc196/manifest.json",
+          "nodeId": "classify_codex",
+          "pipelineId": "ticket-complete-AI-3107",
+          "runtime": "claude",
+          "sessionId": "918ec8c8-d5fe-45e5-9274-aeec6e6c8523",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "Both findings analyzed. Let me confirm the blocker by tracing the code path.\n\nThe blocker is confirmed. Scenario: `--timeout` fires → `timeout.fired = true`, `run.error` emitted, `SIGTERM` sent. If the child traps SIGTERM and exits cleanly with code 0 (a common graceful-shutdown pattern), then before the SIGKILL grace escalates:\n- `childExitCode = completed.code = 0`\n- line 295 guard skipped (childExitCode is 0)\n- `resultIsError = state.resultIsError || childExitCode !== 0` = **false**\n- `exitCode = 0`\n- emits `run.completed { exitCode: 0, resultIsError: false }` and returns 0\n\nSo a timed-out run reports success despite emitting `run.error` — the \"fail loudly\" contract is violated. `timeout.fired` is never folded into the result. Real correctness defect in PR-introduced code. **Adopt.**\n\nThe suggestion (README:181) is a documentation-precision nit about 143 vs 137 — not a code correctness defect; it's labeled a suggestion and I'll **reject** it as the false-positive filter.\nClassification complete.\n\n**Adopted (1):**\n- **headless-run.ts:295-306** — A timed-out child that traps SIGTERM and exits 0 emits `run.error` but the final `run.completed` reports success (`exitCode: 0`, `resultIsError: false`). `timeout.fired` is never folded into the result computation, so the \"fail a hung lane loudly\" contract is silently violated in the graceful-shutdown path (which no test exercises — the fixtures only cover SIGKILL escalation, which lands on 137 and happens to be non-zero). Confirmed by tracing lines 295–306.\n\n**Rejected (1):**\n- **README.md:181** — 143-vs-137 exit-code precision. Documentation nit (Codex's own \"Suggestion\"), not a code correctness defect. Rejected as false-positive filter.\n\nWrote one `## Fix:` block to `.attractor/codex-correctness-fixes.md`.\n",
+      "retryCount": 0,
+      "sessionId": "918ec8c8-d5fe-45e5-9274-aeec6e6c8523",
+      "startedAt": "2026-08-18T16:04:54.804Z",
+      "usage": {
+        "cacheReadTokens": 138551,
+        "cacheWriteTokens": 27695,
+        "costUsd": 0.38136425,
+        "inputTokens": 9761,
+        "outputTokens": 3548
+      }
     }
   },
   "parallelBranches": {
@@ -964,7 +1085,7 @@
   },
   "pipelineId": "ticket-complete-AI-3107",
   "status": "running",
-  "updatedAt": "2026-08-18T16:04:53.038Z",
+  "updatedAt": "2026-08-18T16:05:45.543Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1225,6 +1346,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "classify_codex": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 50739,
+      "usage": {
+        "cacheReadTokens": 138551,
+        "cacheWriteTokens": 27695,
+        "costUsd": 0.38136425,
+        "inputTokens": 9761,
+        "outputTokens": 3548
       },
       "visits": 1
     }
