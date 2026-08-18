@@ -1,0 +1,22 @@
+{
+  "acs": [
+    {
+      "id": 1,
+      "criterion": "eh-detected categories exit with distinct documented codes from one reserved contiguous block at >=64 (exact numbers implementer's choice, recorded in the README table): at minimum spawn failure (binary missing/unspawnable), semantic harness failure (resultIsError with child exit 0), and preflight/usage errors (TTY or empty stdin, invalid flag values). Clean completion remains 0. Proof: extend the existing missing-binary / semantic-failure / preflight subprocess tests to assert the reserved codes.",
+      "status": null,
+      "evidence": null
+    },
+    {
+      "id": 2,
+      "criterion": "Invariant: a raw child exit code is never remapped when eh has no category for the failure — the existing nonzero-passthrough and 128 + signal behaviors are unchanged, and run.completed.exitCode continues to carry the raw child code (its field semantics do not change).",
+      "status": null,
+      "evidence": null
+    },
+    {
+      "id": 3,
+      "criterion": "README gains an \"Exit codes\" table (mirrored in DESIGN.md's headless section) documenting the reserved block, the passthrough rule, and the caveat that a harness's own code may numerically collide with the reserved block only in the passthrough case.",
+      "status": null,
+      "evidence": null
+    }
+  ]
+}
