@@ -82,14 +82,15 @@ eh claude ollama qwen3-coder --search firecrawl
 ### Effort
 
 ```bash
-eh claude ollama qwen3-coder -e high  # low|medium|high|xhigh|max (default auto)
+eh claude ollama qwen3-coder -e high  # auto|none|minimal|low|medium|high|xhigh|max
 ```
 
-claude → `CLAUDE_CODE_EFFORT_LEVEL` (+ `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT` for
-non-Anthropic providers); codex → `model_reasoning_effort` (`xhigh`/`max` map to
-`high`); grok → `--reasoning-effort <level>` when explicitly set; pi →
-`--thinking <level>` (levels match 1:1); opencode has no knob and ignores it.
-Profiles and recents remember it.
+The picker (and `-e`) only offers levels the harness and the selected model both
+accept. claude → `CLAUDE_CODE_EFFORT_LEVEL` (+
+`CLAUDE_CODE_ALWAYS_ENABLE_EFFORT` for non-Anthropic providers); codex →
+`model_reasoning_effort` (passed through); grok → `--reasoning-effort <level>`
+when explicitly set; pi → `--thinking <level>` (levels match 1:1); opencode has
+no knob and ignores it. Profiles and recents remember it.
 
 ### Approval defaults
 

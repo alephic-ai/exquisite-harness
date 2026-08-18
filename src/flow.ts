@@ -1,4 +1,4 @@
-import type { Config } from './config.js'
+import type { Config, ResolvedProvider } from './config.js'
 import type { HarnessDef } from './harnesses.js'
 import type { SessionInfo } from './sessions.js'
 import type { EffortLevel, Selection } from './types.js'
@@ -20,9 +20,19 @@ import {
   searchProviderLabel,
 } from './config.js'
 import { doctor } from './doctor.js'
-import { buildLaunchPlan, getHarness, harnessNames } from './harnesses.js'
+import {
+  assertEffortAllowed,
+  availableEfforts,
+  buildLaunchPlan,
+  getHarness,
+  harnessNames,
+} from './harnesses.js'
 import { exec, printEnv } from './launch.js'
-import { canServeAny, isRoutingProvider } from './providers.js'
+import {
+  canServeAny,
+  isRoutingProvider,
+  listModelsCached,
+} from './providers.js'
 import { resolveSearchBackend } from './search-provider.js'
 import { listSessionsForCwd } from './sessions.js'
 import { defaultsScreen } from './ui/defaults-screen.js'
@@ -258,6 +268,19 @@ export async function launchFlow(
     searchProvider: searchProviderForSelection(config, selection),
   }
 
+  const def = getHarness(harness)
+  if (
+    complete.effort &&
+    complete.effort !== 'auto' &&
+    def &&
+    def.effort !== false
+  ) {
+    assertEffortAllowed(
+      complete.effort,
+      availableEfforts(def, await listedModelEfforts(provider, model)),
+    )
+  }
+
   const searchProviderName = complete.searchProvider ?? 'native'
   if (searchProviderName !== 'native' && harness !== 'claude') {
     throw new Error(
@@ -349,9 +372,16 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
     gatewayZdr = route.zeroDataRetention
   }
   // Harnesses with effort: false (currently opencode) skip the question; an
-  // explicit effort still reaches the harness plan.
+  // explicit effort still reaches the harness plan. Models that report no
+  // efforts keep the harness's own list (Ollama); an empty intersection
+  // skips the picker and stays auto.
   const effort =
-    partial.effort ?? (def.effort === false ? 'auto' : await pickEffort())
+    partial.effort ??
+    (def.effort === false
+      ? 'auto'
+      : await pickEffort(
+          availableEfforts(def, await listedModelEfforts(provider, model)),
+        ))
   return {
     effort,
     gatewayProvider,
@@ -367,6 +397,15 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
             config.defaultSearchProvider,
           )
         : 'native'),
+  }
+}
+
+async function listedModelEfforts(provider: ResolvedProvider, modelId: string) {
+  try {
+    return (await listModelsCached(provider)).find((m) => m.id === modelId)
+      ?.efforts
+  } catch {
+    return undefined
   }
 }
 

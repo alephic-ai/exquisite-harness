@@ -66,7 +66,14 @@ Each prints env/args and exits 0 without launching, unless noted.
     a runnable entry → error "needs a runnable provider entry in
     ~/.pi/agent/models.json".
 11. `eh --print-env pi ollama qwen3-coder -e high` → args end with
-    `--thinking high`.
+    `--thinking high`. 11b. `eh --print-env codex ollama qwen3-coder -e xhigh` →
+    args include `model_reasoning_effort="xhigh"` (no remap to `high`). 11c.
+    Against a loopback OpenRouter whose `/models` lists
+    `reasoning.supported_efforts: ["low","medium"]` for `test/model`,
+    `eh --print-env claude that-provider test/model -e high` → non-zero,
+    `effort "high" is not available`. The same launch with `-e medium` succeeds.
+    A model that omits `reasoning` still accepts Claude's harness list
+    (`-e high` ok, `-e none` rejected).
 12. `eh --print-env opencode ollama qwen3-coder` → `OPENCODE_CONFIG_CONTENT`
     inline JSON (provider `eh-ollama`, npm `@ai-sdk/openai-compatible`,
     placeholder `apiKey`, baseURL `…/v1`, model cost `{input:0,output:0}`), args
@@ -185,6 +192,11 @@ Drive each with the PTY; assert on screen text.
     as a profile and relaunch → the pin is retained without another prompt.
     Typing in the model picker (so `other…` is visible) must not crash with
     `HTTP 404 from …/models/__manual__/endpoints`.
+13. **Effort picker**: select OpenRouter and a model whose `/models` row lists
+    `supported_efforts: ["low","medium","high"]` → effort picker is
+    `auto, low, medium, high` (no `xhigh`/`max`/`none`). A Claude + Ollama model
+    with no `reasoning` field still offers
+    `auto, low, medium, high, xhigh, max`. opencode skips the effort picker.
 
 ## E. Key storage
 

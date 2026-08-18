@@ -1,10 +1,16 @@
 import { z } from 'zod'
 
 import type { ResolvedProvider } from './config.js'
-import type { ModelInfo, Protocol, ProviderType } from './types.js'
 
 import { cachedModels, freshModels, writeModels } from './cache.js'
 import { resolveApiKey } from './keys.js'
+import {
+  MODEL_EFFORT_LEVELS,
+  type ModelEffortLevel,
+  type ModelInfo,
+  type Protocol,
+  type ProviderType,
+} from './types.js'
 
 interface ProviderBehavior {
   // Base URL to hand to Anthropic-protocol harnesses (e.g. Claude Code's
@@ -17,11 +23,29 @@ interface ProviderBehavior {
   protocols: Protocol[]
 }
 
+const reasoningSchema = z
+  .looseObject({
+    mandatory: z.boolean().optional(),
+    supported_efforts: z.array(z.string()).nullable().optional(),
+  })
+  .optional()
+
+const reasoningOptionsSchema = z
+  .array(
+    z.looseObject({
+      type: z.string(),
+      values: z.array(z.string()).optional(),
+    }),
+  )
+  .optional()
+
 const openAiModelsSchema = z.object({
   data: z.array(
     z.looseObject({
       context_length: z.number().optional(),
       id: z.string(),
+      reasoning: reasoningSchema,
+      reasoning_options: reasoningOptionsSchema,
     }),
   ),
 })
@@ -40,6 +64,8 @@ const gatewayModelsSchema = z.object({
           output: z.union([z.string(), z.number()]).optional(),
         })
         .optional(),
+      reasoning: reasoningSchema,
+      reasoning_options: reasoningOptionsSchema,
     }),
   ),
 })
@@ -84,6 +110,7 @@ const openRouterModelsSchema = z.object({
           prompt: z.union([z.string(), z.number()]).optional(),
         })
         .optional(),
+      reasoning: reasoningSchema,
     }),
   ),
 })
@@ -147,13 +174,17 @@ async function listOpenAiModels(baseURL: string, apiKey?: string) {
   const body = await fetchJson(`${withV1(baseURL)}/models`, apiKey)
   return openAiModelsSchema
     .parse(body)
-    .data.map((m) => ({
-      hint:
-        m.context_length == null
-          ? undefined
-          : `${String(Math.round(m.context_length / 1024))}k ctx`,
-      id: m.id,
-    }))
+    .data.map((m) => {
+      const efforts = modelEfforts(m)
+      return {
+        ...(efforts === undefined ? {} : { efforts }),
+        hint:
+          m.context_length == null
+            ? undefined
+            : `${String(Math.round(m.context_length / 1024))}k ctx`,
+        id: m.id,
+      }
+    })
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
@@ -166,6 +197,7 @@ async function listGatewayModels(baseURL: string, apiKey?: string) {
   return gatewayModelsSchema
     .parse(body)
     .data.map((m) => {
+      const efforts = modelEfforts(m)
       const input = perTokenToPerMillion(m.pricing?.input)
       const output = perTokenToPerMillion(m.pricing?.output)
       return {
@@ -173,6 +205,7 @@ async function listGatewayModels(baseURL: string, apiKey?: string) {
           input != null && output != null
             ? `${formatUsd(input)}/${formatUsd(output)}`
             : undefined,
+        ...(efforts === undefined ? {} : { efforts }),
         hint:
           m.context_window == null
             ? undefined
@@ -188,6 +221,7 @@ async function listOpenRouterModels(baseURL: string, apiKey?: string) {
   return openRouterModelsSchema
     .parse(body)
     .data.map((m) => {
+      const efforts = modelEfforts(m)
       const input = perTokenToPerMillion(m.pricing?.prompt)
       const output = perTokenToPerMillion(m.pricing?.completion)
       return {
@@ -195,6 +229,7 @@ async function listOpenRouterModels(baseURL: string, apiKey?: string) {
           input != null && output != null
             ? `${formatUsd(input)}/${formatUsd(output)}`
             : undefined,
+        ...(efforts === undefined ? {} : { efforts }),
         hint:
           m.context_length == null
             ? undefined
@@ -235,8 +270,43 @@ export async function fetchGatewayModelThroughput(
   return p50 == null ? undefined : `${Math.round(p50)} tps`
 }
 
+function modelEfforts(model: {
+  reasoning?: {
+    mandatory?: boolean
+    supported_efforts?: null | string[]
+  }
+  reasoning_options?: { type: string; values?: string[] }[]
+}) {
+  const fromOptions = model.reasoning_options?.find(
+    (option) => option.type === 'effort',
+  )?.values
+  const reported = fromOptions ?? model.reasoning?.supported_efforts
+  // OpenRouter: null = every gateway effort is accepted.
+  if (reported === null) {
+    return withoutMandatoryNone(
+      [...MODEL_EFFORT_LEVELS],
+      model.reasoning?.mandatory,
+    )
+  }
+  if (reported === undefined) return undefined
+  const supported = new Set(reported)
+  return withoutMandatoryNone(
+    MODEL_EFFORT_LEVELS.filter((effort) => supported.has(effort)),
+    model.reasoning?.mandatory,
+  )
+}
+
 function stripTrailingSlash(url: string) {
   return url.replace(/\/+$/, '')
+}
+
+function withoutMandatoryNone(
+  efforts: ModelEffortLevel[],
+  mandatory: boolean | undefined,
+) {
+  const filtered =
+    mandatory === true ? efforts.filter((effort) => effort !== 'none') : efforts
+  return filtered.length === 0 ? undefined : filtered
 }
 
 function withoutV1(url: string) {

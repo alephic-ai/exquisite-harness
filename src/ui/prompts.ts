@@ -10,6 +10,7 @@ import { ZodError } from 'zod'
 
 import type { ResolvedProvider, ResolvedSearchProvider } from '../config.js'
 import type { HarnessDef } from '../harnesses.js'
+import type { ModelEffortLevel, ModelInfo } from '../types.js'
 
 import { freshModels } from '../cache.js'
 import {
@@ -30,22 +31,22 @@ import {
   listGatewayProviders,
   listModelsCached,
 } from '../providers.js'
-import { EFFORT_LEVELS, type ModelInfo } from '../types.js'
 import { findBin } from '../which.js'
 import { bail, keyStoredText, log, note, spinner } from './output.js'
 
 type ProviderRowState = 'incompatible' | 'key-missing' | 'key-set' | 'no-key'
 
 // Effort defaults to `auto` (model default); anything else is an override.
-export async function pickEffort() {
+export async function pickEffort(efforts: readonly ModelEffortLevel[]) {
+  if (efforts.length === 0) return 'auto' as const
   const value = await select({
     message: 'effort',
-    options: EFFORT_LEVELS.map((level) => ({
+    options: (['auto', ...efforts] as const).map((level) => ({
       hint:
         level === 'auto'
           ? 'model default (recommended)'
-          : level === 'xhigh' || level === 'max'
-            ? 'claude + grok + pi; codex maps to high'
+          : level === 'none'
+            ? 'disable reasoning'
             : undefined,
       label: level,
       value: level,

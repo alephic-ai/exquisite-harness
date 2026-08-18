@@ -57,7 +57,7 @@ program
   .option('-s, --save <name>', 'save the combo as a profile, then launch')
   .option(
     '-e, --effort <level>',
-    'reasoning effort: auto, low, medium, high, xhigh, max',
+    `reasoning effort: ${EFFORT_LEVELS.join(', ')}`,
   )
   .option('--print-env', 'print env vars instead of launching')
   .option(
@@ -125,7 +125,7 @@ program
   .description('run one harness headlessly (prompt on stdin, NDJSON on stdout)')
   .option(
     '--reasoning-effort <level>',
-    'reasoning effort: auto, low, medium, high, xhigh, max',
+    `reasoning effort: ${EFFORT_LEVELS.join(', ')}`,
     'auto',
   )
   .option(
