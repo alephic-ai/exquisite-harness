@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:24.619Z",
-  "currentNodeId": "commit_plan",
+  "currentNodeId": "implement",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -343,12 +343,26 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-18T15:31:33.937Z"
+    },
+    "commit_plan": {
+      "completedAt": "2026-08-18T15:31:36.561Z",
+      "nodeId": "commit_plan",
+      "outcome": "success",
+      "output": "[intelligencev2/ai-3106-eh-run-add-cwd-dir-for-the-spawned-harness eb63bb6] docs: add implementation plan [skip ci]\n 1 file changed, 207 insertions(+)\n create mode 100644 .plans/AI-3106-eh-run-cwd-flag.md",
+      "outputCapture": {
+        "capturedLength": 204,
+        "lengthUnit": "utf16_code_units",
+        "originalLength": 204,
+        "truncated": false
+      },
+      "retryCount": 0,
+      "startedAt": "2026-08-18T15:31:36.550Z"
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3106",
   "status": "running",
-  "updatedAt": "2026-08-18T15:31:33.943Z",
+  "updatedAt": "2026-08-18T15:31:36.562Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -434,6 +448,19 @@
       "handler": "tool",
       "outcome": "success",
       "totalDurationMs": 5,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "commit_plan": {
+      "handler": "tool",
+      "outcome": "success",
+      "totalDurationMs": 11,
       "usage": {
         "cacheReadTokens": 0,
         "cacheWriteTokens": 0,
