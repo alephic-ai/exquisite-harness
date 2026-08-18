@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:34.652Z",
-  "currentNodeId": "tactical_fix",
+  "currentNodeId": "lint",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1355,6 +1355,247 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-18T15:58:21.318Z"
+    },
+    "tactical_fix": {
+      "completedAt": "2026-08-18T16:02:48.645Z",
+      "nodeId": "tactical_fix",
+      "artifacts": [
+        {
+          "agentRunId": "b90e347d-b109-4a4f-8315-46e44b86d211",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "7b5e3b0918226c111c9736d28107b50bda3acd21b8b28bf75700f7931484a331",
+              "sizeBytes": 1042845
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/027ad8e4-dfd1-4415-8d65-b91b65e9e138.request.json",
+              "sha256": "58bc626450e18b64c14d4f3744da48dfdbc75b2ce9f930c2f68e511e30411664",
+              "sizeBytes": 114318
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/083ae2d4-e6be-4761-9d19-417119622687.request.json",
+              "sha256": "ce47358d7c690fcac0c20d88e452e011465ffdd0140fc33b318007c13519afe4",
+              "sizeBytes": 117782
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/143524cc-4124-4bcb-b8db-b18b234f82ad.request.json",
+              "sha256": "b2b64415dbdb4a4a2dd328e192d0342cf4f89540d3a1906ef034971e4aa5b223",
+              "sizeBytes": 106310
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/19614cca-1236-4971-b400-ebac10e835dd.request.json",
+              "sha256": "08752d1267d6cd42510dcdca2dcbf4d5baa08107874ac2592b3a0cfce9458b8d",
+              "sizeBytes": 129722
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/317777fe-a43b-4e4d-9e25-c40dff818e77.response.json",
+              "sha256": "e44a6807d7e140896848fff7f5b1b29890d189206d8992c4f6183a0a9ccc8bc3",
+              "sizeBytes": 870
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/353771d4-aa92-4a90-903a-4af876633b8c.request.json",
+              "sha256": "26f037eed44cdec02f10a6c771f7d4f2ddcb61c185fcef2b70b3452f426eaed6",
+              "sizeBytes": 13434
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4381f18b-1bfa-40bc-ab20-23b3a2e1abcf.response.json",
+              "sha256": "a15fe0777ea17ca152279956cbc26db76f7ed56527ec45e2fd94d95dbb3257a4",
+              "sizeBytes": 922
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/44f47de9-ed36-447a-9914-62a48b82210a.response.json",
+              "sha256": "cdb653f84ffe18cd719913f83c1ed023c31a0ae840a40aa52dad98ab2a3cabea",
+              "sizeBytes": 832
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/46364a30-662e-4c81-8859-6ab6231ddaf8.response.json",
+              "sha256": "a36f3b527a9989b1b14c53e8c5bd4bf6eb701c1ff5b4e9ce2f578860cd697115",
+              "sizeBytes": 692
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/49d06cd4-0573-4b93-ab70-de11cfbcb8f2.response.json",
+              "sha256": "24d6abfaf3ffc977b3e56dfd8e9a55d12f7ad00c8d777b0fdb35d0e7f17eaf2f",
+              "sizeBytes": 1218
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5753039d-a19f-464e-9a96-42314bba977e.response.json",
+              "sha256": "d79dd570515e108810df7bf540966e0f4eaef8ea007e26600716817af3722c6f",
+              "sizeBytes": 888
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6d179347-68d0-4217-a56e-21be565f6ed6.request.json",
+              "sha256": "b14bf35e6a0c6072bec487756013791e2c7b7cf3403111d92d4e7742aa7eb90b",
+              "sizeBytes": 137616
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/70a0b37e-c29d-46d2-a6cd-b5460a52e747.response.json",
+              "sha256": "1fa52f71ded12af048c09a5db1b10ce634de3aa904f8190feb8d708cb32d13b5",
+              "sizeBytes": 691
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/88a2a0c2-78e2-4cd0-9029-25192f9adac6.response.json",
+              "sha256": "2e5e3a2592c8c914791aa56fed8a962dea4882a14f42bf189d82db7190bdd9d8",
+              "sizeBytes": 894
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8da1ef40-deb3-4e2b-8a55-f22217eaa0f6.response.json",
+              "sha256": "c0ec9a968e0d79f65fc6bfbf12ad1cb39836a38b0ac7eb3c6a0f89541c963ef2",
+              "sizeBytes": 985
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/95afda79-dc0f-4484-8ca7-19f6d9367768.request.json",
+              "sha256": "37bef9f0ea1a192a1830f7d3c4f97b59b304dd9aa7c87fbd6b589574e8e74795",
+              "sizeBytes": 132811
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9a39d4b6-d543-4c85-b8ec-ebaab401ad29.response.json",
+              "sha256": "122561d7c61ed11e4e3ba72683701acdda8c8851abe004ab0fd681533e8addca",
+              "sizeBytes": 2242
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9fc2cad0-7ba3-48ac-b3be-12eac3d0bbdd.response.json",
+              "sha256": "01038236f5eb884e1f1fc6917881dd550d4b375cbeaa572e987b20f2e9236c08",
+              "sizeBytes": 659
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a7e7fcce-f9d6-4745-99b5-5fd0335c5955.response.json",
+              "sha256": "5aeb92503418bcde7ddbb77c341ac7b8ad0c4ec3ea732a2ee069294b79f1bc47",
+              "sizeBytes": 894
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b31d5d95-92ba-484b-aca8-0881c6ecb764.request.json",
+              "sha256": "42e982bb0a13414301ff7da39c6c4d8747fcf3c53ceffac3b6ec25a2a9f1c97b",
+              "sizeBytes": 138186
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b53ce74a-1bb5-49e8-8a47-0e4e5854a71f.request.json",
+              "sha256": "93856e355063ca5b342285bc7e4c385515ac848a233a883aed2e5fd5e4f89aac",
+              "sizeBytes": 132020
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bd5ea277-6f66-4b73-983b-a2abe76f0622.response.json",
+              "sha256": "5a47c0739fc5c028fb3cb39e67cbc22b1d0a6127afb1a13201b6145e422375c1",
+              "sizeBytes": 1027
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/be8be8e2-054a-4a7e-9184-1e6989b99513.response.json",
+              "sha256": "06048ed6c10bffe53251648a7eb2575d5564e44e6522f21b2e17a479f1481802",
+              "sizeBytes": 933
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c3ae0dfa-3726-4560-992e-3e766a91cfc3.request.json",
+              "sha256": "9007fb92ae864c27bdbb61952f10bd4e8481283fc231688ba27c761a65694fbe",
+              "sizeBytes": 126588
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c5adc7f8-d2bd-41ab-ab41-85985ea110bb.request.json",
+              "sha256": "1858698782a75947c88e7d5cdb6461666fa4ebcdd85fb5af9868367a252ad25a",
+              "sizeBytes": 133793
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d499d6f3-8dce-4321-9f69-bfb5dc08a1d5.request.json",
+              "sha256": "7f66f0836908f0ba4a5dc6677257db85157f696643e18a7dd7f30d9d4f57d16c",
+              "sizeBytes": 136114
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d8a84a3d-bc56-4e24-9d83-8b9e3d877948.response.json",
+              "sha256": "895a6c0f6dd806fbfaa19dd77d64975a7d3e0ebe47bd93637aa5ccb5278a4801",
+              "sizeBytes": 2535
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e6e467eb-d642-4381-b5d1-4d8d2fe0dcac.request.json",
+              "sha256": "adb2d226dd33531232469f97da0126ddcc7c9351b8b172fb8fda2f63d1f809e2",
+              "sizeBytes": 120558
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e90bd3a5-75fd-448e-8940-b676e254e83d.response.json",
+              "sha256": "2231c6789763e1a537d386380889ab1bcc8dca11b670839ebbbc089ec22c65cf",
+              "sizeBytes": 751
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f4a1089e-6dab-457c-892f-18e9a1e644c5.request.json",
+              "sha256": "15e2556ac6f0befd4117a649a084942acd56f750f2ae608c64e2175c27d8b407",
+              "sizeBytes": 138852
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/fb2ea7a3-1128-447e-b97f-665b11e486a9.request.json",
+              "sha256": "49b613b8e218366d0538188bd07e9319c3333de410a481e0fe5bad7366588298",
+              "sizeBytes": 110404
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/fc8638fe-6ada-43d9-bd03-a0b771f18fbe.request.json",
+              "sha256": "4de8d58121fc14a2a8fb0c209b6ebfb9fdec19861ee37ed971e1372dda29a90a",
+              "sizeBytes": 124730
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "bb8b0e6eb0c552cf968f3b7f4440753091fb7dfd6ab6f95cba2ed3e8459cb790",
+              "sizeBytes": 29724
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/tactical_fix/attempt-0-b90e347d-b109-4a4f-8315-46e44b86d211",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/tactical_fix/attempt-0-b90e347d-b109-4a4f-8315-46e44b86d211/manifest.json",
+          "nodeId": "tactical_fix",
+          "pipelineId": "ticket-complete-AI-3109",
+          "runtime": "claude",
+          "sessionId": "37a7c7d4-7398-4abc-b260-5efcaaba3a1d",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "Now let me read the relevant region of the source file\nLet me look at `executeHeadlessPlan`, `withCleanup`, and understand the existing error/exit code handling.\n\n\nNow let me look at the constants at the top of the file and the imports\nLet me read the rest of `executePreparedHeadlessPlan` to understand how it handles errors and what it emits/returns\nLet me find `prepareHeadlessPlan` to understand cleanup responsibilities before restructuring.\n\n\nNow I have a complete understanding. Let me trace the issue precisely:\n\n- `executePreparedHeadlessPlan` handles spawn (65), semantic (66), and passthrough exit codes internally via `return` — it emits `run.completed` itself and never throws for those terminal states.\n- The outer `catch` currently emits a **duplicate** `run.completed` with `64` for ANY throw — including post-execution teardown failures (`prepared.cleanup` grok `rm`, or `withGatewayRouting`'s `finally { await proxy.close() }`), which propagate up through the `withCleanup` layers on the **success** path after the child already completed.\n- The minimal, no-refactor fix (task requires \"keep the edit minimal — no refactors\"): track whether execution has started; on a catch after execution began, rethrow instead of emitting a duplicate preflight `run.completed`/returning `64`. This narrows the `64` path to setup-before-execution exactly as prescribed. All genuine preflight failures (readPrompt, unknown effort/provider, buildLaunchPlan, prepareHeadlessPlan) throw *before* `run.started` is emitted, so they correctly keep returning `64`.\n\nLet me apply the edit:\n\n\nNow set `executionStarted = true` right before calling `executeHeadlessPlan`, and update the catch:\n\n\nLet me verify the final result:\n\n\nThe fix is in place. Let me verify it type-checks with a quick targeted check (not the full repo-level gate):\n\n\nType-check passes. Now let me commit with the prescribed message:\n\n\nThe fix is applied and committed.\n\n## Summary\n\nI applied the single Codex blocker from `.attractor/review-fixes.md` (the duplicate 64 / mislabeled-preflight finding).\n\n**Problem:** The outer `catch` in `runHeadless` wrapped `run.started`, `executeHeadlessPlan`, and both `withCleanup` layers. A post-success teardown failure — grok's `rm(dir)` cleanup (`prepared.cleanup`) or `withGatewayRouting`'s `finally { await proxy.close() }` — propagates up through the `withCleanup` success path and hit the catch, emitting a **duplicate** `run.completed` and returning `EH_EXIT_PREFLIGHT` (64) even though the child had already completed with a valid result.\n\n**Fix (minimal, no refactor):**\n- Added `let executionStarted = false` before the try.\n- Set `executionStarted = true` immediately after emitting `run.started`, right before `executeHeadlessPlan`.\n- In the catch, added `if (executionStarted) throw error` before the 64 emission.\n\nThe `64`/preflight path is now narrowed to setup-before-execution: all genuine preflight failures (TTY/empty stdin, unknown effort/provider, `buildLaunchPlan`, `prepareHeadlessPlan`) throw *before* `run.started` and still return `64`. Spawn (65) and semantic (66) paths are unaffected — they return/emit their own `run.completed` inside `executePreparedHeadlessPlan` and never reach this catch.\n\n**Verification:** `tsc --noEmit` passes (exit 0). No ACs in `.attractor/ac.json` were affected — 64/65/66 still emitted for their genuine categories — so no evidence update was needed.\n\n**Mismatch note:** none — the prescription matched the current code exactly. Committed as `86f6a75` (\"fix: apply review fixes\", 1 file, +8).\n",
+      "retryCount": 0,
+      "sessionId": "37a7c7d4-7398-4abc-b260-5efcaaba3a1d",
+      "startedAt": "2026-08-18T15:58:22.952Z",
+      "usage": {
+        "cacheReadTokens": 423936,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.029822948,
+        "inputTokens": 116198,
+        "outputTokens": 10950
+      }
     }
   },
   "parallelBranches": {
@@ -1365,7 +1606,7 @@
   },
   "pipelineId": "ticket-complete-AI-3109",
   "status": "running",
-  "updatedAt": "2026-08-18T15:58:21.586Z",
+  "updatedAt": "2026-08-18T16:02:48.645Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1665,6 +1906,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "tactical_fix": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 265693,
+      "usage": {
+        "cacheReadTokens": 423936,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.029822948,
+        "inputTokens": 116198,
+        "outputTokens": 10950
       },
       "visits": 1
     }
