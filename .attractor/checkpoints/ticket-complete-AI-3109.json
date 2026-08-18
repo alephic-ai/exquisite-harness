@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:34.652Z",
-  "currentNodeId": "classify_codex",
+  "currentNodeId": "evaluate_review",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1038,6 +1038,163 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-18T15:51:20.352Z"
+    },
+    "classify_codex": {
+      "completedAt": "2026-08-18T15:53:35.582Z",
+      "nodeId": "classify_codex",
+      "artifacts": [
+        {
+          "agentRunId": "18211c2b-e8e2-476c-9109-4131697f559b",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "5308904f0b2f526b4498fbb1008fe8fec033328d27bd20984bee8bacc79d8564",
+              "sizeBytes": 179354
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/192ed9be-de58-4b8a-957c-dab79a673c48.request.json",
+              "sha256": "a13064bd4f6a8a3e0621d68690d26c9561b0b241034dc25e92b5d84d29c7cf95",
+              "sizeBytes": 79681
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3dc8bf6e-cc5e-421d-b47e-313666b40304.request.json",
+              "sha256": "c7761c901ffb5b277779f5354d8496f784bf8eec8da3427fce220d8c97cabc67",
+              "sizeBytes": 124425
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/77b473cb-b993-42af-a23e-de3cbf7675da.request.json",
+              "sha256": "efa299e5a311996c5bac4c6200c5bb7299aeb0030681ea18eee57777538872a9",
+              "sizeBytes": 162926
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8c9b3f62-f1f2-4aec-ba87-1e12f4498ebe.request.json",
+              "sha256": "08a737e116ea74ea209aa8e9ea9cedc0aafaa68eb784750c23d1616a3be6ff29",
+              "sizeBytes": 153220
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bba0f3cc-b7ce-4fda-b745-f5dfee21c49b.request.json",
+              "sha256": "cf6247a6fd72d37a5e5af7fe476b65f288ffea8703c7f4d716a6aa15ac91d4be",
+              "sizeBytes": 6041
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c066754e-c08b-4aa9-b1c5-d10b5c6780e9.request.json",
+              "sha256": "a02d5a84d3ce0a657275e3a524141eb8921e810038968f0a7079fb4c6fc1bed0",
+              "sizeBytes": 96421
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cc7f74eb-331f-4def-a8e1-5266a6f66955.request.json",
+              "sha256": "188b90dd89b141b833eb88b2b0516a02410d78e7f8986f1e0391e62d898b0ba0",
+              "sizeBytes": 173327
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e4a43af9-a5e1-4879-92f7-08d9e404d6f3.request.json",
+              "sha256": "da76c359d04d3d7365937e4e16474e911425f68c229832453a9146e48b349ca7",
+              "sizeBytes": 82772
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f988cd2e-d4d2-4699-8c11-23e5f2383b77.request.json",
+              "sha256": "5472b6994970dd88d716e9a395521dbbfe73c528fa6c93c27310a3511bee999e",
+              "sizeBytes": 121505
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUqcpCqCC5vtfFasRBC.response.json",
+              "sha256": "6854c42735391eee1b83150ef4815f0e7db924cc8b860fda48da975a52cee0a6",
+              "sizeBytes": 815
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUqdaazwRHDjYFpZtxE.response.json",
+              "sha256": "f273d0852a0d554cabb6555032553c46882d26e3667d5662026c6ec17ffcea78",
+              "sizeBytes": 1660
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUqto8gJBXQtdHFryrJ.response.json",
+              "sha256": "4e9843c48d19c016c7b2f21271ebd686733eb9cb5b530c7a85ca814ca8ddcbdd",
+              "sizeBytes": 1461
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUr9rkTPVz4zPribTZQ.response.json",
+              "sha256": "ef60914919da580d07362291779ead2ad8f254abe026340a109768aafc2664b7",
+              "sizeBytes": 1895
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUrTyRHVPxn4eavnyBg.response.json",
+              "sha256": "d61014651db3bef523ef7f5dcd2a7ebe984ecfb7bb9c32ce457ab878bea02416",
+              "sizeBytes": 3006
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUs3cUyx7A8wvRjvxxE.response.json",
+              "sha256": "1b9494b315ce49a7ed9aa5f84a5440a7fbd94319b21c8d82ac73348a0c3d277d",
+              "sizeBytes": 12080
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUuy2FHBLDwjrrHi7qx.response.json",
+              "sha256": "8b6aefabd5e44b90b1dfb6eb26ee2023f775e2164bd065dde3955b3025b30d11",
+              "sizeBytes": 8489
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUwzgWhzeiZqhc53fy4.response.json",
+              "sha256": "5459aa9c6baf65e25c348b5767d4f14801b0751d18f86f42059d629db48bdf36",
+              "sizeBytes": 10849
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAUzyacjUxrNhXcijuSA.response.json",
+              "sha256": "4a7f75e0a9fcf89a45d0b13d23705d200a7ab8e50b873e02919b4cfc1f359998",
+              "sizeBytes": 1743
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "23177dd5b4da3d09c761f0daaa6199c0e7259030e47bac9b790b1d42cc4ed789",
+              "sizeBytes": 14689
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/classify_codex/attempt-0-18211c2b-e8e2-476c-9109-4131697f559b",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3109/b3eb78e84ea1-c48ae3d4-0b8c-4afc-8fc0-87a63d2ee9c1/agent-artifacts/classify_codex/attempt-0-18211c2b-e8e2-476c-9109-4131697f559b/manifest.json",
+          "nodeId": "classify_codex",
+          "pipelineId": "ticket-complete-AI-3109",
+          "runtime": "claude",
+          "sessionId": "6d8e3d32-50c3-4cd3-9d26-fd9f696902d8",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I've now confirmed both findings against the actual code. Let me reason through each.\n\n**Finding 1 (headless-run.ts:118 — broad catch mislabels post-spawn failures as `64`):** Confirmed real. The outer `try` (lines 56–114) wraps `run.started` emission (line 97) *and* `executeHeadlessPlan` *and* both `withCleanup` layers. `withCleanup` (cleanup.ts:18-20) awaits cleanup **uncaught** on the success path, so a post-execution teardown failure propagates to the catch. Reachable paths after a *successful* run that already emitted its own `run.completed`:\n- grok's `prepared.cleanup` = `rm(dir, …)` throwing,\n- `withGatewayRouting`'s `finally { await proxy.close() }` (gateway-routing.ts:57-59) rejecting on server teardown.\n\nIn those cases the catch emits a **second** `run.completed` and returns `64` — which the PR itself documents as \"preflight/usage error — nothing was spawned.\" That's a protocol-level double-emit plus a categorically wrong code, introduced by this PR's exit-code contract.\n\n**Finding 2 (gateway-routing.test.ts:423):** Reject. The `gatewayValidationHeaders` selection logic (gateway-routing.ts:232-244) is **not in the diff** — it's pre-existing and unchanged. The diff only edits the test, correctly saving/deleting/restoring the ambient `ANTHROPIC_API_KEY` to keep it hermetic against sandbox-exported keys. That's sound test hygiene, not a defect. The finding's real target is a claimed latent bug in unchanged code, and it asks to change pre-existing header-selection behavior based on an inferred invariant — exactly what the rule says to reject (pre-existing behavior unaffected by the diff, and a spec-latent claim I can't confirm as a defect in PR-introduced code).\n\nWriting the adopted finding:\nClassification complete.\n\n- **Finding 1 — Adopt.** `src/headless-run.ts` broad catch: confirmed the `try` spans `run.started`, execution, and both `withCleanup` layers, and `withCleanup` re-throws cleanup failures uncaught on the success path (cleanup.ts:18-20). Post-success teardown failures (grok tmpdir `rm`, gateway `proxy.close()`) therefore reach the catch, which emits a duplicate `run.completed` and returns `64` — the code this PR documents as \"nothing was spawned.\" Real correctness defect in the PR's new exit-code contract.\n\n- **Finding 2 — Reject.** The `gatewayValidationHeaders` selection logic it targets is pre-existing and untouched by the diff; the diff only makes the test hermetic (correctly save/delete/restore of ambient `ANTHROPIC_API_KEY`). The finding asks to change unchanged code based on an inferred invariant — pre-existing behavior unaffected by the diff.\n\nOne finding written to `.attractor/codex-correctness-fixes.md`.\n",
+      "retryCount": 0,
+      "sessionId": "6d8e3d32-50c3-4cd3-9d26-fd9f696902d8",
+      "startedAt": "2026-08-18T15:51:21.659Z",
+      "usage": {
+        "cacheReadTokens": 296883,
+        "cacheWriteTokens": 46547,
+        "costUsd": 0.72855525,
+        "inputTokens": 9767,
+        "outputTokens": 9555
+      }
     }
   },
   "parallelBranches": {
@@ -1048,7 +1205,7 @@
   },
   "pipelineId": "ticket-complete-AI-3109",
   "status": "running",
-  "updatedAt": "2026-08-18T15:51:20.358Z",
+  "updatedAt": "2026-08-18T15:53:35.583Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1309,6 +1466,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "classify_codex": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 133923,
+      "usage": {
+        "cacheReadTokens": 296883,
+        "cacheWriteTokens": 46547,
+        "costUsd": 0.72855525,
+        "inputTokens": 9767,
+        "outputTokens": 9555
       },
       "visits": 1
     }
