@@ -18,6 +18,7 @@ import { fetchModelMeta } from './pricing.js'
 import {
   anthropicBaseURLFor,
   codexWireApiFor,
+  isRoutingProvider,
   openAIBaseURLFor,
   resolveKey,
 } from './providers.js'
@@ -133,7 +134,7 @@ async function planClaude(
     args,
     bin: 'claude',
     env,
-    ...(statusline && isVercelGatewayURL(baseURL)
+    ...(statusline && isCostCaptureURL(baseURL)
       ? {
           gatewayCostCapture: {
             resumed: false,
@@ -476,25 +477,26 @@ function gatewayRoutingFor(
   gatewayZdr: boolean | undefined,
 ) {
   if (gatewayProvider === undefined && gatewayZdr !== true) return undefined
-  if (provider.type !== 'vercel-gateway') {
+  if (!isRoutingProvider(provider.type)) {
     throw new Error(
       gatewayProvider === undefined
-        ? 'ZDR-only routing requires a Vercel AI Gateway provider'
-        : '--gateway-provider requires a Vercel AI Gateway provider',
+        ? 'ZDR-only routing requires OpenRouter or Vercel AI Gateway'
+        : '--gateway-provider requires OpenRouter or Vercel AI Gateway',
     )
   }
   if (
     gatewayProvider !== undefined &&
-    !/^[A-Za-z0-9._-]+$/.test(gatewayProvider)
+    !/^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(gatewayProvider)
   ) {
     throw new Error(
-      `invalid gateway provider "${gatewayProvider}" (use its Vercel provider slug)`,
+      `invalid gateway provider "${gatewayProvider}" (use the provider slug)`,
     )
   }
   // A pin wins over ZDR-only routing: pinning a provider replaces the
   // ZDR restriction, it doesn't combine with it.
   return {
     apiKeyEnvKey: provider.envKey,
+    ...(provider.type === 'openrouter' ? { kind: 'openrouter' as const } : {}),
     model,
     provider: gatewayProvider,
     targetBaseURL,
@@ -502,9 +504,10 @@ function gatewayRoutingFor(
   }
 }
 
-function isVercelGatewayURL(baseURL: string) {
+function isCostCaptureURL(baseURL: string) {
   try {
-    return new URL(baseURL).hostname === 'ai-gateway.vercel.sh'
+    const host = new URL(baseURL).hostname
+    return host === 'ai-gateway.vercel.sh' || host === 'openrouter.ai'
   } catch {
     return false
   }

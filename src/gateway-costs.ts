@@ -38,6 +38,13 @@ const gatewayCostEventSchema = z.looseObject({
     }),
   }),
 })
+const openRouterCostEventSchema = z.looseObject({
+  id: z.string().optional(),
+  message: z.looseObject({ id: z.string().optional() }).optional(),
+  usage: z.looseObject({
+    cost: z.union([usdDecimalSchema, z.number()]),
+  }),
+})
 const ledgerEntrySchema = z.discriminatedUnion('type', [
   z.object({ complete: z.boolean(), type: z.literal('session') }),
   z.object({ requestId: z.string(), type: z.literal('pending') }),
@@ -140,6 +147,12 @@ function appendLedgerEntry(props: {
   )
 }
 
+function costToDecimal(raw: number | string) {
+  if (typeof raw === 'string') return normalizeUsdDecimal(raw)
+  if (!Number.isFinite(raw) || raw < 0) return undefined
+  return normalizeUsdDecimal(raw.toFixed(10))
+}
+
 function createCostEventCapture(props: {
   costDir: string
   requestId: string | undefined
@@ -203,11 +216,27 @@ function createCostEventCapture(props: {
       return
     }
     const event = gatewayCostEventSchema.safeParse(parsed)
-    if (!event.success) return
-    const generationId = event.data.provider_metadata.gateway.generationId
-    const costUsd = normalizeUsdDecimal(
-      event.data.provider_metadata.gateway.cost,
-    )
+    if (event.success) {
+      recordCost(
+        event.data.provider_metadata.gateway.generationId,
+        event.data.provider_metadata.gateway.cost,
+      )
+      return
+    }
+    const openRouter = openRouterCostEventSchema.safeParse(parsed)
+    if (!openRouter.success) return
+    const costUsd = costToDecimal(openRouter.data.usage.cost)
+    if (costUsd === undefined) return
+    const generationId =
+      openRouter.data.id ?? openRouter.data.message?.id ?? props.requestId
+    if (generationId === undefined) return
+    recordCost(generationId, costUsd)
+  }
+
+  function recordCost(generationId: string, rawCost: string) {
+    const sessionId = props.sessionId
+    if (!sessionId) return
+    const costUsd = normalizeUsdDecimal(rawCost)
     const previous = seen.get(generationId)
     if (previous === costUsd) return
     seen.set(generationId, costUsd)
@@ -215,7 +244,7 @@ function createCostEventCapture(props: {
     appendLedgerEntry({
       costDir: props.costDir,
       entry: { costUsd, generationId, type: 'cost' },
-      sessionId: props.sessionId,
+      sessionId,
     })
   }
 }
@@ -315,7 +344,14 @@ function gatewayUpstreamURL(props: {
   } else {
     throw new Error('gateway cost proxy received an unsupported path')
   }
-  return new URL(allowedPath, `${props.targetBaseURL}/`)
+  const target = new URL(
+    props.targetBaseURL.endsWith('/')
+      ? props.targetBaseURL
+      : `${props.targetBaseURL}/`,
+  )
+  const prefix = target.pathname.replace(/\/+$/, '')
+  target.pathname = `${prefix}${allowedPath}`
+  return target
 }
 
 function isHopByHopHeader(name: string) {
@@ -634,16 +670,32 @@ function trackGatewayRequest(props: {
 
 function validateGatewayTargetBaseURL(targetBaseURL: string) {
   const target = new URL(targetBaseURL)
-  const isProductionGateway =
+  if (
+    target.username !== '' ||
+    target.password !== '' ||
+    target.search !== '' ||
+    target.hash !== ''
+  ) {
+    throw new Error('gateway cost proxy target is not allowed')
+  }
+  const path = target.pathname.replace(/\/+$/, '') || '/'
+  const isVercel =
     target.protocol === 'https:' &&
     target.hostname === 'ai-gateway.vercel.sh' &&
-    target.port === ''
+    target.port === '' &&
+    path === '/'
+  const isOpenRouter =
+    target.protocol === 'https:' &&
+    target.hostname === 'openrouter.ai' &&
+    target.port === '' &&
+    path === '/api'
   const isLoopbackFixture =
     target.protocol === 'http:' &&
     target.hostname === '127.0.0.1' &&
-    target.port !== ''
-  if (!isProductionGateway && !isLoopbackFixture) {
+    target.port !== '' &&
+    (path === '/' || path === '/api')
+  if (!isVercel && !isOpenRouter && !isLoopbackFixture) {
     throw new Error('gateway cost proxy target is not allowed')
   }
-  return target.origin
+  return `${target.origin}${path === '/' ? '' : path}`
 }

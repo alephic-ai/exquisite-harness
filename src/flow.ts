@@ -22,7 +22,7 @@ import {
 import { doctor } from './doctor.js'
 import { buildLaunchPlan, getHarness, harnessNames } from './harnesses.js'
 import { exec, printEnv } from './launch.js'
-import { canServeAny } from './providers.js'
+import { canServeAny, isRoutingProvider } from './providers.js'
 import { resolveSearchBackend } from './search-provider.js'
 import { listSessionsForCwd } from './sessions.js'
 import { defaultsScreen } from './ui/defaults-screen.js'
@@ -343,7 +343,7 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
   const model = partial.model ?? (await pickModel(provider))
   let gatewayProvider = partial.gatewayProvider
   let gatewayZdr = partial.gatewayZdr
-  if (provider.type === 'vercel-gateway' && gatewayProvider === undefined) {
+  if (isRoutingProvider(provider.type) && gatewayProvider === undefined) {
     const route = await pickGatewayProvider(provider, model)
     gatewayProvider = route.provider
     gatewayZdr = route.zeroDataRetention

@@ -100,9 +100,14 @@ export async function addProvider(config: Config) {
         value: 'ollama',
       },
       {
-        hint: 'e.g. OpenRouter — chat completions only',
+        hint: 'chat completions only',
         label: 'openai-chat',
         value: 'openai-chat',
+      },
+      {
+        hint: 'Anthropic + OpenAI, provider routing',
+        label: 'OpenRouter',
+        value: 'openrouter',
       },
       {
         hint: 'all protocols (Anthropic + OpenAI)',
@@ -128,7 +133,12 @@ export async function addProvider(config: Config) {
 
   const envKey = await text({
     message: 'API key env var (blank for none)',
-    placeholder: type === 'vercel-gateway' ? 'AI_GATEWAY_API_KEY' : '',
+    placeholder:
+      type === 'vercel-gateway'
+        ? 'AI_GATEWAY_API_KEY'
+        : type === 'openrouter'
+          ? 'OPENROUTER_API_KEY'
+          : '',
   })
   if (isCancel(envKey)) bail()
 

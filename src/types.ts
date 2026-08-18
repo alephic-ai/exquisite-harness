@@ -8,10 +8,12 @@ export interface LaunchPlan {
   gatewayCostCapture?: {
     resumed: boolean
   }
-  // Gateway routing is either a pinned provider, or automatic Vercel routing
+  // Gateway routing is either a pinned upstream, or automatic routing
   // (`provider` unset) optionally restricted to ZDR providers (zdr true).
   gatewayRouting?: {
     apiKeyEnvKey?: string
+    // Which request-body shape the routing proxy injects. Omitted = vercel.
+    kind?: 'openrouter' | 'vercel'
     model: string
     provider?: string
     targetBaseURL: string
@@ -35,6 +37,7 @@ export type Protocol = 'anthropic' | 'openai-chat' | 'openai-responses'
 export const PROVIDER_TYPES = [
   'ollama',
   'openai-chat',
+  'openrouter',
   'vercel-gateway',
 ] as const
 export type ProviderType = (typeof PROVIDER_TYPES)[number]
@@ -60,13 +63,13 @@ export type ApprovalMode = (typeof APPROVAL_MODES)[number]
 
 export interface Selection {
   effort?: EffortLevel
-  // Pinned Gateway provider slug (undefined = automatic Vercel routing).
+  // Pinned upstream provider slug (undefined = automatic routing).
   gatewayProvider?: string
   harness: string
   model: string
   provider: string
   searchProvider?: string
-  // Restrict automatic Gateway routing to ZDR providers.
+  // Restrict automatic routing to ZDR providers.
   gatewayZdr?: boolean
 }
 

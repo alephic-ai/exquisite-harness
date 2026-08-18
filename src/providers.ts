@@ -44,6 +44,13 @@ const gatewayModelsSchema = z.object({
   ),
 })
 
+const throughputP50Schema = z
+  .looseObject({
+    p50: z.number().optional(),
+  })
+  .nullable()
+  .optional()
+
 const gatewayEndpointsSchema = z.object({
   data: z.looseObject({
     endpoints: z.array(
@@ -56,15 +63,29 @@ const gatewayEndpointsSchema = z.object({
           .optional(),
         provider_name: z.string(),
         status: z.number().optional(),
-        throughput_last_1h: z
-          .looseObject({
-            p50: z.number().optional(),
-          })
-          .nullable()
-          .optional(),
+        // OpenRouter's routing slug (e.g. amazon-bedrock, deepinfra/turbo).
+        // Vercel uses provider_name as the slug and omits tag.
+        tag: z.string().optional(),
+        throughput_last_1h: throughputP50Schema,
+        throughput_last_30m: throughputP50Schema,
       }),
     ),
   }),
+})
+
+const openRouterModelsSchema = z.object({
+  data: z.array(
+    z.looseObject({
+      context_length: z.number().optional(),
+      id: z.string(),
+      pricing: z
+        .looseObject({
+          completion: z.union([z.string(), z.number()]).optional(),
+          prompt: z.union([z.string(), z.number()]).optional(),
+        })
+        .optional(),
+    }),
+  ),
 })
 
 const ollamaTagsSchema = z.object({
@@ -162,6 +183,28 @@ async function listGatewayModels(baseURL: string, apiKey?: string) {
     .sort((a, b) => a.id.localeCompare(b.id))
 }
 
+async function listOpenRouterModels(baseURL: string, apiKey?: string) {
+  const body = await fetchJson(`${withV1(baseURL)}/models`, apiKey)
+  return openRouterModelsSchema
+    .parse(body)
+    .data.map((m) => {
+      const input = perTokenToPerMillion(m.pricing?.prompt)
+      const output = perTokenToPerMillion(m.pricing?.completion)
+      return {
+        costLabel:
+          input != null && output != null
+            ? `${formatUsd(input)}/${formatUsd(output)}`
+            : undefined,
+        hint:
+          m.context_length == null
+            ? undefined
+            : `${String(Math.round(m.context_length / 1024))}k ctx`,
+        id: m.id,
+      }
+    })
+    .sort((a, b) => a.id.localeCompare(b.id))
+}
+
 // Fetch one model's p50 throughput (tokens/sec) from its /endpoints response.
 // Returns undefined when no active endpoint publishes a p50, or when the model
 // id 404s — Vercel 404s `/models/{id}/endpoints` for ids it no longer lists
@@ -187,7 +230,7 @@ export async function fetchGatewayModelThroughput(
   const p50 = gatewayEndpointsSchema
     .parse(body)
     .data.endpoints.filter((e) => e.status === undefined || e.status === 0)
-    .map((e) => e.throughput_last_1h?.p50)
+    .map(endpointThroughput)
     .find((value) => value != null)
   return p50 == null ? undefined : `${Math.round(p50)} tps`
 }
@@ -214,6 +257,13 @@ const BEHAVIORS: Record<ProviderType, ProviderBehavior> = {
     openAIBaseURL: withV1,
     protocols: ['openai-chat'],
   },
+  'openrouter': {
+    anthropicBaseURL: withoutV1,
+    codexWireApi: 'chat',
+    listModels: listOpenRouterModels,
+    openAIBaseURL: withV1,
+    protocols: ['anthropic', 'openai-chat', 'openai-responses'],
+  },
   'vercel-gateway': {
     anthropicBaseURL: withoutV1,
     codexWireApi: 'responses',
@@ -231,6 +281,16 @@ export function anthropicBaseURLFor(provider: ResolvedProvider) {
 
 export function canServeAny(type: ProviderType, protocols: Protocol[]) {
   return protocols.some((p) => BEHAVIORS[type].protocols.includes(p))
+}
+
+export function isRoutingProvider(type: ProviderType) {
+  return type === 'openrouter' || type === 'vercel-gateway'
+}
+
+// OpenRouter base slugs match every regional/variant tag (`amazon-bedrock`
+// → `amazon-bedrock/global`). A full tag still has to match exactly.
+export function gatewaySlugMatches(available: string, pin: string) {
+  return available === pin || available.startsWith(`${pin}/`)
 }
 
 // env (explicit shell/1Password/dotenvx) → macOS Keychain → 0600 secrets file.
@@ -275,6 +335,8 @@ export async function listModels(provider: ResolvedProvider) {
 export interface GatewayProviderInfo {
   costInputPerMillion: number | undefined
   costOutputPerMillion: number | undefined
+  // Display name when it differs from the pin slug (OpenRouter tag vs name).
+  label?: string
   name: string
   throughputTokensPerSec: number | undefined
 }
@@ -283,8 +345,10 @@ export async function listGatewayProviders(
   provider: ResolvedProvider,
   modelId: string,
 ): Promise<GatewayProviderInfo[]> {
-  if (provider.type !== 'vercel-gateway') {
-    throw new Error(`provider "${provider.name}" is not Vercel AI Gateway`)
+  if (!isRoutingProvider(provider.type)) {
+    throw new Error(
+      `provider "${provider.name}" does not support upstream routing`,
+    )
   }
   const key = provider.envKey ? await resolveKey(provider) : undefined
   const apiKey = key && key.source !== 'none' ? key.value : undefined
@@ -301,16 +365,31 @@ export async function listGatewayProviders(
   const seen = new Set<string>()
   const providers: GatewayProviderInfo[] = []
   for (const endpoint of endpoints) {
-    if (seen.has(endpoint.provider_name)) continue
-    seen.add(endpoint.provider_name)
+    const name = endpointSlug(endpoint)
+    if (seen.has(name)) continue
+    seen.add(name)
     providers.push({
       costInputPerMillion: perTokenToPerMillion(endpoint.pricing?.prompt),
       costOutputPerMillion: perTokenToPerMillion(endpoint.pricing?.completion),
-      name: endpoint.provider_name,
-      throughputTokensPerSec: endpoint.throughput_last_1h?.p50,
+      ...(endpoint.provider_name !== name
+        ? { label: endpoint.provider_name }
+        : {}),
+      name,
+      throughputTokensPerSec: endpointThroughput(endpoint),
     })
   }
   return providers.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function endpointSlug(endpoint: { provider_name: string; tag?: string }) {
+  return endpoint.tag ?? endpoint.provider_name
+}
+
+function endpointThroughput(endpoint: {
+  throughput_last_1h?: null | { p50?: number }
+  throughput_last_30m?: null | { p50?: number }
+}) {
+  return endpoint.throughput_last_1h?.p50 ?? endpoint.throughput_last_30m?.p50
 }
 
 // Provider APIs publish USD per token as a string or number. Reject negatives
