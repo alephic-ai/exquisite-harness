@@ -1,22 +1,22 @@
 {
   "acs": [
     {
-      "id": 1,
       "criterion": "eh-detected categories exit with distinct documented codes from one reserved contiguous block at >=64 (exact numbers implementer's choice, recorded in the README table): at minimum spawn failure (binary missing/unspawnable), semantic harness failure (resultIsError with child exit 0), and preflight/usage errors (TTY or empty stdin, invalid flag values). Clean completion remains 0. Proof: extend the existing missing-binary / semantic-failure / preflight subprocess tests to assert the reserved codes.",
-      "status": "pass",
-      "evidence": "Reserved block 64 (preflight), 65 (spawn), 66 (semantic) added at src/headless-run.ts:22-24 and wired at the 3 return sites. Extended subprocess tests assert them: missing-binary->65 (headless-run.test.ts:205,221), preflight test.each->64 (:361,373), semantic pi/opencode & Codex->66 (:1048,1055,1127,1134). Clean-completion tests still assert exit 0. `bun test src/headless-run.test.ts` => 23 pass, 0 fail."
+      "evidence": "Reserved block 64 (preflight), 65 (spawn), 66 (semantic) added at src/headless-run.ts:22-24 and wired at the 3 return sites. Extended subprocess tests assert them: missing-binary->65 (headless-run.test.ts:205,221), preflight test.each->64 (:361,373), semantic pi/opencode & Codex->66 (:1048,1055,1127,1134). Clean-completion tests still assert exit 0. `bun test src/headless-run.test.ts` => 23 pass, 0 fail.",
+      "id": 1,
+      "status": "pass"
     },
     {
-      "id": 2,
       "criterion": "Invariant: a raw child exit code is never remapped when eh has no category for the failure — the existing nonzero-passthrough and 128 + signal behaviors are unchanged, and run.completed.exitCode continues to carry the raw child code (its field semantics do not change).",
-      "status": "pass",
-      "evidence": "The childExitCode derivation (`completed.code ?? (signalNumber ? 128 + signalNumber : 1)`) and the resultIsError computation are byte-for-byte unchanged in the src/headless-run.ts diff; only the semantic-forcing literal changed. The passthrough proof tests are untouched and green: exitCode 7 (headless-run.test.ts:1165,1173) and 128 + SIGTERM (:1231,1240)."
+      "evidence": "The childExitCode derivation (`completed.code ?? (signalNumber ? 128 + signalNumber : 1)`) and the resultIsError computation are byte-for-byte unchanged in the src/headless-run.ts diff; only the semantic-forcing literal changed. The passthrough proof tests are untouched and green: exitCode 7 (headless-run.test.ts:1165,1173) and 128 + SIGTERM (:1231,1240).",
+      "id": 2,
+      "status": "pass"
     },
     {
-      "id": 3,
       "criterion": "README gains an \"Exit codes\" table (mirrored in DESIGN.md's headless section) documenting the reserved block, the passthrough rule, and the caveat that a harness's own code may numerically collide with the reserved block only in the passthrough case.",
-      "status": "pass",
-      "evidence": "README.md:168-185 adds a \"#### Exit codes\" table (0/64/65/66/any-other) plus the passthrough rule and the collision-only-in-passthrough caveat. DESIGN.md headless-execution section mirrors the block (64/65/66 + raw passthrough incl. 128+signal). docs/qa/eh-cli.md section I updated to assert 64/65/66."
+      "evidence": "README.md:168-185 adds a \"#### Exit codes\" table (0/64/65/66/any-other) plus the passthrough rule and the collision-only-in-passthrough caveat. DESIGN.md headless-execution section mirrors the block (64/65/66 + raw passthrough incl. 128+signal). docs/qa/eh-cli.md section I updated to assert 64/65/66.",
+      "id": 3,
+      "status": "pass"
     }
   ]
 }

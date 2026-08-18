@@ -1,1 +1,15 @@
-{"files":[{"changeType":"edit","path":"src/headless-run.ts"},{"changeType":"edit","path":"src/headless-run.test.ts"},{"changeType":"edit","path":"README.md"},{"changeType":"edit","path":"DESIGN.md"},{"changeType":"edit","path":"docs/qa/eh-cli.md"},{"changeType":"edit","path":"package.json"}],"taskTitles":["Reserved exit codes in headless-run.ts + extend tests","Document the reserved block","Version bump"]}
+{
+  "files": [
+    { "changeType": "edit", "path": "src/headless-run.ts" },
+    { "changeType": "edit", "path": "src/headless-run.test.ts" },
+    { "changeType": "edit", "path": "README.md" },
+    { "changeType": "edit", "path": "DESIGN.md" },
+    { "changeType": "edit", "path": "docs/qa/eh-cli.md" },
+    { "changeType": "edit", "path": "package.json" }
+  ],
+  "taskTitles": [
+    "Reserved exit codes in headless-run.ts + extend tests",
+    "Document the reserved block",
+    "Version bump"
+  ]
+}
