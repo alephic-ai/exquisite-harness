@@ -4,11 +4,24 @@
 
 Ticket AI-3109: eh run: reserved exit codes for eh-detected failure categories
 
-- AC1: eh-detected categories exit with distinct documented codes from one reserved contiguous block at >=64 (exact numbers implementer's choice, recorded in the README table): at minimum spawn failure (binary missing/unspawnable), semantic harness failure (resultIsError with child exit 0), and preflight/usage errors (TTY or empty stdin, invalid flag values). Clean completion remains 0. Proof: extend the existing missing-binary / semantic-failure / preflight subprocess tests to assert the reserved codes.
-- AC2: Invariant: a raw child exit code is never remapped when eh has no category for the failure — the existing nonzero-passthrough and 128 + signal behaviors are unchanged, and run.completed.exitCode continues to carry the raw child code (its field semantics do not change).
-- AC3: README gains an "Exit codes" table (mirrored in DESIGN.md's headless section) documenting the reserved block, the passthrough rule, and the caveat that a harness's own code may numerically collide with the reserved block only in the passthrough case.
+- AC1: eh-detected categories exit with distinct documented codes from one
+  reserved contiguous block at >=64 (exact numbers implementer's choice,
+  recorded in the README table): at minimum spawn failure (binary
+  missing/unspawnable), semantic harness failure (resultIsError with child exit
+  0), and preflight/usage errors (TTY or empty stdin, invalid flag values).
+  Clean completion remains 0. Proof: extend the existing missing-binary /
+  semantic-failure / preflight subprocess tests to assert the reserved codes.
+- AC2: Invariant: a raw child exit code is never remapped when eh has no
+  category for the failure — the existing nonzero-passthrough and 128 + signal
+  behaviors are unchanged, and run.completed.exitCode continues to carry the raw
+  child code (its field semantics do not change).
+- AC3: README gains an "Exit codes" table (mirrored in DESIGN.md's headless
+  section) documenting the reserved block, the passthrough rule, and the caveat
+  that a harness's own code may numerically collide with the reserved block only
+  in the passthrough case.
 
-Changed files in review scope (vs `origin/main`, pipeline artifacts filtered out):
+Changed files in review scope (vs `origin/main`, pipeline artifacts filtered
+out):
 
 - DESIGN.md
 - README.md
@@ -37,7 +50,7 @@ index 7ab2607..1a49e8f 100644
 +the child exited `0`). Every other code is the raw child exit code passed
 +through unchanged (including `128 + signal`), so a harness's own code can
 +collide with the reserved block only in that passthrough case.
- 
+
  **Phase 2 (later): local router.** An opt-in localhost proxy that receives
  Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
 diff --git a/README.md b/README.md
@@ -47,7 +60,7 @@ index 723bdc3..05e651d 100644
 @@ -165,6 +165,25 @@ preserved as `harness.output`. Harness stderr remains stderr. A semantically
  failed native result makes both `run.completed.exitCode` and the `eh` process
  exit code non-zero, even when the child process exits zero.
- 
+
 +#### Exit codes
 +
 +`eh` owns a small reserved block of exit codes for failures it detects itself;
@@ -90,10 +103,10 @@ index 8468b22..929115f 100644
 +   `128 + signal`).
  2. With Ollama running and a pulled model declared for the `ollama` provider in
     pi's `models.json`, run a short real pi request (replace `<model>`):
- 
+
 @@ -324,9 +326,10 @@ Drive each with the PTY; assert on screen text.
     events remain available as `harness.event`; stderr contains no TUI.
- 
+
  4. Repeat the pi and opencode fake-binary cases with a nonexistent child binary
 -   and with the real native error event shape. → each emits one `run.error`, a
 -   failed `run.completed`, and a non-zero `eh` exit while preserving native
@@ -102,9 +115,9 @@ index 8468b22..929115f 100644
 +   exits `65` (spawn failure) and the native-error case exits `66` (semantic
 +   harness failure); each emits one `run.error`, a failed `run.completed`, and
 +   preserves native stderr separately.
- 
+
  ## Known limitations
- 
+
 diff --git a/package.json b/package.json
 index b09077d..b29f006 100644
 --- a/package.json
@@ -123,7 +136,7 @@ index def570f..be1cfaa 100644
 +++ b/src/gateway-routing.test.ts
 @@ -417,6 +417,10 @@ describe('gateway provider routing', () => {
    })
- 
+
    test('uses a non-empty auth token when the provider key variable is deliberately blank', async () => {
 +    // CI/sandbox may export ANTHROPIC_API_KEY; the plan's blank value must win,
 +    // so clear the ambient var to keep this test hermetic against it.
@@ -140,14 +153,14 @@ index def570f..be1cfaa 100644
 +      else process.env.ANTHROPIC_API_KEY = priorApiKey
      }
    })
- 
+
 diff --git a/src/headless-run.test.ts b/src/headless-run.test.ts
 index 63965f6..533c7a9 100644
 --- a/src/headless-run.test.ts
 +++ b/src/headless-run.test.ts
 @@ -202,7 +202,7 @@ describe('eh run', () => {
      const events = parseEvents(stdout)
- 
+
      expect(stderr).toBe('')
 -    expect(exitCode).toBe(1)
 +    expect(exitCode).toBe(65)
@@ -165,7 +178,7 @@ index 63965f6..533c7a9 100644
        v: 1,
 @@ -358,7 +358,7 @@ describe('eh run', () => {
        ])
- 
+
        expect(stderr).toBe('')
 -      expect(exitCode).toBe(1)
 +      expect(exitCode).toBe(64)
@@ -184,7 +197,7 @@ index 63965f6..533c7a9 100644
 @@ -1045,14 +1045,14 @@ describe('eh run', () => {
        ])
        const events = parseEvents(stdout)
- 
+
 -      expect(exitCode).toBe(1)
 +      expect(exitCode).toBe(66)
        expect(events).toContainEqual({
@@ -201,7 +214,7 @@ index 63965f6..533c7a9 100644
 @@ -1124,14 +1124,14 @@ describe('eh run', () => {
        .split('\n')
        .map((line) => z.record(z.string(), z.unknown()).parse(JSON.parse(line)))
- 
+
 -    expect(exitCode).toBe(1)
 +    expect(exitCode).toBe(66)
      expect(events).toContainEqual({
@@ -221,7 +234,7 @@ index 76acfe8..2603c5c 100644
 +++ b/src/headless-run.ts
 @@ -15,6 +15,13 @@ import { buildLaunchPlan } from './harnesses.js'
  import { EFFORT_LEVELS } from './types.js'
- 
+
  const PROTOCOL_VERSION = 1
 +// Reserved eh exit codes for eh-detected failure categories — a contiguous
 +// block at >=64 (sysexits.h's EX_ range). Raw child codes pass through
@@ -247,7 +260,7 @@ index 76acfe8..2603c5c 100644
 +    return EH_EXIT_PREFLIGHT
    }
  }
- 
+
 @@ -251,8 +262,12 @@ async function executePreparedHeadlessPlan(options: {
            completed.error.message || `Failed to spawn "${options.plan.bin}"`,
          type: 'run.error',

@@ -1,5 +1,3 @@
 ## Verdict
 
-**Mergeable**: YES
-**Blockers**: None
-**Suggestions**: None
+**Mergeable**: YES **Blockers**: None **Suggestions**: None
