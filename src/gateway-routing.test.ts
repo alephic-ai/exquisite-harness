@@ -432,6 +432,11 @@ describe('gateway provider routing', () => {
       )
     })
 
+    // Keep this hermetic: the auth resolver also falls back to
+    // process.env[apiKeyEnvKey], so blank the ambient key to force the plan
+    // ANTHROPIC_AUTH_TOKEN fall-through regardless of the shell environment.
+    const priorApiKey = process.env.ANTHROPIC_API_KEY
+    delete process.env.ANTHROPIC_API_KEY
     try {
       await withGatewayRouting(
         {
@@ -454,6 +459,11 @@ describe('gateway provider routing', () => {
       )
       expect(validationAuthorization).toBe('Bearer qa-auth-token')
     } finally {
+      if (priorApiKey === undefined) {
+        delete process.env.ANTHROPIC_API_KEY
+      } else {
+        process.env.ANTHROPIC_API_KEY = priorApiKey
+      }
       await upstream.close()
       if (priorApiKey === undefined) delete process.env.ANTHROPIC_API_KEY
       else process.env.ANTHROPIC_API_KEY = priorApiKey
