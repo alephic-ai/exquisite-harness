@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:49.328Z",
-  "currentNodeId": "verify_review_fixes",
+  "currentNodeId": "validate_followups",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1368,6 +1368,61 @@
         "inputTokens": 58913,
         "outputTokens": 2221
       }
+    },
+    "verify_review_fixes": {
+      "completedAt": "2026-08-18T16:10:36.360Z",
+      "nodeId": "verify_review_fixes",
+      "artifacts": [
+        {
+          "agentRunId": "83ffc7c2-2e26-49e2-8097-86ffe3272aaa",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "023e593da38b44ed238d9eadf6ff7ce49e78337596861ba5dfdd96b690af0fb2",
+              "sizeBytes": 11322
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "11009f805956d8637d5f3453ceedb0f6cd10f445b21edab2bd307cdd90d9efac",
+              "sizeBytes": 1493
+            },
+            {
+              "contentType": "application/x-ndjson",
+              "relativePath": "codex-sessions/2026/08/18/rollout-2026-08-18T16-10-06-01a015a3-1b77-7743-9c3a-21c319d319d6.jsonl",
+              "sha256": "3d93ab36eff151d391a2df8fb025ed6510d1e441a5c5e9f2961b9abbb07df10c",
+              "sizeBytes": 100383
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "c14005fc321ecb815e85c6dc60a955ba25ec3028ee62460babd166f2f844fe29",
+              "sizeBytes": 13345
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/verify_review_fixes/attempt-0-83ffc7c2-2e26-49e2-8097-86ffe3272aaa",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3107/b3eb78e84ea1-ad819a53-e19a-4335-8169-9888a79872d1/agent-artifacts/verify_review_fixes/attempt-0-83ffc7c2-2e26-49e2-8097-86ffe3272aaa/manifest.json",
+          "nodeId": "verify_review_fixes",
+          "pipelineId": "ticket-complete-AI-3107",
+          "runtime": "codex",
+          "sessionId": "01a015a3-1b77-7743-9c3a-21c319d319d6",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I’ll do the constrained repair verification only: read the prior fix artifact, check the corresponding current code path, then update the two review artifacts and either keep or remove the unresolved-fixes file.\nThe prior fix artifact contains one blocker: timed-out child exits 0 after SIGTERM. The current code now folds `timeout.fired` into `resultIsError`, and because `exitCode` is forced to `1` when an errored result has child exit `0`, the specific blocker is resolved.\nI’ve updated the repair review artifacts and removed `.attractor/review-fixes.md` since the only listed fix is resolved. I’m doing a quick file/status check now to make sure the artifacts are in the requested shape.\nSTATUS:success\n",
+      "retryCount": 0,
+      "sessionId": "01a015a3-1b77-7743-9c3a-21c319d319d6",
+      "startedAt": "2026-08-18T16:10:05.963Z",
+      "usage": {
+        "cacheReadTokens": 59520,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.20259500000000003,
+        "inputTokens": 83839,
+        "outputTokens": 1708
+      }
     }
   },
   "parallelBranches": {
@@ -1378,7 +1433,7 @@
   },
   "pipelineId": "ticket-complete-AI-3107",
   "status": "running",
-  "updatedAt": "2026-08-18T16:10:03.787Z",
+  "updatedAt": "2026-08-18T16:10:36.361Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1691,6 +1746,19 @@
         "costUsd": 0.012192886,
         "inputTokens": 58913,
         "outputTokens": 2221
+      },
+      "visits": 1
+    },
+    "verify_review_fixes": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 30397,
+      "usage": {
+        "cacheReadTokens": 59520,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.20259500000000003,
+        "inputTokens": 83839,
+        "outputTokens": 1708
       },
       "visits": 1
     }

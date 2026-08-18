@@ -1,3 +1,1 @@
-## Verdict
-
-**Mergeable**: YES **Blockers**: None **Suggestions**: None
+Guillaumeify intentionally skipped on this repair verification pass.
