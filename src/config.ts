@@ -74,10 +74,12 @@ const MAX_RECENT = 10
 const DEFAULT_BASE_URLS: Record<ProviderType, string> = {
   'ollama': 'http://localhost:11434',
   'openai-chat': '',
+  'openrouter': 'https://openrouter.ai/api/v1',
   'vercel-gateway': 'https://ai-gateway.vercel.sh/v1',
 }
 
 const DEFAULT_ENV_KEYS: Partial<Record<ProviderType, string>> = {
+  'openrouter': 'OPENROUTER_API_KEY',
   'vercel-gateway': 'AI_GATEWAY_API_KEY',
 }
 
@@ -96,9 +98,8 @@ const DEFAULT_SEARCH_ENV_KEYS: Record<SearchProviderType, string> = {
 const BUILTIN_PROVIDERS: Record<string, ProviderConfig> = {
   'ollama': { baseURL: DEFAULT_BASE_URLS.ollama, type: 'ollama' },
   'openrouter': {
-    baseURL: 'https://openrouter.ai/api/v1',
     envKey: 'OPENROUTER_API_KEY',
-    type: 'openai-chat',
+    type: 'openrouter',
   },
   'vercel-ai-gateway': {
     envKey: 'AI_GATEWAY_API_KEY',

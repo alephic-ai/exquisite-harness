@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { ResolvedProvider } from './config.js'
 
 import { resolveApiKey } from './keys.js'
-import { fetchJson, withV1 } from './providers.js'
+import { fetchJson, gatewaySlugMatches, withV1 } from './providers.js'
 
 // USD per 1M tokens. Optional cache rates when the provider publishes them.
 export interface ModelRates {
@@ -77,6 +77,7 @@ const gatewayEndpointsSchema = z.object({
         }),
         provider_name: z.string(),
         status: z.number().optional(),
+        tag: z.string().optional(),
       }),
     ),
   }),
@@ -109,7 +110,15 @@ export async function fetchModelMeta(props: {
         modelId,
       })
     }
-    return await fetchOpenRouterMeta(provider.baseURL, modelId, apiKey)
+    if (provider.type === 'openrouter') {
+      return await fetchOpenRouterMeta({
+        apiKey,
+        baseURL: provider.baseURL,
+        gatewayProvider,
+        modelId,
+      })
+    }
+    return await fetchOpenRouterListMeta(provider.baseURL, modelId, apiKey)
   } catch {
     return {
       contextWindow: undefined,
@@ -265,7 +274,10 @@ async function fetchGatewayRateLabel(props: {
       (endpoint) =>
         (endpoint.status == null || endpoint.status === 0) &&
         (props.gatewayProvider == null ||
-          endpoint.provider_name === props.gatewayProvider),
+          gatewaySlugMatches(
+            endpoint.tag ?? endpoint.provider_name,
+            props.gatewayProvider,
+          )),
     )
   if (endpoints.length === 0) return undefined
 
@@ -287,7 +299,7 @@ async function fetchGatewayRateLabel(props: {
   return `${formatRateRange(inputRates)}/${formatRateRange(outputRates)}`
 }
 
-async function fetchOpenRouterMeta(
+async function fetchOpenRouterListMeta(
   baseURL: string,
   modelId: string,
   apiKey?: string,
@@ -329,6 +341,23 @@ async function fetchOpenRouterMeta(
     rateLabel: formatRatesPerMillion(rates),
     rates,
   }
+}
+
+async function fetchOpenRouterMeta(props: {
+  apiKey: string | undefined
+  baseURL: string
+  gatewayProvider: string | undefined
+  modelId: string
+}): Promise<ModelMeta> {
+  const listed = await fetchOpenRouterListMeta(
+    props.baseURL,
+    props.modelId,
+    props.apiKey,
+  )
+  const rateLabel = await fetchGatewayRateLabel(props)
+    .then((label) => label ?? listed.rateLabel ?? 'varies')
+    .catch(() => listed.rateLabel ?? 'varies')
+  return { ...listed, rateLabel }
 }
 
 function formatRateRange(values: number[]) {

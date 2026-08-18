@@ -5,6 +5,7 @@ import { createServer, request as httpRequest } from 'node:http'
 
 import { withGatewayRouting } from './gateway-routing.js'
 import { buildLaunchPlan } from './harnesses.js'
+import { anthropicBaseURLFor } from './providers.js'
 
 describe('gateway provider routing', () => {
   test.each(['/messages', '/responses', '/chat/completions'])(
@@ -129,6 +130,177 @@ describe('gateway provider routing', () => {
       )
       // The upstream sees the full configured base path, not a collapsed /v1.
       expect(receivedPath).toBe('/gateway/v1/chat/completions')
+    } finally {
+      await upstream.close()
+    }
+  })
+
+  test('pins an OpenRouter provider without changing the response', async () => {
+    let receivedBody = ''
+    const responseBody = 'data: {"type":"message_delta"}\n\n'
+    const upstream = await startUpstream(async (request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [
+                {
+                  provider_name: 'Amazon Bedrock',
+                  status: 0,
+                  tag: 'amazon-bedrock',
+                },
+              ],
+            },
+          }),
+        )
+        return
+      }
+      receivedBody = await readBody(request)
+      response.setHeader('content-type', 'text/event-stream')
+      response.end(responseBody)
+    })
+    const targetBaseURL = `${upstream.baseURL}/api/v1`
+
+    try {
+      await withGatewayRouting(
+        {
+          args: [`base_url="${targetBaseURL}"`],
+          bin: 'test-harness',
+          env: { TEST_GATEWAY_BASE_URL: targetBaseURL },
+          gatewayRouting: {
+            kind: 'openrouter',
+            model: 'anthropic/claude-sonnet-4.6',
+            provider: 'amazon-bedrock',
+            targetBaseURL,
+          },
+          notes: [],
+        },
+        async (plan) => {
+          const response = await fetch(
+            `${plan.env.TEST_GATEWAY_BASE_URL}/chat/completions`,
+            {
+              body: JSON.stringify({
+                model: 'anthropic/claude-sonnet-4.6',
+                provider: { ignore: ['together'] },
+              }),
+              headers: { 'content-type': 'application/json' },
+              method: 'POST',
+            },
+          )
+          expect(await response.text()).toBe(responseBody)
+        },
+      )
+      expect(JSON.parse(receivedBody)).toEqual({
+        model: 'anthropic/claude-sonnet-4.6',
+        provider: {
+          allow_fallbacks: false,
+          ignore: ['together'],
+          only: ['amazon-bedrock'],
+        },
+      })
+    } finally {
+      await upstream.close()
+    }
+  })
+
+  test('OpenRouter ZDR-only routing injects provider.zdr without pinning', async () => {
+    let receivedBody = ''
+    const upstream = await startUpstream(async (request, response) => {
+      receivedBody = await readBody(request)
+      response.end('data: {"type":"response.completed"}\n\n')
+    })
+    const targetBaseURL = `${upstream.baseURL}/v1`
+
+    try {
+      await withGatewayRouting(
+        {
+          args: [`base_url="${targetBaseURL}"`],
+          bin: 'test-harness',
+          env: { TEST_GATEWAY_BASE_URL: targetBaseURL },
+          gatewayRouting: {
+            kind: 'openrouter',
+            model: 'anthropic/claude-sonnet-4.6',
+            targetBaseURL,
+            zdr: true,
+          },
+          notes: [],
+        },
+        async (plan) => {
+          await fetch(`${plan.env.TEST_GATEWAY_BASE_URL}/messages`, {
+            body: JSON.stringify({ model: 'anthropic/claude-sonnet-4.6' }),
+            headers: { 'content-type': 'application/json' },
+            method: 'POST',
+          })
+        },
+      )
+      expect(JSON.parse(receivedBody)).toEqual({
+        model: 'anthropic/claude-sonnet-4.6',
+        provider: { zdr: true },
+      })
+    } finally {
+      await upstream.close()
+    }
+  })
+
+  test('accepts an OpenRouter base slug when only regional tags are listed', async () => {
+    let receivedBody = ''
+    const upstream = await startUpstream(async (request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [
+                {
+                  provider_name: 'Amazon Bedrock',
+                  status: 0,
+                  tag: 'amazon-bedrock/global',
+                },
+              ],
+            },
+          }),
+        )
+        return
+      }
+      receivedBody = await readBody(request)
+      response.end('ok')
+    })
+    const targetBaseURL = `${upstream.baseURL}/api/v1`
+
+    try {
+      await withGatewayRouting(
+        {
+          args: [`base_url="${targetBaseURL}"`],
+          bin: 'test-harness',
+          env: { TEST_GATEWAY_BASE_URL: targetBaseURL },
+          gatewayRouting: {
+            kind: 'openrouter',
+            model: 'anthropic/claude-sonnet-4.6',
+            provider: 'amazon-bedrock',
+            targetBaseURL,
+          },
+          notes: [],
+        },
+        async (plan) => {
+          const response = await fetch(
+            `${plan.env.TEST_GATEWAY_BASE_URL}/chat/completions`,
+            {
+              body: JSON.stringify({ model: 'anthropic/claude-sonnet-4.6' }),
+              headers: { 'content-type': 'application/json' },
+              method: 'POST',
+            },
+          )
+          expect(await response.text()).toBe('ok')
+        },
+      )
+      expect(JSON.parse(receivedBody)).toEqual({
+        model: 'anthropic/claude-sonnet-4.6',
+        provider: {
+          allow_fallbacks: false,
+          only: ['amazon-bedrock'],
+        },
+      })
     } finally {
       await upstream.close()
     }
@@ -544,6 +716,32 @@ describe('gateway routing plan construction', () => {
       statusline: false,
     })
     expect(plan.gatewayRouting).toBeUndefined()
+  })
+
+  test('OpenRouter pins use the OpenRouter request body and Claude Anthropic skin', async () => {
+    const openrouter = {
+      baseURL: 'https://openrouter.ai/api/v1',
+      name: 'openrouter',
+      type: 'openrouter' as const,
+    }
+    expect(anthropicBaseURLFor(openrouter)).toBe('https://openrouter.ai/api')
+    const plan = await buildLaunchPlan(
+      'codex',
+      openrouter,
+      'anthropic/claude-sonnet-4.6',
+      {
+        gatewayProvider: 'amazon-bedrock',
+        statusline: false,
+      },
+    )
+    expect(plan.gatewayRouting).toEqual({
+      apiKeyEnvKey: undefined,
+      kind: 'openrouter',
+      model: 'anthropic/claude-sonnet-4.6',
+      provider: 'amazon-bedrock',
+      targetBaseURL: 'https://openrouter.ai/api/v1',
+      zdr: false,
+    })
   })
 })
 

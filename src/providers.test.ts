@@ -236,6 +236,117 @@ test('skips an active endpoint with null throughput for one that has a p50', asy
   }
 })
 
+test('lists OpenRouter models with cost and context hints', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        data: [
+          {
+            context_length: 200_000,
+            id: 'anthropic/claude-sonnet-4.6',
+            pricing: { completion: '0.000015', prompt: '0.000003' },
+          },
+          {
+            context_length: 128_000,
+            id: 'openai/gpt-5',
+            pricing: { completion: '0.00001', prompt: '0.00000125' },
+          },
+        ],
+      }),
+    )
+  })
+
+  try {
+    const models = await listModels({
+      baseURL: `${upstream.baseURL}/api/v1`,
+      name: 'openrouter',
+      type: 'openrouter',
+    })
+    expect(models).toEqual([
+      {
+        costLabel: '$3/$15',
+        hint: '195k ctx',
+        id: 'anthropic/claude-sonnet-4.6',
+      },
+      {
+        costLabel: '$1.25/$10',
+        hint: '125k ctx',
+        id: 'openai/gpt-5',
+      },
+    ])
+  } finally {
+    await upstream.close()
+  }
+})
+
+test('lists OpenRouter endpoints by tag with 30m throughput', async () => {
+  let requestedPath = ''
+  const upstream = await startUpstream((request, response) => {
+    requestedPath = request.url ?? ''
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        data: {
+          endpoints: [
+            {
+              pricing: { completion: '0.000025', prompt: '0.000005' },
+              provider_name: 'Amazon Bedrock',
+              status: 0,
+              tag: 'amazon-bedrock',
+              throughput_last_30m: { p50: 36 },
+            },
+            {
+              pricing: { completion: '0.000025', prompt: '0.000005' },
+              provider_name: 'Anthropic',
+              status: 0,
+              tag: 'anthropic',
+              throughput_last_30m: { p50: 34 },
+            },
+            {
+              provider_name: 'Google Vertex',
+              status: -1,
+              tag: 'google-vertex/us-east5',
+            },
+          ],
+        },
+      }),
+    )
+  })
+
+  try {
+    const providers = await listGatewayProviders(
+      {
+        baseURL: `${upstream.baseURL}/api/v1`,
+        name: 'openrouter',
+        type: 'openrouter',
+      },
+      'anthropic/claude-sonnet-4.6',
+    )
+    expect(providers).toEqual([
+      {
+        costInputPerMillion: 5,
+        costOutputPerMillion: 25,
+        label: 'Amazon Bedrock',
+        name: 'amazon-bedrock',
+        throughputTokensPerSec: 36,
+      },
+      {
+        costInputPerMillion: 5,
+        costOutputPerMillion: 25,
+        label: 'Anthropic',
+        name: 'anthropic',
+        throughputTokensPerSec: 34,
+      },
+    ])
+    expect(requestedPath).toBe(
+      '/api/v1/models/anthropic/claude-sonnet-4.6/endpoints',
+    )
+  } finally {
+    await upstream.close()
+  }
+})
+
 test('lets a Gateway /endpoints 500 propagate so the picker can retry', async () => {
   const upstream = await startUpstream((_request, response) => {
     response.statusCode = 500

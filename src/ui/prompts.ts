@@ -26,6 +26,7 @@ import {
   fetchGatewayModelThroughput,
   type GatewayProviderInfo,
   HttpError,
+  isRoutingProvider,
   listGatewayProviders,
   listModelsCached,
 } from '../providers.js'
@@ -341,12 +342,16 @@ export async function pickGatewayProvider(
     )
   }
 
+  const product = provider.type === 'openrouter' ? 'OpenRouter' : 'AI Gateway'
   const value = await autocomplete({
     maxItems: 12,
-    message: `AI Gateway provider · ${model}`,
+    message: `${product} provider · ${model}`,
     options: [
       {
-        hint: 'Vercel routing and fallback',
+        hint:
+          provider.type === 'openrouter'
+            ? 'OpenRouter routing and fallback'
+            : 'Vercel routing and fallback',
         label: 'automatic (recommended)',
         value: GATEWAY_AUTO,
       },
@@ -369,11 +374,11 @@ export async function pickGatewayProvider(
   if (value === GATEWAY_ZDR) return { zeroDataRetention: true }
   if (value === MANUAL) {
     const typed = await text({
-      message: 'AI Gateway provider slug',
+      message: `${product} provider slug`,
       validate: (v) =>
-        v != null && /^[A-Za-z0-9._-]+$/.test(v)
+        v != null && /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(v)
           ? undefined
-          : 'use the provider slug from Vercel AI Gateway',
+          : 'use the provider slug from the model page',
     })
     if (isCancel(typed)) bail()
     return { provider: typed }
@@ -383,7 +388,7 @@ export async function pickGatewayProvider(
 
 export async function pickModel(provider: ResolvedProvider) {
   const models = await loadModels(provider)
-  const isGateway = provider.type === 'vercel-gateway'
+  const isGateway = isRoutingProvider(provider.type)
   // Throughput lives per-model in a separate /endpoints call the gateway doesn't
   // want to pay for the whole list. Fetch it for the models visible on the first
   // screen so tok/s shows immediately, then lazily for anything the user filters
@@ -543,7 +548,8 @@ function gatewayProviderLabel(info: GatewayProviderInfo) {
       ? `${Math.round(info.throughputTokensPerSec)} tps`
       : undefined
   const parts = [cost, throughput].filter((part) => part != null)
-  return parts.length > 0 ? `${info.name} — ${parts.join(' · ')}` : info.name
+  const display = info.label ?? info.name
+  return parts.length > 0 ? `${display} — ${parts.join(' · ')}` : display
 }
 
 // Model picker row: cost/throughput (when the provider lists them) go inline in

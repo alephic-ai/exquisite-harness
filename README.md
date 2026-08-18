@@ -49,10 +49,10 @@ When you launch Claude through `eh`, it injects a session statusline: provider,
 model, the selected endpoint's rates when pinned (otherwise the active provider
 rate range)
 ($/1M), session cost, and context %
-against the provider’s published window. Vercel AI Gateway sessions use the
-gateway's exact billed cost metadata. Other totals are token-based estimates and
-paid-provider fallbacks carry a `~`; providers with published zero rates show
-exact `$0`. Partial or unpriceable totals show `—`
+against the provider’s published window. Vercel AI Gateway and OpenRouter
+sessions use exact billed cost metadata. Other totals are token-based estimates
+and paid-provider fallbacks carry a `~`; providers with published zero rates
+show exact `$0`. Partial or unpriceable totals show `—`
 instead of guessing.
 
 OpenCode launches receive the same published rates in their inline model
@@ -71,6 +71,8 @@ eh -r                                 # pick from this dir's sessions (all harne
 eh -r codex -p ollama                 # only codex sessions; -p/-m/-e override the wiring
 eh claude vercel-ai-gateway anthropic/claude-sonnet-4.6 \
   --gateway-provider bedrock          # pin this run to one Gateway provider
+eh claude openrouter anthropic/claude-sonnet-4.6 \
+  --gateway-provider anthropic        # same pin on OpenRouter's Anthropic skin
 eh --print-env claude ollama qwen3-coder
                                       # print the export lines, don't launch
 eh claude ollama qwen3-coder --search firecrawl
@@ -110,18 +112,21 @@ Claude's auto mode may reject unsupported accounts, models, or custom provider
 wiring. Pi's separate project-trust `--approve` option is intentionally not
 mapped. `platform default` adds no approval argument.
 
-### AI Gateway provider routing
+### Upstream provider routing
 
-For Vercel AI Gateway models, interactive launches offer an additional provider
-picker after the model. Each provider row shows its cost ($ in/out per 1M) and
-p50 throughput (tps). Leave it on `automatic` for normal Gateway routing, pin
-one upstream with `--gateway-provider <slug>`, or choose `ZDR only` to restrict
-routing to zero-data-retention providers. A pin is fail-closed for that run:
-Gateway will not fall back to another provider. The option works with Claude,
+For OpenRouter and Vercel AI Gateway models, interactive launches offer an
+additional provider picker after the model. Each provider row shows its cost ($
+in/out per 1M) and p50 throughput (tps). Leave it on `automatic` for normal
+routing, pin one upstream with `--gateway-provider <slug>`, or choose `ZDR only`
+to restrict routing to zero-data-retention providers. A pin is fail-closed for
+that run: the gateway will not fall back to another provider. OpenRouter slugs
+may include a path suffix (`deepinfra/turbo`). The option works with Claude,
 Codex, Grok, opencode, and pi, plus `eh run`; profiles and recents remember it.
-For pi, eh points the harness's native gateway provider at its loopback proxy
-via a temporary `--extension`, so no `~/.pi/agent/models.json` mutation is
-needed.
+For pi, eh points the harness's native provider at its loopback proxy via a
+temporary `--extension`, so no `~/.pi/agent/models.json` mutation is needed.
+
+OpenRouter speaks Anthropic Messages natively (`ANTHROPIC_BASE_URL` is
+`https://openrouter.ai/api`), so Claude Code no longer needs the phase-2 router.
 
 ### Resume
 
@@ -168,8 +173,8 @@ private temporary prompt file because its headless CLI exposes `--prompt-file`;
 for all five harnesses with `--resume-session <id>`. Orchestrators that must
 preserve harness-specific policy flags can pass a JSON string array with
 `--native-args-json`; those args are prepended before `eh`'s required
-machine-output flags. Vercel AI Gateway runs through Claude, Codex, Grok,
-opencode, or pi may also use `--gateway-provider <slug>`.
+machine-output flags. OpenRouter and Vercel AI Gateway runs through Claude,
+Codex, Grok, opencode, or pi may also use `--gateway-provider <slug>`.
 
 ### Keys
 
@@ -240,7 +245,7 @@ eh update                             # self-update to the latest release
 
 |             | Ollama         | OpenRouter | Vercel AI Gateway |
 | ----------- | -------------- | ---------- | ----------------- |
-| Claude Code | ✅             | ⚠️ router  | ✅                |
+| Claude Code | ✅             | ✅         | ✅                |
 | Codex       | ✅             | ✅         | ✅                |
 | Grok        | ✅             | ✅         | ✅                |
 | opencode    | ✅             | ✅         | ✅                |
@@ -262,7 +267,8 @@ controls launch-time approval behavior. `~/.config/eh/cache.json` — model list
 All three matrix providers are built in; config only overrides or adds custom
 ones. Firecrawl search is also built in; `searchProviders` can override its
 `baseURL` or `envKey`, and `defaultSearchProvider` controls new Claude launches.
-Saved profiles and recents also include an optional Gateway provider pin.
+Saved profiles and recents also include an optional upstream provider pin
+(OpenRouter or Vercel AI Gateway).
 
 ## Developing
 

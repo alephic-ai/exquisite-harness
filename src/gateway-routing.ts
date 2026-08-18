@@ -10,6 +10,8 @@ import { z } from 'zod'
 
 import type { LaunchPlan } from './types.js'
 
+import { gatewaySlugMatches } from './providers.js'
+
 const requestBodySchema = z.record(z.string(), z.unknown())
 const gatewayEndpointsSchema = z.object({
   data: z.looseObject({
@@ -17,6 +19,7 @@ const gatewayEndpointsSchema = z.object({
       z.looseObject({
         provider_name: z.string(),
         status: z.number().optional(),
+        tag: z.string().optional(),
       }),
     ),
   }),
@@ -43,6 +46,7 @@ export async function withGatewayRouting<T>(
     validatedModels,
   })
   const proxy = await startGatewayRoutingProxy({
+    kind: plan.gatewayRouting.kind ?? 'vercel',
     provider: plan.gatewayRouting.provider,
     targetBaseURL: plan.gatewayRouting.targetBaseURL,
     validatedModels,
@@ -113,13 +117,14 @@ async function fetchGatewayProviders(props: {
         .filter(
           (endpoint) => endpoint.status === undefined || endpoint.status === 0,
         )
-        .map((endpoint) => endpoint.provider_name),
+        .map((endpoint) => endpoint.tag ?? endpoint.provider_name),
     ),
   ]
 }
 
 async function forwardRequest(props: {
   activeRequests: Set<AbortController>
+  kind: 'openrouter' | 'vercel'
   provider: string | undefined
   request: IncomingMessage
   response: ServerResponse
@@ -150,6 +155,7 @@ async function forwardRequest(props: {
     const headers = requestHeaders(props.request.headers)
     const routed = isInferencePath(upstreamURL.pathname)
       ? routeRequestBody(rawBody ?? Buffer.alloc(0), {
+          kind: props.kind,
           provider: props.provider,
           zdr: props.zdr,
         })
@@ -321,11 +327,29 @@ function routePlanThroughProxy(plan: LaunchPlan, proxyBaseURL: string) {
 
 function routeRequestBody(
   body: Buffer,
-  route: { provider: string | undefined; zdr: boolean | undefined },
+  route: {
+    kind: 'openrouter' | 'vercel'
+    provider: string | undefined
+    zdr: boolean | undefined
+  },
 ) {
   const parsed = requestBodySchema.parse(JSON.parse(body.toString('utf8')))
   if (typeof parsed.model !== 'string' || parsed.model.length === 0) {
     throw new Error('gateway routing request is missing a model')
+  }
+  if (route.kind === 'openrouter') {
+    const provider = asRecord(parsed.provider) ?? {}
+    const injection = {
+      ...provider,
+      ...(route.provider !== undefined
+        ? { allow_fallbacks: false, only: [route.provider] }
+        : {}),
+      ...(route.zdr === true ? { zdr: true } : {}),
+    }
+    return {
+      body: JSON.stringify({ ...parsed, provider: injection }),
+      model: parsed.model,
+    }
   }
   const providerOptions = asRecord(parsed.providerOptions) ?? {}
   const gateway = asRecord(providerOptions.gateway) ?? {}
@@ -347,6 +371,7 @@ function routeRequestBody(
 }
 
 async function startGatewayRoutingProxy(props: {
+  kind: 'openrouter' | 'vercel'
   provider: string | undefined
   targetBaseURL: string
   validatedModels?: Map<string, Promise<void>>
@@ -359,6 +384,7 @@ async function startGatewayRoutingProxy(props: {
   const server = createServer((request, response) => {
     void forwardRequest({
       activeRequests,
+      kind: props.kind,
       provider: props.provider,
       request,
       response,
@@ -412,7 +438,9 @@ async function validateGatewayProvider(props: {
   let validation = props.validatedModels.get(cacheKey)
   if (!validation) {
     validation = fetchGatewayProviders(props).then((providers) => {
-      if (!providers.includes(provider)) {
+      if (
+        !providers.some((available) => gatewaySlugMatches(available, provider))
+      ) {
         const available = providers.length > 0 ? providers.join(', ') : 'none'
         throw new Error(
           `gateway provider "${provider}" is unavailable for model "${props.model}" (available: ${available})`,

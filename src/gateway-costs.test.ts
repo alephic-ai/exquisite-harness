@@ -394,6 +394,76 @@ describe('gateway cost capture', () => {
       await hostileOrigin.close()
     }
   })
+
+  test('records OpenRouter usage.cost from the stream', async () => {
+    const sessionId = '3b0d5d6a-6f1a-4d4e-9c2a-1f8c9b7e4a10'
+    const body = `event: message_delta\ndata: ${JSON.stringify({
+      id: 'gen-abc123',
+      type: 'message_delta',
+      usage: { cost: 0.00001596 },
+    })}\n\n`
+    const upstream = await startUpstream(body)
+    const costDir = makeTempDir()
+    const proxy = await startGatewayCostProxy({
+      costDir,
+      resumed: false,
+      targetBaseURL: upstream.baseURL,
+    })
+
+    try {
+      const response = await settleWithin(
+        fetch(`${proxy.baseURL}/v1/messages`, {
+          body: gatewayRequestBody(sessionId),
+          headers: { 'content-type': 'application/json' },
+          method: 'POST',
+        }),
+        'stream response headers',
+      )
+      expect(await response.text()).toBe(body)
+      expect(readGatewaySessionCost({ costDir, sessionId })).toEqual({
+        exact: true,
+        total: '0.00001596',
+      })
+    } finally {
+      await proxy.close()
+      await upstream.close()
+    }
+  })
+
+  test('preserves an /api prefix when forwarding to the upstream', async () => {
+    let receivedPath = ''
+    const sessionId = '8c2f1d0e-4a6b-4c8d-9e1f-2a3b4c5d6e7f'
+    const event = gatewayCostEvent('gen_789', '0.01')
+    const body = `data: ${JSON.stringify(event)}\n\n`
+    const upstream = await startUpstream((request, response) => {
+      receivedPath = request.url ?? ''
+      response.writeHead(200, { 'content-type': 'text/event-stream' })
+      response.end(body)
+    })
+    const costDir = makeTempDir()
+    const proxy = await startGatewayCostProxy({
+      costDir,
+      resumed: false,
+      targetBaseURL: `${upstream.baseURL}/api`,
+    })
+
+    try {
+      const response = await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: gatewayRequestBody(sessionId),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      })
+      expect(await response.text()).toBe(body)
+      expect(receivedPath).toBe('/api/v1/messages')
+      expect(readGatewaySessionCost({ costDir, sessionId })).toEqual({
+        exact: true,
+        total: '0.01',
+      })
+    } finally {
+      await proxy.close()
+      await upstream.close()
+    }
+  })
 })
 
 function gatewayCostEvent(generationId: string, cost: string) {

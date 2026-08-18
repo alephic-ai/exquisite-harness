@@ -110,3 +110,74 @@ test('reports the full active gateway rate range including context tiers', async
     })
   }
 })
+
+test('pins OpenRouter rate labels to the endpoint tag, not the display name', async () => {
+  const server = createServer((request, response) => {
+    response.setHeader('content-type', 'application/json')
+    if (request.url === '/v1/models') {
+      response.end(
+        JSON.stringify({
+          data: [
+            {
+              context_length: 200_000,
+              id: 'anthropic/claude-sonnet-4.6',
+              pricing: { completion: '0.000025', prompt: '0.000005' },
+            },
+          ],
+        }),
+      )
+      return
+    }
+    response.end(
+      JSON.stringify({
+        data: {
+          endpoints: [
+            {
+              pricing: { completion: '0.000025', prompt: '0.000005' },
+              provider_name: 'Amazon Bedrock',
+              status: 0,
+              tag: 'amazon-bedrock/global',
+            },
+            {
+              pricing: { completion: '0.00003', prompt: '0.000006' },
+              provider_name: 'Anthropic',
+              status: 0,
+              tag: 'anthropic',
+            },
+          ],
+        },
+      }),
+    )
+  })
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject)
+    server.listen(0, '127.0.0.1', resolve)
+  })
+  const address = server.address()
+  if (!address || typeof address === 'string') {
+    server.close()
+    throw new Error('test pricing server did not bind a TCP port')
+  }
+
+  try {
+    const provider = {
+      baseURL: `http://127.0.0.1:${String(address.port)}`,
+      name: 'openrouter',
+      type: 'openrouter' as const,
+    }
+    const pinned = await fetchModelMeta({
+      gatewayProvider: 'amazon-bedrock',
+      modelId: 'anthropic/claude-sonnet-4.6',
+      provider,
+    })
+    expect(pinned.rateLabel).toBe('$5/$25')
+    expect(pinned.contextWindow).toBe(200_000)
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+  }
+})

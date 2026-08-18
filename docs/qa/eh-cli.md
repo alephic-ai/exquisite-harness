@@ -41,8 +41,9 @@ Each prints env/args and exits 0 without launching, unless noted.
    exports. The same applies with `-e high`.
 4. `eh --print-env codex openrouter openai/gpt-5.1` (openrouter configured) →
    `wire_api="chat"`, `env_key="OPENROUTER_API_KEY"`.
-5. `eh --print-env claude openrouter x` → error "cannot serve the Anthropic
-   protocol (needs the eh router, phase 2)", non-zero exit.
+5. `eh --print-env claude openrouter x` with `OPENROUTER_API_KEY` set →
+   `ANTHROPIC_BASE_URL=https://openrouter.ai/api`. With the key unset and no
+   stored key → error `no API key for "openrouter"`, non-zero exit.
 6. `eh --print-env claude vercel-ai-gateway x` with `AI_GATEWAY_API_KEY` unset
    and no stored key → error "no API key for \"vercel-ai-gateway\"", non-zero
    exit.
@@ -121,8 +122,8 @@ Each prints env/args and exits 0 without launching, unless noted.
    the runtime refuses before eh's code runs ("The current working directory was
    deleted…"), non-zero exit — no raw `uv_cwd` stack trace.
 10. `eh --print-env --gateway-provider bedrock codex ollama qwen3-coder` → error
-    `--gateway-provider requires a Vercel AI Gateway provider`, non-zero exit.
-    An invalid slug such as `not valid` also fails before launch.
+    `--gateway-provider requires OpenRouter or Vercel AI Gateway`, non-zero
+    exit. An invalid slug such as `not valid` also fails before launch.
 
 ## D. Interactive flows (PTY harness)
 
@@ -143,10 +144,9 @@ Drive each with the PTY; assert on screen text.
    the recent → launch-plan note with **redacted** secrets
    (`ANTHROPIC_AUTH_TOKEN=•••`), the resolved approval default, and go/save/back
    options.
-3. **Pickers**: run `eh claude` → provider picker lists ollama (compatible) and,
-   if configured, openrouter. Arrow down to focus openrouter → its hint reads
-   "openai-chat · needs router" (clack only shows the focused row's hint);
-   picking it warns "…needs the phase-2 router" and re-prompts. Pick ollama →
+3. **Pickers**: run `eh claude` → provider picker lists ollama and, if a key is
+   set, openrouter as compatible
+   (`openrouter · https://openrouter.ai/api/v1 · ✓ key set`). Pick ollama →
    model picker lists live Ollama models with size hints, plus "other…". Select
    a model → confirm screen. 3b. **providerCompat gate**: with
    `PI_CODING_AGENT_DIR` pointed at an empty dir (no models.json), run `eh pi` →

@@ -50,7 +50,7 @@ program
   )
   .option(
     '--gateway-provider <slug>',
-    'pin Vercel AI Gateway to one upstream provider',
+    'pin OpenRouter or Vercel AI Gateway to one upstream provider',
   )
   .option('-m, --model <id>', 'model id')
   .option('--search <provider>', 'web search/fetch: native, firecrawl')
@@ -101,6 +101,8 @@ Common workflows:
   eh -r codex -p ollama               only codex sessions; -p/-m/-e override the wiring
   eh claude vercel-ai-gateway anthropic/claude-sonnet-4.6 --gateway-provider bedrock
       pin this run to one Vercel AI Gateway upstream provider
+  eh claude openrouter anthropic/claude-sonnet-4.6 --gateway-provider anthropic
+      same pin through OpenRouter's Anthropic Messages skin
   eh -r --print-env claude ollama qwen3-coder
       scripted resume: no picker, prints env + bare resume args
   eh --print-env claude ollama qwen3-coder
@@ -132,7 +134,7 @@ program
   )
   .option(
     '--gateway-provider <slug>',
-    'pin Vercel AI Gateway to one upstream provider',
+    'pin OpenRouter or Vercel AI Gateway to one upstream provider',
   )
   .option('--resume-session <id>', 'resume an existing native session')
   .action(async (harness, provider, model, opts) => {
