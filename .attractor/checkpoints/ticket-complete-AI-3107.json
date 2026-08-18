@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:49.328Z",
-  "currentNodeId": "lint",
+  "currentNodeId": "test",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -672,17 +672,17 @@
       }
     },
     "lint": {
-      "completedAt": "2026-08-18T16:01:41.554Z",
+      "completedAt": "2026-08-18T16:09:47.282Z",
       "nodeId": "lint",
       "outcome": "success",
-      "output": "No formatter changes to commit\n\n$ concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'\n$ prettier --write . --log-level=error",
+      "output": "$ concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'\n$ prettier --write . --log-level=error",
       "outputCapture": {
-        "capturedLength": 154,
+        "capturedLength": 122,
         "lengthUnit": "utf16_code_units",
-        "originalLength": 154,
+        "originalLength": 122,
         "truncated": false
       },
-      "retryCount": 1,
+      "retryCount": 2,
       "startedAt": "2026-08-18T15:55:23.683Z"
     },
     "test": {
@@ -1378,7 +1378,7 @@
   },
   "pipelineId": "ticket-complete-AI-3107",
   "status": "running",
-  "updatedAt": "2026-08-18T16:09:36.388Z",
+  "updatedAt": "2026-08-18T16:09:47.284Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1502,7 +1502,7 @@
     "lint": {
       "handler": "tool",
       "outcome": "success",
-      "totalDurationMs": 19886,
+      "totalDurationMs": 29313,
       "usage": {
         "cacheReadTokens": 0,
         "cacheWriteTokens": 0,
@@ -1510,7 +1510,7 @@
         "inputTokens": 0,
         "outputTokens": 0
       },
-      "visits": 2
+      "visits": 3
     },
     "test": {
       "handler": "tool",
