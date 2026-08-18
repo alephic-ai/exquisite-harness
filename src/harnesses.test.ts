@@ -44,6 +44,7 @@ test('intersects Claude efforts with the model list and keeps unknown models on 
     'max',
   ])
   expect(availableEfforts(opencode, ['high'])).toEqual([])
+  expect(availableEfforts(claude, [])).toEqual([])
 })
 
 test('rejects an explicit effort the model does not support', () => {

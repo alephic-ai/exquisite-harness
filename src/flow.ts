@@ -1,4 +1,4 @@
-import type { Config, ResolvedProvider } from './config.js'
+import type { Config } from './config.js'
 import type { HarnessDef } from './harnesses.js'
 import type { SessionInfo } from './sessions.js'
 import type { EffortLevel, Selection } from './types.js'
@@ -22,17 +22,13 @@ import {
 import { doctor } from './doctor.js'
 import {
   assertEffortAllowed,
-  availableEfforts,
   buildLaunchPlan,
   getHarness,
   harnessNames,
+  resolveAvailableEfforts,
 } from './harnesses.js'
 import { exec, printEnv } from './launch.js'
-import {
-  canServeAny,
-  isRoutingProvider,
-  listModelsCached,
-} from './providers.js'
+import { canServeAny, isRoutingProvider } from './providers.js'
 import { resolveSearchBackend } from './search-provider.js'
 import { listSessionsForCwd } from './sessions.js'
 import { defaultsScreen } from './ui/defaults-screen.js'
@@ -277,7 +273,7 @@ export async function launchFlow(
   ) {
     assertEffortAllowed(
       complete.effort,
-      availableEfforts(def, await listedModelEfforts(provider, model)),
+      await resolveAvailableEfforts(def, provider, model),
     )
   }
 
@@ -379,9 +375,7 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
     partial.effort ??
     (def.effort === false
       ? 'auto'
-      : await pickEffort(
-          availableEfforts(def, await listedModelEfforts(provider, model)),
-        ))
+      : await pickEffort(await resolveAvailableEfforts(def, provider, model)))
   return {
     effort,
     gatewayProvider,
@@ -397,15 +391,6 @@ async function completeSelection(config: Config, partial: Partial<Selection>) {
             config.defaultSearchProvider,
           )
         : 'native'),
-  }
-}
-
-async function listedModelEfforts(provider: ResolvedProvider, modelId: string) {
-  try {
-    return (await listModelsCached(provider)).find((m) => m.id === modelId)
-      ?.efforts
-  } catch {
-    return undefined
   }
 }
 

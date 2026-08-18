@@ -13,6 +13,7 @@ import {
   anthropicBaseURLFor,
   codexWireApiFor,
   isRoutingProvider,
+  listModelsCached,
   openAIBaseURLFor,
   resolveKey,
 } from './providers.js'
@@ -448,6 +449,22 @@ export function availableEfforts(
   const harnessEfforts = def.efforts ?? MODEL_EFFORT_LEVELS
   if (modelEfforts === undefined) return [...harnessEfforts]
   return harnessEfforts.filter((level) => modelEfforts.includes(level))
+}
+
+export async function resolveAvailableEfforts(
+  def: HarnessDef,
+  provider: ResolvedProvider,
+  modelId: string,
+) {
+  try {
+    return availableEfforts(
+      def,
+      (await listModelsCached(provider)).find((model) => model.id === modelId)
+        ?.efforts,
+    )
+  } catch {
+    return availableEfforts(def, undefined)
+  }
 }
 
 // Single lookup chokepoint — this keeps the `| undefined` honest.

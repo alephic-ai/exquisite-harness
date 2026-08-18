@@ -304,9 +304,9 @@ function withoutMandatoryNone(
   efforts: ModelEffortLevel[],
   mandatory: boolean | undefined,
 ) {
-  const filtered =
-    mandatory === true ? efforts.filter((effort) => effort !== 'none') : efforts
-  return filtered.length === 0 ? undefined : filtered
+  return mandatory === true
+    ? efforts.filter((effort) => effort !== 'none')
+    : efforts
 }
 
 function withoutV1(url: string) {

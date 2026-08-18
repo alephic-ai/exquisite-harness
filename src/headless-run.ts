@@ -11,7 +11,12 @@ import type { EffortLevel, LaunchPlan } from './types.js'
 import { withCleanup } from './cleanup.js'
 import { getProvider, loadConfig } from './config.js'
 import { withGatewayRouting } from './gateway-routing.js'
-import { buildLaunchPlan } from './harnesses.js'
+import {
+  assertEffortAllowed,
+  buildLaunchPlan,
+  getHarness,
+  resolveAvailableEfforts,
+} from './harnesses.js'
 import { EFFORT_LEVELS } from './types.js'
 
 const PROTOCOL_VERSION = 1
@@ -69,6 +74,14 @@ export async function runHeadless(options: HeadlessRunOptions) {
     const config = loadConfig()
     const provider = getProvider(config, resolved.provider)
     if (!provider) throw new Error(`unknown provider "${resolved.provider}"`)
+    const def = getHarness(resolved.harness)
+    if (!def) throw new Error(`unknown harness "${resolved.harness}"`)
+    if (resolved.effort !== 'auto' && def.effort !== false) {
+      assertEffortAllowed(
+        resolved.effort,
+        await resolveAvailableEfforts(def, provider, resolved.model),
+      )
+    }
     const plan = await buildLaunchPlan(
       resolved.harness,
       provider,

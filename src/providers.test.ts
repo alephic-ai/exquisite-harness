@@ -301,6 +301,14 @@ test('lists OpenRouter models with supported_efforts, null, and mandatory', asyn
               supported_efforts: ['high', 'medium', 'low', 'none'],
             },
           },
+          {
+            id: 'vendor/empty',
+            reasoning: { supported_efforts: [] },
+          },
+          {
+            id: 'vendor/none-only',
+            reasoning: { mandatory: true, supported_efforts: ['none'] },
+          },
           { id: 'meta/llama-3' },
         ],
       }),
@@ -326,6 +334,14 @@ test('lists OpenRouter models with supported_efforts, null, and mandatory', asyn
       {
         efforts: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
         id: 'openai/o3',
+      },
+      {
+        efforts: [],
+        id: 'vendor/empty',
+      },
+      {
+        efforts: [],
+        id: 'vendor/none-only',
       },
     ])
   } finally {

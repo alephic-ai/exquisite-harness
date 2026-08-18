@@ -254,6 +254,15 @@ describe('eh run', () => {
       'unknown effort "extreme"',
     ],
     [
+      'Claude-rejected none',
+      'claude',
+      'ollama',
+      'run the task',
+      ['--reasoning-effort', 'none'],
+      'none',
+      'effort "none" is not available',
+    ],
+    [
       'unknown harness',
       'missing-harness',
       'ollama',
