@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "verdict": "ready",
+  "summary": "This ticket describes a precedence bug in gatewayValidationHeaders (src/gateway-routing.ts:232-244) where the ambient process.env[apiKeyEnvKey] rung outranks a plan-owned blank provider key, causing preflight validation to authenticate with a different credential than the spawned child will use. I independently verified every cited path, line range, and function name against the current repo state (gateway-routing.ts, harnesses.ts's planClaude/planCodex/planPi/planOpencode, keys.ts's resolveApiKey, launch.ts, headless-run.ts, config.ts, pricing.ts, grok-home.test.ts, DESIGN.md's section boundaries, release-affecting-files.sh, and the existing red test at gateway-routing.test.ts:419) and found them all accurate, with one minor line-number drift noted below. The problem statement, the chosen fix (suppress only on Object.hasOwn-blank, not on absence), the rejected alternatives, the acceptance criteria, and the out-of-scope boundary are all internally consistent and traceable to concrete evidence. Acceptance criteria are checkboxes, outcome-oriented, and cover the invariant, its complement, the fail-first test proof, and the DESIGN.md documentation update. The Delegability block has all six required keys with closed-vocabulary values. This reads as one shippable PR (a single-function fix plus its test and doc updates) with a well-justified relationship to the sibling PR #49 test-hermeticity approach it supersedes.",
+  "blockingQuestions": [],
+  "ticketGaps": [
+    "The 'Out of Scope' section cites `ratesFromEnv` at `src/pricing.ts:406-407`; the function is actually defined starting at line 416 in the current repo (lines 406-407 fall inside the neighboring `contextWindowFromEnv`). The identifier and its purpose are correct, only the line number is stale — worth a one-line correction but does not block implementation."
+  ],
+  "verificationGaps": []
+}

@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T16:11:16.315Z",
-  "currentNodeId": "validate_ticket",
+  "currentNodeId": "file_linear",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-writer.ir.json",
   "nodeStates": {
     "start": {
@@ -455,12 +455,205 @@
         "inputTokens": 3084,
         "outputTokens": 16974
       }
+    },
+    "validate_ticket": {
+      "completedAt": "2026-08-18T16:23:05.107Z",
+      "nodeId": "validate_ticket",
+      "artifacts": [
+        {
+          "agentRunId": "783c02ba-e6eb-497f-85bc-8887649d3d3e",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "6ae621ec034b743fb5a942b201aff2cb14106b30d77dfeaa8b9d1270447663fb",
+              "sizeBytes": 94837
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/060e96c9-ee2c-417c-9efc-cf472c524e09.request.json",
+              "sha256": "5ffb89298be3038404ffbe3f9049f4de7a7eab22eaf4b90fd797fd4ef5aaaaca",
+              "sizeBytes": 126263
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3257cea3-d71f-4792-9181-70d537935739.request.json",
+              "sha256": "4ab8069b03aa196863eda9819ef4d0394091282b98e4eaaa3b26a7241f23ca08",
+              "sizeBytes": 127280
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/349d55df-9e92-40b7-b4d0-d8c9292b5e93.request.json",
+              "sha256": "ca8a6ff6688bba6cc0dc7dba06fb6b5864dcfd3a9abb990f2e8582361363c2d2",
+              "sizeBytes": 110521
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/65fc6998-e143-4250-bfb2-80d38c142c6f.request.json",
+              "sha256": "4ebf0d576649d4298c94deb424e25abac5f9891e0acd9bae07696975395c15cc",
+              "sizeBytes": 133494
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/763f2c0e-e9e6-495a-adf2-10a5b25edafa.request.json",
+              "sha256": "9cdbf30da341afbd7b331b5cfa7593908985d7dd6357983417da5b156484a49e",
+              "sizeBytes": 4801
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8432b1ab-74cb-43ec-af44-5ae250eb20bf.request.json",
+              "sha256": "3fddf72244f6a671ff5f55a2fb43c48ab9f61a9d30a7f3e568e3dca6b78e4968",
+              "sizeBytes": 136141
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9cb533f8-bf5a-4e41-be94-099a384362ed.request.json",
+              "sha256": "3b8fe575ef7f415ec0d09b652fb7abe1f0c2c3cec8268ca3b45320910d6991d4",
+              "sizeBytes": 125013
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cfd205df-918c-4a57-8a1f-94d711cc7ee2.request.json",
+              "sha256": "49b257d8707f7130ff4c8e0e511ba264ccc19f405f3002d2f76bda988c7915bc",
+              "sizeBytes": 116166
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d26b2186-f8dc-4fe1-9168-d1ac81099800.request.json",
+              "sha256": "1655523dfb4c0fddcc5b39bf08a5ce0a9b0556bbebce70c230cdce93da91d951",
+              "sizeBytes": 94421
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/def485fe-4a10-487a-a445-088f05a5411e.request.json",
+              "sha256": "eb7223148f07ba6d3901329390c9eddf37a90746db87c2fbab47aa20a137e0e7",
+              "sizeBytes": 131183
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f6b7f199-f9cc-455f-a9d5-0bf23e1f4351.request.json",
+              "sha256": "64b506f0ae5b3b301db6d55df5ee81a736205495c45772d82acd06c58144708a",
+              "sizeBytes": 130472
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/fe8224f6-5bf0-4d21-9300-97332348a5ce.request.json",
+              "sha256": "237074b26a467355a2aeff9d4ce8acafc1f584d08ea130d55a4761fb1f524c01",
+              "sizeBytes": 107090
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXBgR3MDwq8aeTFZZ9r.response.json",
+              "sha256": "525c7fafad06b66b80a83550d73a652818a5388fdeed70437361b9da9ea7457c",
+              "sizeBytes": 816
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXBh7xK4coGEuxCXKyx.response.json",
+              "sha256": "9cc09afb3855f3c1a6f80fb4056d77a7ca62c61815a6d5e510fe76785aa7eb48",
+              "sizeBytes": 1382
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXBx2PnQbxQc1WLTuNE.response.json",
+              "sha256": "128181b8aeba98ffbb4496aac47abae65d705d507af6d85595e693c812d2978a",
+              "sizeBytes": 2366
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXCLTGi5rrKxebA73nQ.response.json",
+              "sha256": "34c06be1611621dafd52fda08d8f887cdde478d3fc48f147abaac7f32fd3bdcd",
+              "sizeBytes": 1524
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXChs8FMouen3fHJDSy.response.json",
+              "sha256": "94f576e70f934ad708add38c70157758b4236e6347f541f705adf566c8d58922",
+              "sizeBytes": 1696
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXD5wvBBZ7jfMGDU8EP.response.json",
+              "sha256": "fbd1f790fc34ea3730385db26fc6996d6b64ff7a0e66e4b7e23afc519b600e30",
+              "sizeBytes": 1805
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXDNutM8vnQGewdxGZJ.response.json",
+              "sha256": "19ec3a284938248951b01aa996dd450395bd6db252696605b70d6f141fd93551",
+              "sizeBytes": 1084
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXDh8kZYRGKE9Viwdak.response.json",
+              "sha256": "e31356bb234d67fc21492a0614009204e9ab058293200a6daf6845c74ecd1d16",
+              "sizeBytes": 2351
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXE8Cst8KarxYnbTW1p.response.json",
+              "sha256": "5fceeb3fdbcad5feca62d2aee8648e6eaa17ebf27f5a57da95fca59a36fc2aa4",
+              "sizeBytes": 1163
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXENTdKPuUj9XPSaNjE.response.json",
+              "sha256": "201de68dd124a58a70c2ff12247eb6d50dc2600e24a187ea1021102b7257b0c6",
+              "sizeBytes": 2169
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXEpSKVBHmjJeT7DVHh.response.json",
+              "sha256": "1946df7ff4b0e823c3de186e36698cfb69b300abc4c5d0e202430b3b67306a5b",
+              "sizeBytes": 3086
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAXFduqQMb81LsmoeYRd.response.json",
+              "sha256": "bdba2ac794891e3e15e53b7a1b655003b4020c02c0e4bfe33f1436bdfcfaff97",
+              "sizeBytes": 1059
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "96ac49db07a961cb48a3ee6138cbc18070fca75b9dac865dc8dacce3ccce21f0",
+              "sizeBytes": 16620
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-writer-AI-3109/b3eb78e84ea1-ddbedd9d-e27c-4f7e-8133-4adf955d0535/agent-artifacts/validate_ticket/attempt-0-783c02ba-e6eb-497f-85bc-8887649d3d3e",
+          "manifestPath": "/tmp/envoy/ticket-writer-AI-3109/b3eb78e84ea1-ddbedd9d-e27c-4f7e-8133-4adf955d0535/agent-artifacts/validate_ticket/attempt-0-783c02ba-e6eb-497f-85bc-8887649d3d3e/manifest.json",
+          "nodeId": "validate_ticket",
+          "pipelineId": "ticket-writer-AI-3109",
+          "runtime": "claude",
+          "sessionId": "8fc726df-3dbd-4f8d-8511-7d661577eaef",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "Matches the ticket's line-range description closely (function starts at 232, ambient read at 238, `planEnvValue` at 260-262). Let me verify a few more referenced spots quickly.\nAll checks so far match exactly. Let me verify the remaining specific claims: DESIGN.md lines, package.json version guard, headless-run.ts/launch.ts spreads, config.ts lines, and grok-home.test.ts pattern.\nGood, that exists too (just a different line than contextWindowFromEnv, but ticket cited 406-407 which is close/off by ~10 lines). Let me check exact location.\nLines 15-19 exact match, :138 matches, :100-106 close enough (region around there). All citations check out well. Now let's check the acceptance criteria structure and Delegability block, plus DESIGN.md line range accuracy.\nEverything verifies. All checks pass — the ticket is remarkably well-grounded with accurate file/line references. Now writing the validation artifact.\nThe ticket validated as `ready` — every cited path, line range, and function name checked out against the current repo (one minor line-number drift in a non-blocking `Out of Scope` citation). Acceptance criteria, delegability block, and verification steps are all sound.\n\nSTATUS:success\n",
+      "retryCount": 0,
+      "sessionId": "8fc726df-3dbd-4f8d-8511-7d661577eaef",
+      "startedAt": "2026-08-18T16:22:07.532Z",
+      "usage": {
+        "cacheReadTokens": 439706,
+        "cacheWriteTokens": 25403,
+        "costUsd": 0.4799977499999999,
+        "inputTokens": 3156,
+        "outputTokens": 3378
+      }
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-writer-AI-3109",
   "status": "running",
-  "updatedAt": "2026-08-18T16:22:06.166Z",
+  "updatedAt": "2026-08-18T16:23:05.108Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -503,6 +696,20 @@
         "outputTokens": 16974
       },
       "visits": 1
+    },
+    "validate_ticket": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 57575,
+      "usage": {
+        "cacheReadTokens": 439706,
+        "cacheWriteTokens": 25403,
+        "costUsd": 0.4799977499999999,
+        "inputTokens": 3156,
+        "outputTokens": 3378
+      },
+      "visits": 1
     }
-  }
+  },
+  "workPushed": true
 }
