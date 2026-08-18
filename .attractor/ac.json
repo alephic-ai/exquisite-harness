@@ -1,0 +1,22 @@
+{
+  "acs": [
+    {
+      "id": 1,
+      "criterion": "`eh run` accepts `--cwd <dir>`; the spawned harness child process runs with that directory as its working directory (`spawn(..., { cwd })` in `executePreparedHeadlessPlan`, `src/headless-run.ts`). Proof: subprocess test in `src/headless-run.test.ts` using a fake harness (per the existing `createFakeHarness` pattern) that reports `process.cwd()`.",
+      "status": null,
+      "evidence": null
+    },
+    {
+      "id": 2,
+      "criterion": "A nonexistent or non-directory `--cwd` value fails preflight before spawn with a clear error on stderr and a nonzero exit — the child is never spawned against a missing directory. Proof: subprocess tests for both a missing path and a file-not-directory path, asserting the error, the nonzero exit, and that the fake harness was never invoked.",
+      "status": null,
+      "evidence": null
+    },
+    {
+      "id": 3,
+      "criterion": "Omitting the flag preserves today's behavior exactly (child inherits eh's cwd); existing headless-run tests stay green unmodified.",
+      "status": null,
+      "evidence": null
+    }
+  ]
+}

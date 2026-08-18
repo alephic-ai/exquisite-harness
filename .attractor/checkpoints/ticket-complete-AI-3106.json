@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:24.619Z",
-  "currentNodeId": "plan",
+  "currentNodeId": "verify_plan",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -95,12 +95,217 @@
         "inputTokens": 9748,
         "outputTokens": 819
       }
+    },
+    "plan": {
+      "completedAt": "2026-08-18T15:31:24.956Z",
+      "nodeId": "plan",
+      "artifacts": [
+        {
+          "agentRunId": "803ae70d-3594-4306-9d1b-7d61327cf4e0",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "25f07f3eefadadf692b422833a7e611368c9b73093263a86a20bae8d5e41f5c2",
+              "sizeBytes": 278804
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0336349e-7fe7-4b57-a77b-f3ab70bf6ba8.request.json",
+              "sha256": "dd05bdf983c00ce954827bd02cc61ffaf5bd50e9c9d81c88bce6b597c967ace5",
+              "sizeBytes": 224111
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/048a10c1-9d54-4cbe-88b8-3772aa9830e7.request.json",
+              "sha256": "91157b377d78ba83f58e8c253b15d526e62fe20e29b3b3acfd3e7f5da53483a6",
+              "sizeBytes": 212499
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2786ee34-04df-453d-afed-74f6a3433f6d.request.json",
+              "sha256": "a6fbe1227e42c1c8468e37c710d17cf70fa22a4aac83d486506022cacd7a90c8",
+              "sizeBytes": 180191
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6e0599b3-194d-4fe8-8dff-c70a0aa27c26.request.json",
+              "sha256": "9eb1ca46a2a2603dae60c81fe57a8556f5de66586a612cc8feed1ee274376a0d",
+              "sizeBytes": 194697
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7a297d53-7f09-4311-98c1-d21f217d2b98.request.json",
+              "sha256": "35beec5158134421b378583833fc1ccf960b96b96c748eaa67931b9636311233",
+              "sizeBytes": 224599
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7fd68371-4aa9-4f16-8f84-ad8239197f35.request.json",
+              "sha256": "aa8a77baa1d0b1f93cd977d59cf47446ef04647c3e41d1deb958b955491bdd23",
+              "sizeBytes": 87503
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/940b81ad-da5c-4b2e-a207-595de525165a.request.json",
+              "sha256": "2698638a19e8aae36829f2620c51279827efe2e74cee9d3e136d6426fe0a3882",
+              "sizeBytes": 189552
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a86aba2b-7316-4c71-8849-1d18ce3947c3.request.json",
+              "sha256": "5010db5f032a137cc5744bf5cafa9edb2edd65e268368d2cf089107c1b7c3dc5",
+              "sizeBytes": 181907
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ad98f8c5-7c13-4c5c-a22c-85196bffb5b0.request.json",
+              "sha256": "858f7545c66aa7a46991b38a3c525017f61f3713ee888e038cfa08e5cb7bad47",
+              "sizeBytes": 14170
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c284bddf-eea9-4e72-ba7b-079728994d2f.request.json",
+              "sha256": "d1e44f39ba9c21105bcc5ca2f5707e165240af1d835f017a6a46ff183ab2fe58",
+              "sizeBytes": 192156
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d5c67b45-76e3-4dc0-be07-32fb6cb83104.request.json",
+              "sha256": "c846ad17358b84baf0bb70723624f2f6399f3fc205b9f4095103e05fb1effdf7",
+              "sizeBytes": 114824
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e5668759-520f-4299-9d67-1724287e846a.request.json",
+              "sha256": "af2fdbeae4d8a9be1fa2b763d0ead95477484d9bf27b10d3f84b6ea55e1de11b",
+              "sizeBytes": 227802
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ef1c58d4-cfcc-4b0f-9b16-3000e1b4517b.request.json",
+              "sha256": "d9dca21156136f6761ce1533a78c956ef84e1355332c342990667737c14dc2f4",
+              "sizeBytes": 226244
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT7JBjoBvvMydp3KJHZ.response.json",
+              "sha256": "0064c6c8e259cacbe066ff8194337ef4c0606d3ea93f8ab9776aacb9ff01430c",
+              "sizeBytes": 806
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT7Jv97Z22UCJ7VbWRE.response.json",
+              "sha256": "3eb4247b4480688a03435b88c4da4d30d19aeccbd4e7c4e4a95d79e8ac359918",
+              "sizeBytes": 1787
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT7bHtLCdKg1FMyqiN1.response.json",
+              "sha256": "7d1f1591b743ed45573f1db6e79fe49bf85504677632d6d74e0aabb68fd17257",
+              "sizeBytes": 1707
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT7shNJuvEVqy4YUn8S.response.json",
+              "sha256": "64e5a314f8f57ece6d1ea11f7b12b67dba9967c38a4c4df9027c24cfca72e660",
+              "sizeBytes": 2019
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT8EJMardYLmQj4xeKP.response.json",
+              "sha256": "06353fec3b2ab8e14cfbd4cbf7ebc4e0b9283675b17cb2b2348e8e12a6e37bbd",
+              "sizeBytes": 1106
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT8UTtyayMBb6bQm4KV.response.json",
+              "sha256": "bb0c66220734bca170cc08a5e5239df92b37c8d5b4d068f8bb8df3329ca6bf65",
+              "sizeBytes": 1818
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT92f9oLrNcvbbGyMU7.response.json",
+              "sha256": "bb82850360bdbe4358f87a97b92c4c5977641fb93dfc68fd51d254195f5dfc70",
+              "sizeBytes": 934
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeAT9CQnQXEzeFhN7BopA.response.json",
+              "sha256": "a1c6115ea17d4fd97d3c4a115e3e0b33c589eb853a6411cfab1baf7269456b8c",
+              "sizeBytes": 17197
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATDXw9EtrBMMnBuLcvD.response.json",
+              "sha256": "3ccd9489320bcb2184495e9c6f8070b4db949b5821e4c2a8a76f1d52e4e22b55",
+              "sizeBytes": 12064
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATHSkxXEauonC78ZTut.response.json",
+              "sha256": "27434349ea8df5bdedb3d6892a4e033d0a55fbc8e60cc3a863ac03ba1f079ac4",
+              "sizeBytes": 1065
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATHhA97W1V27ViqT9Jz.response.json",
+              "sha256": "0f15c0d19fa7aa268840d8271133457be7b747187f16e3987fdeb90ff5add7ac",
+              "sizeBytes": 2106
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATJ89YzGCSE5ty2x6We.response.json",
+              "sha256": "d21a8a51b6133d2e3555b3dd27a4c94644e30885682d6257ae451b3e33e0d125",
+              "sizeBytes": 1553
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeATJS4ZeWb9iM9Ni1j2w.response.json",
+              "sha256": "a1cbf2782b561064e61bb2904d0dd2c4bd347374e89c50fe8a0bcbf55c90df7f",
+              "sizeBytes": 2764
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "b1bea2be6501ee5f048b67d7ec8f25e9585002bb7093f130b18ee41645f2dc66",
+              "sizeBytes": 27042
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/plan/attempt-0-803ae70d-3594-4306-9d1b-7d61327cf4e0",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3106/b3eb78e84ea1-6b3d6919-f94d-4731-b045-901c0d3499b7/agent-artifacts/plan/attempt-0-803ae70d-3594-4306-9d1b-7d61327cf4e0/manifest.json",
+          "nodeId": "plan",
+          "pipelineId": "ticket-complete-AI-3106",
+          "runtime": "claude",
+          "sessionId": "45e541a8-f179-4baf-959a-79f6b73b8a74",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll explore the codebase to verify the ticket's claims before writing the plan.\nNow let me look at main.ts, the test file, and the fake harness pattern.\nI have a thorough understanding of the code. Let me check the docs and version.\nI now have everything I need. Let me verify one detail about where the option interfaces live and the version guard, then write the plan.\nConfirmed — the option interfaces both live in `headless-run.ts`, so `types.ts`/`LaunchPlan` need no change. Now writing the plan and sidecars.\nNow the required sidecars. First removing any stale remainder, then creating `ac.json` and `plan-meta-draft.json`:\nPlan and sidecars written. Summary of what I produced:\n\n## Plan: `.plans/AI-3106-eh-run-cwd-flag.md`\n\nThe plan delivers `eh run --cwd <dir>` in **2 tasks**, well within budget (6 authored file-units, 2 tasks).\n\n**Key findings from exploration that shaped the plan:**\n\n1. **`types.ts`/`LaunchPlan` need no change** — the ticket and scope_gate both mentioned `types.ts`, but I verified `HeadlessRunOptions` and `ResolvedHeadlessRunOptions` are both declared *in `headless-run.ts`* (not `types.ts`). `cwd` rides those options objects straight to the `spawn()` call, never touching `LaunchPlan`. I flagged this explicitly so the implementer doesn't waste effort adding a field there.\n\n2. **The \"on stderr\" AC wording conflicts with the codebase contract.** I read the actual behavior: preflight failures throw inside `runHeadless`'s `try/catch`, which normalizes them into a `run.error` NDJSON event + failed `run.completed` on **stdout**, with stderr empty (verified at `headless-run.test.ts:360-378`). The plan follows the established convention over the ticket's literal wording and documents why — the honest read of how the system actually behaves, per the Phase 1 instruction to treat ticket behavioral claims as hypotheses.\n\n3. **`cwd: undefined` is a genuine no-op for `spawn`**, so AC-3 (omitting the flag preserves behavior) is satisfied by construction, with the untouched existing tests as proof.\n\n4. **The `--resume-session` flag is the transcribed reference implementation** (main.ts:139/151 + the options threading), with exact line anchors and the current spawn block quoted verbatim.\n\n**Sidecars:**\n- `.attractor/ac.json` — all 3 ticket acceptance criteria (verbatim), status/evidence null.\n- `.attractor/plan-meta-draft.json` — 2 task titles + 7 File Map entries with change types.\n- Removed a stale `.attractor/plan-remainder.json`? None existed (only `checkpoints/`), so nothing to clean — and none created since the whole ticket fits budget.\n",
+      "retryCount": 0,
+      "sessionId": "45e541a8-f179-4baf-959a-79f6b73b8a74",
+      "startedAt": "2026-08-18T15:28:40.840Z",
+      "usage": {
+        "cacheReadTokens": 754079,
+        "cacheWriteTokens": 69591,
+        "costUsd": 1.1769692499999997,
+        "inputTokens": 11294,
+        "outputTokens": 12199
+      }
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3106",
   "status": "running",
-  "updatedAt": "2026-08-18T15:28:39.514Z",
+  "updatedAt": "2026-08-18T15:31:24.959Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -142,6 +347,20 @@
         "outputTokens": 819
       },
       "visits": 1
+    },
+    "plan": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 164116,
+      "usage": {
+        "cacheReadTokens": 754079,
+        "cacheWriteTokens": 69591,
+        "costUsd": 1.1769692499999997,
+        "inputTokens": 11294,
+        "outputTokens": 12199
+      },
+      "visits": 1
     }
-  }
+  },
+  "workPushed": true
 }
