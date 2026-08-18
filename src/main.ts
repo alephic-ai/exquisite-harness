@@ -138,6 +138,10 @@ program
   )
   .option('--resume-session <id>', 'resume an existing native session')
   .option('--cwd <dir>', 'run the spawned harness in this working directory')
+  .option(
+    '--timeout <seconds>',
+    'fail the run if the harness runs longer than <seconds> (SIGTERM, then SIGKILL after a grace period)',
+  )
   .action(async (harness, provider, model, opts) => {
     process.exitCode = await runHeadless({
       cwd: opts.cwd,
@@ -151,6 +155,7 @@ program
       nativeArgsJson: opts.nativeArgsJson,
       provider,
       resumeSessionId: opts.resumeSession,
+      timeout: opts.timeout,
     })
   })
 

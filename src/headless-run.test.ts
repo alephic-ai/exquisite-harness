@@ -1502,6 +1502,184 @@ describe('eh run', () => {
       }
     }
   })
+
+  test.each(['0', '-5', 'soon'])(
+    'rejects the invalid --timeout %s before spawning the harness',
+    async (value) => {
+      const fixture = createFakeCodex()
+      const child = spawn(
+        process.execPath,
+        [
+          'run',
+          'src/main.ts',
+          'run',
+          'codex',
+          'ollama',
+          'qwen3-coder',
+          '--timeout',
+          value,
+        ],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+            XDG_CONFIG_HOME: fixture.configDir,
+          },
+        },
+      )
+      child.stdin.end('run the task')
+
+      const [exitCode, stderr, stdout] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stderr),
+        readStream(child.stdout),
+      ])
+      const events = parseEvents(stdout)
+
+      expect(stderr).toBe('')
+      expect(exitCode).toBe(64)
+      expect(events).toEqual([
+        {
+          message: expect.stringContaining(
+            '--timeout must be a positive integer',
+          ),
+          type: 'run.error',
+          v: 1,
+        },
+        { exitCode: 64, resultIsError: true, type: 'run.completed', v: 1 },
+      ])
+      expect(
+        events.some((event) => asRecord(event.event)?.type === 'fake.args'),
+      ).toBe(false)
+    },
+  )
+
+  test.each([
+    {
+      env: {},
+      expectedSignal: os.constants.signals.SIGTERM,
+      makeFake: createFakeSleeper,
+      name: 'sends SIGTERM and names the limit when a hung harness exceeds --timeout',
+    },
+    {
+      env: { EH_TIMEOUT_KILL_GRACE_MS: '100' },
+      expectedSignal: os.constants.signals.SIGKILL,
+      makeFake: createFakeSigtermTrap,
+      name: 'escalates to SIGKILL when the timed-out harness traps SIGTERM',
+    },
+  ])(
+    '$name',
+    async ({ env, expectedSignal, makeFake }) => {
+      const fixture = makeFake()
+      const child = spawn(
+        process.execPath,
+        [
+          'run',
+          'src/main.ts',
+          'run',
+          'codex',
+          'ollama',
+          'qwen3-coder',
+          '--timeout',
+          '1',
+        ],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            ...env,
+            PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+            XDG_CONFIG_HOME: fixture.configDir,
+          },
+        },
+      )
+      child.stdin.end('hang forever')
+
+      let fakePid: number | undefined
+      try {
+        const [exitCode, stderr, stdout] = await Promise.all([
+          childExitCode(child),
+          readStream(child.stderr),
+          readStream(child.stdout),
+        ])
+        const events = parseEvents(stdout)
+        fakePid = timeoutFakePid(events)
+
+        expect(stderr).toBe('')
+        expect(exitCode).toBe(128 + expectedSignal)
+
+        // Exactly one run.error — the timeout's limit-naming one — so the generic
+        // "exited with signal" error is suppressed.
+        const runErrors = events.filter((event) => event.type === 'run.error')
+        expect(runErrors).toHaveLength(1)
+        expect(String(runErrors[0]?.message)).toContain('1s')
+
+        const errorIndex = events.findIndex(
+          (event) => event.type === 'run.error',
+        )
+        const completedIndex = events.findIndex(
+          (event) => event.type === 'run.completed',
+        )
+        expect(errorIndex).toBeLessThan(completedIndex)
+        expect(completedIndex).toBe(events.length - 1)
+        expect(events[completedIndex]).toEqual({
+          exitCode: 128 + expectedSignal,
+          resultIsError: true,
+          type: 'run.completed',
+          v: 1,
+        })
+      } finally {
+        if (fakePid !== undefined) {
+          try {
+            process.kill(fakePid, 'SIGKILL')
+          } catch {
+            // The timeout path already reaped the fake harness.
+          }
+        }
+      }
+    },
+    20_000,
+  )
+
+  test('leaves a run that finishes before the deadline unchanged', async () => {
+    const runFast = async (extraArgs: string[]) => {
+      const fixture = createFakeCodex()
+      const child = spawn(
+        process.execPath,
+        [
+          'run',
+          'src/main.ts',
+          'run',
+          'codex',
+          'ollama',
+          'qwen3-coder',
+          ...extraArgs,
+        ],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+            XDG_CONFIG_HOME: fixture.configDir,
+          },
+        },
+      )
+      child.stdin.end('do the task')
+      const [exitCode, stdout] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stdout),
+      ])
+      return { events: parseEvents(stdout), exitCode }
+    }
+
+    const withTimeout = await runFast(['--timeout', '60'])
+    const without = await runFast([])
+
+    expect(withTimeout.exitCode).toBe(0)
+    expect(without.exitCode).toBe(0)
+    expect(withTimeout.events).toEqual(without.events)
+  }, 20_000)
 })
 
 function asRecord(value: unknown) {
@@ -1766,6 +1944,30 @@ emit({
   return fixture
 }
 
+function createFakeSigtermTrap() {
+  // Like the sleeper but ignores SIGTERM, forcing the SIGKILL grace escalation.
+  return createFakeHarness(
+    'codex',
+    `const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
+process.on('SIGTERM', () => {})
+emit({ type: 'thread.started', thread_id: 'thread-timeout' })
+emit({ type: 'fake.args', args: process.argv.slice(2), pid: process.pid })
+setInterval(() => {}, 1000)`,
+  )
+}
+
+function createFakeSleeper() {
+  // Emits its args (with pid) then hangs forever — used to prove the --timeout
+  // deadline terminates a lane that would otherwise never exit.
+  return createFakeHarness(
+    'codex',
+    `const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
+emit({ type: 'thread.started', thread_id: 'thread-timeout' })
+emit({ type: 'fake.args', args: process.argv.slice(2), pid: process.pid })
+setInterval(() => {}, 1000)`,
+  )
+}
+
 function parseEvents(stdout: string) {
   return stdout
     .trim()
@@ -1820,4 +2022,14 @@ async function startGatewayStub() {
       await closed
     },
   }
+}
+
+function timeoutFakePid(events: Record<string, unknown>[]) {
+  for (const event of events) {
+    const inner = asRecord(event.event)
+    if (inner?.type === 'fake.args' && typeof inner.pid === 'number') {
+      return inner.pid
+    }
+  }
+  return undefined
 }
