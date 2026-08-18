@@ -202,7 +202,7 @@ describe('eh run', () => {
     const events = parseEvents(stdout)
 
     expect(stderr).toBe('')
-    expect(exitCode).toBe(1)
+    expect(exitCode).toBe(65)
     expect(events).toHaveLength(3)
     expect(events[0]).toEqual({
       effort: 'auto',
@@ -218,7 +218,7 @@ describe('eh run', () => {
       v: 1,
     })
     expect(events[2]).toEqual({
-      exitCode: 1,
+      exitCode: 65,
       resultIsError: true,
       type: 'run.completed',
       v: 1,
@@ -367,7 +367,7 @@ describe('eh run', () => {
       ])
 
       expect(stderr).toBe('')
-      expect(exitCode).toBe(1)
+      expect(exitCode).toBe(64)
       expect(parseEvents(stdout)).toEqual([
         {
           message: expect.stringContaining(
@@ -379,7 +379,7 @@ describe('eh run', () => {
           v: 1,
         },
         {
-          exitCode: 1,
+          exitCode: 64,
           resultIsError: true,
           type: 'run.completed',
           v: 1,
@@ -1054,14 +1054,14 @@ describe('eh run', () => {
       ])
       const events = parseEvents(stdout)
 
-      expect(exitCode).toBe(1)
+      expect(exitCode).toBe(66)
       expect(events).toContainEqual({
         message: `expected ${harness} failure`,
         type: 'run.error',
         v: 1,
       })
       expect(events).toContainEqual({
-        exitCode: 1,
+        exitCode: 66,
         resultIsError: true,
         type: 'run.completed',
         v: 1,
@@ -1133,14 +1133,14 @@ describe('eh run', () => {
       .split('\n')
       .map((line) => z.record(z.string(), z.unknown()).parse(JSON.parse(line)))
 
-    expect(exitCode).toBe(1)
+    expect(exitCode).toBe(66)
     expect(events).toContainEqual({
       message: 'expected failure',
       type: 'run.error',
       v: 1,
     })
     expect(events).toContainEqual({
-      exitCode: 1,
+      exitCode: 66,
       resultIsError: true,
       type: 'run.completed',
       v: 1,

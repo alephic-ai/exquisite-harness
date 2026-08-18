@@ -20,6 +20,13 @@ import {
 import { EFFORT_LEVELS } from './types.js'
 
 const PROTOCOL_VERSION = 1
+// Reserved eh exit codes for eh-detected failure categories — a contiguous
+// block at >=64 (sysexits.h's EX_ range). Raw child codes pass through
+// unchanged when eh has no category, so a harness's own code may only collide
+// with this block in the passthrough case. Documented in README's "Exit codes".
+const EH_EXIT_PREFLIGHT = 64
+const EH_EXIT_SPAWN = 65
+const EH_EXIT_HARNESS_ERROR = 66
 const PROMPT_STDIN_HELP =
   "eh run expects a prompt on stdin; pipe one in, for example: printf 'fix the parser' | eh run codex ollama qwen3-coder"
 const recordSchema = z.record(z.string(), z.unknown())
@@ -120,8 +127,12 @@ export async function runHeadless(options: HeadlessRunOptions) {
     })
   } catch (error) {
     emit({ message: errorMessage(error), type: 'run.error' })
-    emit({ exitCode: 1, resultIsError: true, type: 'run.completed' })
-    return 1
+    emit({
+      exitCode: EH_EXIT_PREFLIGHT,
+      resultIsError: true,
+      type: 'run.completed',
+    })
+    return EH_EXIT_PREFLIGHT
   }
 }
 
@@ -264,8 +275,12 @@ async function executePreparedHeadlessPlan(options: {
           completed.error.message || `Failed to spawn "${options.plan.bin}"`,
         type: 'run.error',
       })
-      emit({ exitCode: 1, resultIsError: true, type: 'run.completed' })
-      return 1
+      emit({
+        exitCode: EH_EXIT_SPAWN,
+        resultIsError: true,
+        type: 'run.completed',
+      })
+      return EH_EXIT_SPAWN
     }
     const signalNumber = completed.signal
       ? os.constants.signals[completed.signal]
@@ -281,7 +296,10 @@ async function executePreparedHeadlessPlan(options: {
       })
     }
     const resultIsError = state.resultIsError || childExitCode !== 0
-    const exitCode = resultIsError && childExitCode === 0 ? 1 : childExitCode
+    const exitCode =
+      resultIsError && childExitCode === 0
+        ? EH_EXIT_HARNESS_ERROR
+        : childExitCode
     emit({ exitCode, resultIsError, type: 'run.completed' })
     return exitCode
   } finally {

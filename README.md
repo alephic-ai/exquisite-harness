@@ -166,6 +166,25 @@ preserved as `harness.output`. Harness stderr remains stderr. A semantically
 failed native result makes both `run.completed.exitCode` and the `eh` process
 exit code non-zero, even when the child process exits zero.
 
+#### Exit codes
+
+`eh` owns a small reserved block of exit codes for failures it detects itself;
+any other code is the harness's own, passed through unchanged.
+
+| Exit code | Meaning                                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------------------ |
+| `0`       | Clean completion                                                                                             |
+| `64`      | Preflight/usage error — TTY, empty stdin, invalid flag values, unknown harness/provider; nothing was spawned |
+| `65`      | Spawn failure — the harness binary is missing or otherwise unspawnable                                       |
+| `66`      | Semantic harness failure — `resultIsError` while the child process exited `0`                                |
+| any other | Raw child exit code, passed through unchanged (including `128 + signal` for a signalled child)               |
+
+`run.completed.exitCode` always equals the `eh` process exit code and, in the
+passthrough case, carries the raw child code. Because raw codes pass through
+untouched, a harness's own exit code may numerically collide with this reserved
+block only in the passthrough case; classify from the `run.error` event when the
+distinction matters.
+
 The fully specified command never opens UI, updates recents, or installs a
 statusline. Claude, Codex, pi, and opencode receive the prompt over stdin; pi
 runs with `--mode json`, and opencode uses `run --format json`. Grok receives a
