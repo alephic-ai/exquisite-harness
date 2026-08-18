@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:24.619Z",
-  "currentNodeId": "join",
+  "currentNodeId": "clear_codex_fixes",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -920,6 +920,14 @@
       "output": "Parallel branches: review_guillaumeify: success, review_codex: success",
       "retryCount": 0,
       "startedAt": "2026-08-18T15:50:30.056Z"
+    },
+    "join": {
+      "completedAt": "2026-08-18T15:52:43.500Z",
+      "nodeId": "join",
+      "outcome": "success",
+      "output": "Fan-in \"join\": all 2 branches completed",
+      "retryCount": 0,
+      "startedAt": "2026-08-18T15:52:43.500Z"
     }
   },
   "parallelBranches": {
@@ -930,7 +938,7 @@
   },
   "pipelineId": "ticket-complete-AI-3106",
   "status": "running",
-  "updatedAt": "2026-08-18T15:52:41.935Z",
+  "updatedAt": "2026-08-18T15:52:43.501Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1165,6 +1173,19 @@
         "costUsd": 1.836357,
         "inputTokens": 852738,
         "outputTokens": 7445
+      },
+      "visits": 1
+    },
+    "join": {
+      "handler": "fan_in",
+      "outcome": "success",
+      "totalDurationMs": 0,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
       },
       "visits": 1
     }
