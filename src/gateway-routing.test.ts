@@ -454,9 +454,9 @@ describe('gateway provider routing', () => {
       )
       expect(validationAuthorization).toBe('Bearer qa-auth-token')
     } finally {
-      await upstream.close()
       if (priorApiKey === undefined) delete process.env.ANTHROPIC_API_KEY
       else process.env.ANTHROPIC_API_KEY = priorApiKey
+      await upstream.close()
     }
   })
 

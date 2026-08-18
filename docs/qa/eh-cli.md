@@ -342,6 +342,20 @@ Drive each with the PTY; assert on screen text.
    exits `65` (spawn failure) and the native-error case exits `66` (semantic
    harness failure); each emits one `run.error`, a failed `run.completed`, and
    preserves native stderr separately.
+5. Confirm `--cwd` controls the spawned child's working directory. Step 1's
+   automated suite runs a fake codex under `--cwd <scratch>` and asserts the
+   child reports that directory as its cwd, plus preflight failures for a
+   nonexistent path and a file-not-directory path (each emits only `run.error` +
+   failed `run.completed` on stdout, exits `64`, and never spawns the child).
+   For a live check with a real provider and key:
+
+   ```bash
+   printf 'run pwd and print it' |
+     eh run claude vercel-ai-gateway <model> --cwd /tmp
+   ```
+
+   → the harness runs in `/tmp`; a nonexistent `--cwd` exits `64` with a
+   `run.error` before any `harness.event`.
 
 ## Known limitations
 

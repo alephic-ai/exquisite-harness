@@ -137,8 +137,10 @@ program
     'pin OpenRouter or Vercel AI Gateway to one upstream provider',
   )
   .option('--resume-session <id>', 'resume an existing native session')
+  .option('--cwd <dir>', 'run the spawned harness in this working directory')
   .action(async (harness, provider, model, opts) => {
     process.exitCode = await runHeadless({
+      cwd: opts.cwd,
       effort: opts.reasoningEffort,
       // The root command exposes the same option for interactive launches.
       // Commander assigns an option after a subcommand to the root when both

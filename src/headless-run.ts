@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -32,6 +32,7 @@ const PROMPT_STDIN_HELP =
 const recordSchema = z.record(z.string(), z.unknown())
 
 export interface HeadlessRunOptions {
+  cwd?: string
   effort: string
   gatewayProvider?: string
   harness: string
@@ -48,6 +49,7 @@ interface NormalizerState {
 }
 
 interface ResolvedHeadlessRunOptions {
+  cwd: string | undefined
   effort: EffortLevel
   gatewayProvider: string | undefined
   harness: string
@@ -71,6 +73,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
       )
     }
     const resolved: ResolvedHeadlessRunOptions = {
+      cwd: options.cwd,
       effort,
       gatewayProvider: options.gatewayProvider,
       harness: options.harness,
@@ -82,6 +85,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
       provider: options.provider,
       resumeSessionId: options.resumeSessionId,
     }
+    if (resolved.cwd !== undefined) assertRunnableCwd(resolved.cwd)
     const config = loadConfig()
     const provider = getProvider(config, resolved.provider)
     if (!provider) throw new Error(`unknown provider "${resolved.provider}"`)
@@ -123,6 +127,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
         })
 
         return executeHeadlessPlan({
+          cwd: resolved.cwd,
           harness: resolved.harness,
           markSpawned: () => {
             state.executionStarted = true
@@ -147,6 +152,18 @@ export async function runHeadless(options: HeadlessRunOptions) {
 function asRecord(value: unknown) {
   const parsed = recordSchema.safeParse(value)
   return parsed.success ? parsed.data : undefined
+}
+
+function assertRunnableCwd(cwd: string) {
+  let stats
+  try {
+    stats = statSync(cwd)
+  } catch {
+    throw new Error(`--cwd "${cwd}" does not exist`)
+  }
+  if (!stats.isDirectory()) {
+    throw new Error(`--cwd "${cwd}" is not a directory`)
+  }
 }
 
 function emit(event: Record<string, unknown>) {
@@ -218,6 +235,7 @@ function errorMessage(error: unknown) {
 }
 
 async function executeHeadlessPlan(options: {
+  cwd?: string
   harness: string
   markSpawned: () => void
   plan: LaunchPlan
@@ -229,12 +247,14 @@ async function executeHeadlessPlan(options: {
 }
 
 async function executePreparedHeadlessPlan(options: {
+  cwd?: string
   harness: string
   markSpawned: () => void
   plan: LaunchPlan
   stdin?: string
 }) {
   const child = spawn(options.plan.bin, options.plan.args, {
+    cwd: options.cwd,
     env: { ...process.env, ...options.plan.env },
     stdio: ['pipe', 'pipe', 'pipe'],
   })
