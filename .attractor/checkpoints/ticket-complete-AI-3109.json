@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:34.652Z",
-  "currentNodeId": "lint",
+  "currentNodeId": "lint_fix_gate",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -732,17 +732,17 @@
       }
     },
     "lint": {
-      "completedAt": "2026-08-18T15:47:25.301Z",
+      "completedAt": "2026-08-18T16:02:57.984Z",
       "nodeId": "lint",
-      "outcome": "success",
-      "output": "No formatter changes to commit\n\n$ concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'\n$ prettier --write . --log-level=error",
+      "outcome": "fail",
+      "output": "/vercel/sandbox/project/src/headless-run.ts\n  123:9  error  Unnecessary conditional, value is always falsy  @typescript-eslint/no-unnecessary-condition\n\n✖ 1 problem (1 error, 0 warnings)\n\n[ELIFECYCLE] Command failed with exit code 1.\n\n$ concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'",
       "outputCapture": {
-        "capturedLength": 154,
+        "capturedLength": 318,
         "lengthUnit": "utf16_code_units",
-        "originalLength": 154,
+        "originalLength": 318,
         "truncated": false
       },
-      "retryCount": 1,
+      "retryCount": 2,
       "startedAt": "2026-08-18T15:38:25.526Z"
     },
     "test": {
@@ -1606,7 +1606,7 @@
   },
   "pipelineId": "ticket-complete-AI-3109",
   "status": "running",
-  "updatedAt": "2026-08-18T16:02:48.645Z",
+  "updatedAt": "2026-08-18T16:02:57.988Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1729,8 +1729,8 @@
     },
     "lint": {
       "handler": "tool",
-      "outcome": "success",
-      "totalDurationMs": 19945,
+      "outcome": "fail",
+      "totalDurationMs": 27434,
       "usage": {
         "cacheReadTokens": 0,
         "cacheWriteTokens": 0,
@@ -1738,7 +1738,7 @@
         "inputTokens": 0,
         "outputTokens": 0
       },
-      "visits": 2
+      "visits": 3
     },
     "test": {
       "handler": "tool",
