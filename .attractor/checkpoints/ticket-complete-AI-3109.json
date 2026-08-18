@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-18T15:28:34.652Z",
-  "currentNodeId": "lint",
+  "currentNodeId": "test",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -732,17 +732,17 @@
       }
     },
     "lint": {
-      "completedAt": "2026-08-18T16:02:57.984Z",
+      "completedAt": "2026-08-18T16:07:07.967Z",
       "nodeId": "lint",
-      "outcome": "fail",
-      "output": "/vercel/sandbox/project/src/headless-run.ts\n  123:9  error  Unnecessary conditional, value is always falsy  @typescript-eslint/no-unnecessary-condition\n\n✖ 1 problem (1 error, 0 warnings)\n\n[ELIFECYCLE] Command failed with exit code 1.\n\n$ concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'",
+      "outcome": "success",
+      "output": "$ concurrently --raw 'eslint --fix && pnpm format --log-level=error' 'tsc --noEmit'\n$ prettier --write . --log-level=error",
       "outputCapture": {
-        "capturedLength": 318,
+        "capturedLength": 122,
         "lengthUnit": "utf16_code_units",
-        "originalLength": 318,
+        "originalLength": 122,
         "truncated": false
       },
-      "retryCount": 2,
+      "retryCount": 3,
       "startedAt": "2026-08-18T15:38:25.526Z"
     },
     "test": {
@@ -1958,7 +1958,7 @@
   },
   "pipelineId": "ticket-complete-AI-3109",
   "status": "running",
-  "updatedAt": "2026-08-18T16:06:56.484Z",
+  "updatedAt": "2026-08-18T16:07:07.977Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -2081,8 +2081,8 @@
     },
     "lint": {
       "handler": "tool",
-      "outcome": "fail",
-      "totalDurationMs": 27434,
+      "outcome": "success",
+      "totalDurationMs": 37588,
       "usage": {
         "cacheReadTokens": 0,
         "cacheWriteTokens": 0,
@@ -2090,7 +2090,7 @@
         "inputTokens": 0,
         "outputTokens": 0
       },
-      "visits": 3
+      "visits": 4
     },
     "test": {
       "handler": "tool",
