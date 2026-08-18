@@ -11,11 +11,11 @@ categories, while raw child codes continue to pass through unchanged.
 
 Chosen block (contiguous, ≥64, mirrors `sysexits.h`'s `EX_` range):
 
-| Code | Category |
-|------|----------|
+| Code | Category                                                                                                      |
+| ---- | ------------------------------------------------------------------------------------------------------------- |
 | `64` | Preflight/usage error (TTY, empty stdin, invalid flag values, unknown harness/provider — nothing was spawned) |
-| `65` | Spawn failure (harness binary missing or otherwise unspawnable) |
-| `66` | Semantic harness failure (`resultIsError` while the child exited `0`) |
+| `65` | Spawn failure (harness binary missing or otherwise unspawnable)                                               |
+| `66` | Semantic harness failure (`resultIsError` while the child exited `0`)                                         |
 
 ## Scope Boundary
 
@@ -24,7 +24,9 @@ extending the existing subprocess tests to assert them, the README/DESIGN/qa
 docs, and the required version bump.
 
 **Out of scope (do NOT touch):**
-- Provider/auth-error classification (deferred — needs per-harness error parsing).
+
+- Provider/auth-error classification (deferred — needs per-harness error
+  parsing).
 - An `errorCategory` field on `run.completed` (exit codes are the contract now).
 - Remapping the timeout / `128 + signal` shape — it stays as-is (may be
   documented, not changed).
@@ -75,8 +77,9 @@ docs, and the required version bump.
 
 - `src/headless-run.ts` — edit: add reserved-code constants; wire the three
   categories.
-- `src/headless-run.test.ts` — edit: assert reserved codes in the missing-binary,
-  preflight, and semantic tests (leave passthrough + signal tests untouched).
+- `src/headless-run.test.ts` — edit: assert reserved codes in the
+  missing-binary, preflight, and semantic tests (leave passthrough + signal
+  tests untouched).
 - `README.md` — edit: add the "Exit codes" table + passthrough/collision notes.
 - `DESIGN.md` — edit: mirror the table in the headless section.
 - `docs/qa/eh-cli.md` — edit: note the reserved codes in section I.
@@ -93,8 +96,9 @@ three edited tests fail against the current `1`.
 - "normalizes a missing harness binary as a failed run" (`:176`): change
   `expect(exitCode).toBe(1)` → `65`, and `events[2]` from `exitCode: 1` →
   `exitCode: 65`.
-- The `test.each` preflight block (`:228-380`): change `expect(exitCode).toBe(1)`
-  → `64`, and the `run.completed` record's `exitCode: 1` → `exitCode: 64`.
+- The `test.each` preflight block (`:228-380`): change
+  `expect(exitCode).toBe(1)` → `64`, and the `run.completed` record's
+  `exitCode: 1` → `exitCode: 64`.
 - "converts a semantic %s failure into a non-zero wrapper exit" (`:1018`):
   change `expect(exitCode).toBe(1)` → `66` and the `run.completed` `exitCode: 1`
   → `exitCode: 66`.
@@ -128,20 +132,20 @@ Preflight catch — current `src/headless-run.ts:108-112`:
   }
 ```
 
-becomes `exitCode: EH_EXIT_PREFLIGHT` in the emit and `return EH_EXIT_PREFLIGHT`.
+becomes `exitCode: EH_EXIT_PREFLIGHT` in the emit and
+`return EH_EXIT_PREFLIGHT`.
 
 Spawn-error path — current `src/headless-run.ts:248-256`:
 
 ```ts
-    if ('error' in completed) {
-      emit({
-        message:
-          completed.error.message || `Failed to spawn "${options.plan.bin}"`,
-        type: 'run.error',
-      })
-      emit({ exitCode: 1, resultIsError: true, type: 'run.completed' })
-      return 1
-    }
+if ('error' in completed) {
+  emit({
+    message: completed.error.message || `Failed to spawn "${options.plan.bin}"`,
+    type: 'run.error',
+  })
+  emit({ exitCode: 1, resultIsError: true, type: 'run.completed' })
+  return 1
+}
 ```
 
 becomes `exitCode: EH_EXIT_SPAWN` in the emit and `return EH_EXIT_SPAWN`.
@@ -149,19 +153,20 @@ becomes `exitCode: EH_EXIT_SPAWN` in the emit and `return EH_EXIT_SPAWN`.
 Semantic forcing — current `src/headless-run.ts:271`:
 
 ```ts
-    const exitCode = resultIsError && childExitCode === 0 ? 1 : childExitCode
+const exitCode = resultIsError && childExitCode === 0 ? 1 : childExitCode
 ```
 
 becomes:
 
 ```ts
-    const exitCode =
-      resultIsError && childExitCode === 0 ? EH_EXIT_HARNESS_ERROR : childExitCode
+const exitCode =
+  resultIsError && childExitCode === 0 ? EH_EXIT_HARNESS_ERROR : childExitCode
 ```
 
-Leave the `childExitCode` derivation (`completed.code ?? (signalNumber ? 128 +
-signalNumber : 1)`, `:260-261`) and the `resultIsError` computation (`:270`)
-untouched — the raw passthrough and `128 + signal` behaviors do not change.
+Leave the `childExitCode` derivation
+(`completed.code ?? (signalNumber ? 128 + signalNumber : 1)`, `:260-261`) and
+the `resultIsError` computation (`:270`) untouched — the raw passthrough and
+`128 + signal` behaviors do not change.
 
 **Pass:** `bun test src/headless-run.test.ts` green (edited tests now match,
 passthrough + signal tests still pass). Then `pnpm lint:ci`.
@@ -170,9 +175,9 @@ passthrough + signal tests still pass). Then `pnpm lint:ci`.
 
 ### Task 2 — Document the reserved block
 
-**Implement (README.md):** After the headless-runs paragraph ending
-"…even when the child process exits zero." (`README.md:166`), add an
-"#### Exit codes" subsection with this table and notes:
+**Implement (README.md):** After the headless-runs paragraph ending "…even when
+the child process exits zero." (`README.md:166`), add an "#### Exit codes"
+subsection with this table and notes:
 
 ```markdown
 #### Exit codes
@@ -180,13 +185,13 @@ passthrough + signal tests still pass). Then `pnpm lint:ci`.
 `eh` owns a small reserved block of exit codes for failures it detects itself;
 any other code is the harness's own, passed through unchanged.
 
-| Exit code | Meaning |
-|-----------|---------|
-| `0` | Clean completion |
-| `64` | Preflight/usage error — TTY, empty stdin, invalid flag values, unknown harness/provider; nothing was spawned |
-| `65` | Spawn failure — the harness binary is missing or otherwise unspawnable |
-| `66` | Semantic harness failure — `resultIsError` while the child process exited `0` |
-| any other | Raw child exit code, passed through unchanged (including `128 + signal` for a signalled child) |
+| Exit code | Meaning                                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------------------ |
+| `0`       | Clean completion                                                                                             |
+| `64`      | Preflight/usage error — TTY, empty stdin, invalid flag values, unknown harness/provider; nothing was spawned |
+| `65`      | Spawn failure — the harness binary is missing or otherwise unspawnable                                       |
+| `66`      | Semantic harness failure — `resultIsError` while the child process exited `0`                                |
+| any other | Raw child exit code, passed through unchanged (including `128 + signal` for a signalled child)               |
 
 `run.completed.exitCode` always equals the `eh` process exit code and, in the
 passthrough case, carries the raw child code. Because raw codes pass through
@@ -214,8 +219,8 @@ passes through unchanged.
 
 ### Task 3 — Version bump
 
-**Implement:** In `package.json`, bump `"version": "0.11.0"` → `"0.12.0"`
-(plain `X.Y.Z`; the guard rejects anything else).
+**Implement:** In `package.json`, bump `"version": "0.11.0"` → `"0.12.0"` (plain
+`X.Y.Z`; the guard rejects anything else).
 
 **Pass:** `bash scripts/check-version-guard.sh` if runnable locally; otherwise
 rely on CI's `version-guard.yml`.
