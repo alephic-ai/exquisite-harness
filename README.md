@@ -196,7 +196,11 @@ before launch. Orchestrators that must preserve harness-specific policy flags
 can pass a JSON string array with `--native-args-json`; those args are prepended
 before `eh`'s required machine-output flags. OpenRouter and Vercel AI Gateway
 runs through Claude, Codex, Grok, opencode, or pi may also use
-`--gateway-provider <slug>`.
+`--gateway-provider <slug>`. Pass `--timeout <seconds>` to fail a hung lane
+loudly: on expiry `eh` emits a `run.error` naming the limit, sends `SIGTERM`,
+then escalates to `SIGKILL` after a 10s grace period; `run.completed` is still
+the final event and a timed-out child exits `143`. Omitting the flag keeps
+today's no-deadline behavior.
 
 ### Keys
 

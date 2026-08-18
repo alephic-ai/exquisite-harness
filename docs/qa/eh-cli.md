@@ -310,7 +310,11 @@ Drive each with the PTY; assert on screen text.
    incompatibility, and missing keys; each must emit only versioned
    `run.error` + failed `run.completed` records on stdout and exit `64`. A raw
    nonzero child exit code still passes through unchanged (including
-   `128 + signal`).
+   `128 + signal`). The suite also covers `--timeout`: preflight rejection of
+   non-positive/negative/non-numeric values (the fake harness is never invoked,
+   exit `64`), SIGTERM-on-expiry with a single limit-naming `run.error` before
+   the final `run.completed`, SIGKILL escalation via `EH_TIMEOUT_KILL_GRACE_MS`,
+   and the no-effect invariant when a run finishes before the deadline.
 2. With Ollama running and a pulled model declared for the `ollama` provider in
    pi's `models.json`, run a short real pi request (replace `<model>`):
 

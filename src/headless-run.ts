@@ -27,6 +27,7 @@ const PROTOCOL_VERSION = 1
 const EH_EXIT_PREFLIGHT = 64
 const EH_EXIT_SPAWN = 65
 const EH_EXIT_HARNESS_ERROR = 66
+const TIMEOUT_KILL_GRACE_MS = 10_000
 const PROMPT_STDIN_HELP =
   "eh run expects a prompt on stdin; pipe one in, for example: printf 'fix the parser' | eh run codex ollama qwen3-coder"
 const recordSchema = z.record(z.string(), z.unknown())
@@ -40,6 +41,7 @@ export interface HeadlessRunOptions {
   nativeArgsJson?: string
   provider: string
   resumeSessionId?: string
+  timeout?: string
 }
 
 interface NormalizerState {
@@ -57,6 +59,7 @@ interface ResolvedHeadlessRunOptions {
   nativeArgs: string[]
   provider: string
   resumeSessionId: string | undefined
+  timeoutSeconds: number | undefined
 }
 
 export async function runHeadless(options: HeadlessRunOptions) {
@@ -84,6 +87,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
           : parseNativeArgsJson(options.nativeArgsJson),
       provider: options.provider,
       resumeSessionId: options.resumeSessionId,
+      timeoutSeconds: parseTimeoutSeconds(options.timeout),
     }
     if (resolved.cwd !== undefined) assertRunnableCwd(resolved.cwd)
     const config = loadConfig()
@@ -134,6 +138,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
           },
           plan: prepared.plan,
           stdin: prepared.stdin,
+          timeoutSeconds: resolved.timeoutSeconds,
         })
       })
     })
@@ -240,6 +245,7 @@ async function executeHeadlessPlan(options: {
   markSpawned: () => void
   plan: LaunchPlan
   stdin?: string
+  timeoutSeconds?: number
 }) {
   return withGatewayRouting(options.plan, async (plan) =>
     executePreparedHeadlessPlan({ ...options, plan }),
@@ -252,6 +258,7 @@ async function executePreparedHeadlessPlan(options: {
   markSpawned: () => void
   plan: LaunchPlan
   stdin?: string
+  timeoutSeconds?: number
 }) {
   const child = spawn(options.plan.bin, options.plan.args, {
     cwd: options.cwd,
@@ -280,10 +287,36 @@ async function executePreparedHeadlessPlan(options: {
     return { handler, signal }
   })
 
+  // Held in an object so the deferred callback's mutation is visible to the
+  // read below — a plain `let` boolean would be narrowed to its initial value.
+  const timeout = { fired: false }
+  let timeoutTimer: ReturnType<typeof setTimeout> | undefined
+  let killTimer: ReturnType<typeof setTimeout> | undefined
+
   try {
     child.stderr.pipe(process.stderr)
     child.stdin.on('error', () => undefined)
     child.stdin.end(options.stdin)
+
+    if (options.timeoutSeconds !== undefined) {
+      timeoutTimer = setTimeout(() => {
+        // Only act while the child is still running; if it already finished, the
+        // timer is a no-op and the normal completion path reports the real exit.
+        if (child.exitCode === null && child.signalCode === null) {
+          timeout.fired = true
+          emit({
+            message: `${options.harness} exceeded the --timeout limit of ${options.timeoutSeconds}s`,
+            type: 'run.error',
+          })
+          child.kill('SIGTERM')
+          killTimer = setTimeout(() => {
+            if (child.exitCode === null && child.signalCode === null) {
+              child.kill('SIGKILL')
+            }
+          }, timeoutKillGraceMs())
+        }
+      }, options.timeoutSeconds * 1000)
+    }
 
     let state: NormalizerState = {
       pendingGrokText: '',
@@ -318,7 +351,7 @@ async function executePreparedHeadlessPlan(options: {
       : undefined
     const childExitCode =
       completed.code ?? (signalNumber ? 128 + signalNumber : 1)
-    if (!state.resultIsError && childExitCode !== 0) {
+    if (!state.resultIsError && childExitCode !== 0 && !timeout.fired) {
       emit({
         message: completed.signal
           ? `${options.harness} exited with signal ${completed.signal}`
@@ -326,7 +359,8 @@ async function executePreparedHeadlessPlan(options: {
         type: 'run.error',
       })
     }
-    const resultIsError = state.resultIsError || childExitCode !== 0
+    const resultIsError =
+      state.resultIsError || childExitCode !== 0 || timeout.fired
     const exitCode =
       resultIsError && childExitCode === 0
         ? EH_EXIT_HARNESS_ERROR
@@ -334,6 +368,8 @@ async function executePreparedHeadlessPlan(options: {
     emit({ exitCode, resultIsError, type: 'run.completed' })
     return exitCode
   } finally {
+    if (timeoutTimer) clearTimeout(timeoutTimer)
+    if (killTimer) clearTimeout(killTimer)
     for (const { handler, signal } of signalHandlers) {
       process.off(signal, handler)
     }
@@ -608,6 +644,17 @@ function parseNativeArgsJson(value: string) {
   return parsed.data
 }
 
+function parseTimeoutSeconds(value: string | undefined) {
+  if (value === undefined) return undefined
+  const seconds = Number(value)
+  if (!Number.isInteger(seconds) || seconds <= 0) {
+    throw new Error(
+      `--timeout must be a positive integer number of seconds (got "${value}")`,
+    )
+  }
+  return seconds
+}
+
 async function prepareHeadlessPlan(options: {
   options: ResolvedHeadlessRunOptions
   plan: LaunchPlan
@@ -718,4 +765,13 @@ function readPrompt() {
   const prompt = readFileSync(0, 'utf8')
   if (!prompt.trim()) throw new Error(PROMPT_STDIN_HELP)
   return prompt
+}
+
+// The grace period between SIGTERM and SIGKILL. Overridable via the env var so
+// the escalation test doesn't have to sleep the full 10 real seconds.
+function timeoutKillGraceMs() {
+  const raw = process.env.EH_TIMEOUT_KILL_GRACE_MS
+  if (raw === undefined) return TIMEOUT_KILL_GRACE_MS
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : TIMEOUT_KILL_GRACE_MS
 }
