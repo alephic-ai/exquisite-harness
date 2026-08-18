@@ -63,7 +63,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
   // runtime/teardown error, not a preflight error — rethrow instead of
   // emitting a second run.completed with the preflight code after the child
   // has already completed.
-  let executionStarted = false
+  const state = { executionStarted: false }
   try {
     const prompt = readPrompt()
     const effort = EFFORT_LEVELS.find((level) => level === options.effort)
@@ -123,7 +123,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
           provider: provider.name,
           type: 'run.started',
         })
-        executionStarted = true
+        state.executionStarted = true
 
         return executeHeadlessPlan({
           harness: resolved.harness,
@@ -133,7 +133,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
       })
     })
   } catch (error) {
-    if (executionStarted) throw error
+    if (state.executionStarted) throw error
     emit({ message: errorMessage(error), type: 'run.error' })
     emit({
       exitCode: EH_EXIT_PREFLIGHT,
