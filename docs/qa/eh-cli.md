@@ -305,10 +305,12 @@ Drive each with the PTY; assert on screen text.
    prompt stays off argv, native policy args precede mandatory machine-mode
    args, `--resume-session` reaches the native CLI, session/text/usage/cost are
    normalized, and a native semantic error makes both completion and process
-   exits non-zero even if the fake child exits 0. Preflight cases cover empty
-   stdin, malformed native args, invalid effort, unknown harness/provider, pi
-   provider incompatibility, and missing keys; each must emit only versioned
-   `run.error` + failed `run.completed` records on stdout and exit non-zero.
+   exits `66` even if the fake child exits 0. Preflight cases cover empty stdin,
+   malformed native args, invalid effort, unknown harness/provider, pi provider
+   incompatibility, and missing keys; each must emit only versioned
+   `run.error` + failed `run.completed` records on stdout and exit `64`. A raw
+   nonzero child exit code still passes through unchanged (including
+   `128 + signal`).
 2. With Ollama running and a pulled model declared for the `ollama` provider in
    pi's `models.json`, run a short real pi request (replace `<model>`):
 
@@ -336,9 +338,10 @@ Drive each with the PTY; assert on screen text.
    events remain available as `harness.event`; stderr contains no TUI.
 
 4. Repeat the pi and opencode fake-binary cases with a nonexistent child binary
-   and with the real native error event shape. → each emits one `run.error`, a
-   failed `run.completed`, and a non-zero `eh` exit while preserving native
-   stderr separately.
+   and with the real native error event shape. → the nonexistent-binary case
+   exits `65` (spawn failure) and the native-error case exits `66` (semantic
+   harness failure); each emits one `run.error`, a failed `run.completed`, and
+   preserves native stderr separately.
 
 ## Known limitations
 

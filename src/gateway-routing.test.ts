@@ -417,6 +417,10 @@ describe('gateway provider routing', () => {
   })
 
   test('uses a non-empty auth token when the provider key variable is deliberately blank', async () => {
+    // CI/sandbox may export ANTHROPIC_API_KEY; the plan's blank value must win,
+    // so clear the ambient var to keep this test hermetic against it.
+    const priorApiKey = process.env.ANTHROPIC_API_KEY
+    delete process.env.ANTHROPIC_API_KEY
     let validationAuthorization = ''
     const upstream = await startUpstream((request, response) => {
       validationAuthorization = request.headers.authorization ?? ''
@@ -451,6 +455,8 @@ describe('gateway provider routing', () => {
       expect(validationAuthorization).toBe('Bearer qa-auth-token')
     } finally {
       await upstream.close()
+      if (priorApiKey === undefined) delete process.env.ANTHROPIC_API_KEY
+      else process.env.ANTHROPIC_API_KEY = priorApiKey
     }
   })
 
