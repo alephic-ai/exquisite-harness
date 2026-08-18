@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "title": "eh gateway validation: a blank plan provider key must suppress the ambient env fallback",
+  "source": {
+    "ticketId": "AI-3109",
+    "ticketUrl": "https://linear.app/alephic/issue/AI-3109/eh-run-reserved-exit-codes-for-eh-detected-failure-categories"
+  },
+  "request": {
+    "depth": 1,
+    "requestId": "review-follow-up-ai-3109-pr-49",
+    "kind": "review-follow-up",
+    "source": {
+      "parentTicketId": "AI-3109",
+      "pr": {
+        "url": "https://github.com/alephic-ai/exquisite-harness/pull/49",
+        "number": 49,
+        "branch": "intelligencev2/ai-3109-eh-run-reserved-exit-codes-for-eh-detected-failure"
+      }
+    }
+  },
+  "delegability": {
+    "design_freedom": "low",
+    "verification_strength": "high",
+    "silent_failure_cost": "medium",
+    "context_volatility": "low",
+    "recommended_tier": "low",
+    "recommended_effort": "medium"
+  }
+}
