@@ -100,6 +100,14 @@ Each prints env/args and exits 0 without launching, unless noted.
     `--print-env` is intentionally unsupported with its isolated temp home.
     Change the config value to `platform` and repeat the same commands. → none
     of those approval arguments is present.
+18. For each harness whose CLI is installed, from inside a scratch directory run
+    `printf 'create a file named proof.txt with the text hi' | eh run <harness> <provider> <model> --read-only`
+    and confirm no `proof.txt` is written — the harness reports it cannot modify
+    files (Claude/Grok plan mode, Codex's read-only sandbox, opencode's plan
+    agent, pi's read-only tool set). The exact args each harness receives are
+    pinned by automated subprocess tests (`src/headless-run.test.ts`); this item
+    checks the live write-blocking behavior those tests cannot, per
+    `docs/read-only.md`.
 
 ## C. Config / error paths
 

@@ -202,6 +202,16 @@ then escalates to `SIGKILL` after a 10s grace period; `run.completed` is still
 the final event and a timed-out child exits `143`. Omitting the flag keeps
 today's no-deadline behavior.
 
+Pass `--read-only` to engage each harness's strongest own file-write
+restriction: Claude and Grok `--permission-mode plan`, Codex
+`--sandbox read-only` (its OS sandbox), opencode `--agent plan`, and pi
+`--tools read,grep,find,ls`. It composes with an `auto` approval default and
+takes precedence where the two would collide — read-only wins and the approval
+argument is dropped, except opencode, where `--agent plan` and `--auto` run
+together. This is the best available restriction per harness, not a uniform
+sandbox: network access, for one, is not uniformly restricted. See
+`docs/read-only.md` for the per-harness mapping and its verification.
+
 ### Keys
 
 ```bash
