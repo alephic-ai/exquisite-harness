@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:48:36.411Z",
-  "currentNodeId": "classify_codex",
+  "currentNodeId": "evaluate_review",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1434,6 +1434,139 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-21T16:14:46.810Z"
+    },
+    "classify_codex": {
+      "completedAt": "2026-08-21T16:15:45.804Z",
+      "nodeId": "classify_codex",
+      "artifacts": [
+        {
+          "agentRunId": "1ecfd925-73dc-4209-92c4-30556ac9978a",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "6ec7a25e4285df15a72b5a63cd420fabbd542751d539dc039ec7e4b2b1da5986",
+              "sizeBytes": 103123
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/40a04b65-a666-410c-bd14-b008b3782210.request.json",
+              "sha256": "1b1293b267490496da3f66111133b93792365694dac13d2498f72c7176e79c21",
+              "sizeBytes": 123762
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4c669db0-feb2-4af4-b5c3-2a8d6b41e2af.request.json",
+              "sha256": "3a055bee1249cf5fc7c7027d3bb4e87792ec85941654b8be3585b71e023d0af8",
+              "sizeBytes": 107982
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4ce00617-d472-411b-ad12-ad8607db7966.request.json",
+              "sha256": "66bc0fe40c81d202a4e9caff8e5913b3ed06075c923c0712db284df4009bd6ba",
+              "sizeBytes": 129727
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b838d165-b47d-40f3-89f7-42a801715766.request.json",
+              "sha256": "cf4f35ba06004a10b3c017fd05b367b69a94e0b61b5b3fd52c16e8edb4df88d3",
+              "sizeBytes": 79391
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c77c6ae9-59d6-4a4e-9a39-6c9f633f80ad.request.json",
+              "sha256": "6578b8072e226156681f1c7f0f207e75b9698bfb355575e490c88d5bd694c51d",
+              "sizeBytes": 82116
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cf118103-2199-4bf7-84bd-773b213d0cfa.request.json",
+              "sha256": "25085b405fb4532d134375830138829f8fa18f86ca1e16cf55975a050402f62b",
+              "sizeBytes": 119960
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d0f7108c-8314-4a9b-a467-f9f9db5a8ae1.request.json",
+              "sha256": "37232e1f061a8a3be4c6fa75d8d1e2229b304e21184dec3d6e9a24ad925937c1",
+              "sizeBytes": 6041
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC42pToHJugBGnkEP1Y.response.json",
+              "sha256": "dfe6a1ec3f3bd0f619cb1107c6df5656e4f638d2ae7de15c01a4f0449f4ad994",
+              "sizeBytes": 815
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC43XNkwifC59F8DTBJ.response.json",
+              "sha256": "2f81f5bb82f4c6f58d6265858bd3370c6db8f413fe8810d58913503db2237a57",
+              "sizeBytes": 1685
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC4NrE4n4QNeC7AQUGs.response.json",
+              "sha256": "46db9214ccbab51135e32412a00fb7c474edb10c27d0c8938b7ea6480680ef59",
+              "sizeBytes": 1435
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC4brZcazAs8k8E4BEV.response.json",
+              "sha256": "ac30e3ab04fac7b049495c65e29a722cd06c4a74327129aa667fe50ae5a0bfa0",
+              "sizeBytes": 5957
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC5xLPh6EHf1rW4eizp.response.json",
+              "sha256": "1e04d4e11ccde453b2a083e04f52821f0e3c9edcfa2805f066219b4bff21d148",
+              "sizeBytes": 1515
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC6EDsJeRsUTedMGPZh.response.json",
+              "sha256": "2c2b72d5f74d7d0b51f1b4cadac2dbdb381c1660d5adbfb91cffeae8050879f2",
+              "sizeBytes": 6413
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC7k32KdWiWydec4kk2.response.json",
+              "sha256": "5b0f7c423cd817f22ceff24ab5a964ddf325bc003e6dd148e9271f6ebfb82d12",
+              "sizeBytes": 1570
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "6cd0bef1d876fffd544648e5f7c5bfc7098d334208cf3feaa9184b237f99abdc",
+              "sizeBytes": 12571
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3108/b3eb78e84ea1-1cfa0b6f-3c2f-43f4-95f5-1fa23136a318/agent-artifacts/classify_codex/attempt-0-1ecfd925-73dc-4209-92c4-30556ac9978a",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3108/b3eb78e84ea1-1cfa0b6f-3c2f-43f4-95f5-1fa23136a318/agent-artifacts/classify_codex/attempt-0-1ecfd925-73dc-4209-92c4-30556ac9978a/manifest.json",
+          "nodeId": "classify_codex",
+          "pipelineId": "ticket-complete-AI-3108",
+          "runtime": "claude",
+          "sessionId": "ee99bd51-f716-4f23-98bc-6062caa835a1",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "Both findings verified against the code. Let me confirm my analysis:\n\n**Finding 1 (Blocker):** Confirmed real. In the success path (`headless-run.ts:390-391`) and spawn-failure path (`363-367`), `await writeResultFile(...)` runs *before* `emit(run.completed)`. If the `--result-file` path is unwritable (missing parent dir → ENOENT, etc.), `writeFile` rejects. The exception propagates up to `runHeadless`'s catch (line 151), where `state.executionStarted` is already `true` (set by `markSpawned`), so line 152 re-throws — `run.completed` is never emitted. This breaks the terminal-event guarantee the PR itself introduces. **Adopt.**\n\n**Finding 2 (Suggestion):** This is a documentation wording inconsistency in DESIGN.md, not a code correctness defect. Outside the correctness mandate. **Reject.**\nClassification complete.\n\n**Adopted (1):**\n- **Finding 1 (Blocker)** — `src/headless-run.ts:390-391`. Confirmed against the code: `writeResultFile` is awaited before `emit(run.completed)` on every completion path. An unwritable `--result-file` (e.g., nonexistent parent dir) makes `writeFile` reject; the exception unwinds to `runHeadless`'s catch where `state.executionStarted` is already `true` (line 152), which re-throws — so `run.completed` never fires, violating the terminal-event guarantee this PR introduces. Real correctness defect.\n\n**Rejected (1):**\n- **Finding 2 (Suggestion)** — DESIGN.md:114. A documentation wording inconsistency, not a code correctness defect. Outside the correctness mandate.\n\nWrote one `## Fix:` block to `.attractor/codex-correctness-fixes.md`.\n",
+      "retryCount": 0,
+      "sessionId": "ee99bd51-f716-4f23-98bc-6062caa835a1",
+      "startedAt": "2026-08-21T16:14:48.094Z",
+      "usage": {
+        "cacheReadTokens": 187551,
+        "cacheWriteTokens": 31901,
+        "costUsd": 0.43597175,
+        "inputTokens": 9781,
+        "outputTokens": 3697
+      }
     }
   },
   "parallelBranches": {
@@ -1444,7 +1577,7 @@
   },
   "pipelineId": "ticket-complete-AI-3108",
   "status": "running",
-  "updatedAt": "2026-08-21T16:14:46.815Z",
+  "updatedAt": "2026-08-21T16:15:45.805Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1705,6 +1838,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "classify_codex": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 57710,
+      "usage": {
+        "cacheReadTokens": 187551,
+        "cacheWriteTokens": 31901,
+        "costUsd": 0.43597175,
+        "inputTokens": 9781,
+        "outputTokens": 3697
       },
       "visits": 1
     }
