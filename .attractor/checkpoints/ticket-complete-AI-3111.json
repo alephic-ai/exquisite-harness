@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:48:30.863Z",
-  "currentNodeId": "verify_plan",
+  "currentNodeId": "plan_size_gate",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -276,12 +276,26 @@
         "inputTokens": 10721,
         "outputTokens": 23418
       }
+    },
+    "verify_plan": {
+      "completedAt": "2026-08-21T15:53:57.924Z",
+      "nodeId": "verify_plan",
+      "outcome": "success",
+      "output": "Plan found\nac.json valid\nNo plan-remainder.json — the plan covers the whole ticket in one run\nplan-meta-draft.json validated (3 task titles, 10 files)",
+      "outputCapture": {
+        "capturedLength": 150,
+        "lengthUnit": "utf16_code_units",
+        "originalLength": 150,
+        "truncated": false
+      },
+      "retryCount": 0,
+      "startedAt": "2026-08-21T15:53:56.725Z"
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3111",
   "status": "running",
-  "updatedAt": "2026-08-21T15:53:55.444Z",
+  "updatedAt": "2026-08-21T15:53:57.925Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -334,6 +348,19 @@
         "costUsd": 1.59320175,
         "inputTokens": 10721,
         "outputTokens": 23418
+      },
+      "visits": 1
+    },
+    "verify_plan": {
+      "handler": "tool",
+      "outcome": "success",
+      "totalDurationMs": 1199,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
       },
       "visits": 1
     }
