@@ -20,6 +20,27 @@ export interface ModelMeta {
   rates: ModelRates | undefined
 }
 
+// How a headless run's cost was derived: from gateway rates, free (a zero-rate
+// provider), or unavailable when no rates could be resolved.
+export type HeadlessCostSource = 'free' | 'gateway-rates' | 'unavailable'
+
+// eh's own normalized token counts for a run, summed across harness events.
+export interface NormalizedUsage {
+  cacheRead: number
+  cacheWrite: number
+  input: number
+  output: number
+}
+
+// The rate source resolved for a headless run. `endpoint` carries the raw
+// per-endpoint pricing (tier selection is usage-dependent, so it's deferred to
+// cost time); `rates` is the model-aggregate fallback when no pin is given.
+export type HeadlessRateCard =
+  | { kind: 'endpoint'; pricing: EndpointPricing }
+  | { kind: 'free' }
+  | { kind: 'rates'; rates: ModelRates }
+  | { kind: 'unavailable' }
+
 // Providers disagree on string vs number and camelCase vs snake_case.
 const priceField = z.union([z.string(), z.number()]).optional()
 const priceValue = z.union([z.string(), z.number()])
@@ -65,16 +86,26 @@ const gatewayModelsSchema = z.object({
   ),
 })
 
+// Per-endpoint pricing. Cache fields are declared so headless cost computation
+// can read them; the gateway publishes them under either naming.
+const gatewayEndpointPricingSchema = z.looseObject({
+  cacheCreationInputTokens: priceField,
+  cachedInputTokens: priceField,
+  completion: priceField,
+  completion_tiers: z.array(priceTierSchema).optional(),
+  input_cache_read: priceField,
+  input_cache_write: priceField,
+  prompt: priceField,
+  prompt_tiers: z.array(priceTierSchema).optional(),
+})
+
+export type EndpointPricing = z.infer<typeof gatewayEndpointPricingSchema>
+
 const gatewayEndpointsSchema = z.object({
   data: z.looseObject({
     endpoints: z.array(
       z.looseObject({
-        pricing: z.looseObject({
-          completion: priceField,
-          completion_tiers: z.array(priceTierSchema).optional(),
-          prompt: priceField,
-          prompt_tiers: z.array(priceTierSchema).optional(),
-        }),
+        pricing: gatewayEndpointPricingSchema,
         provider_name: z.string(),
         status: z.number().optional(),
         tag: z.string().optional(),
@@ -128,6 +159,46 @@ export async function fetchModelMeta(props: {
   }
 }
 
+// Resolve the rate source for a headless run. A `--gateway-provider` pin gets
+// per-endpoint pricing (AC-1); otherwise fall back to the model-aggregate rates.
+// Never throws — any failure resolves to `unavailable` so no cost is fabricated.
+export async function fetchHeadlessRateCard(props: {
+  gatewayProvider?: string
+  modelId: string
+  provider: ResolvedProvider
+}): Promise<HeadlessRateCard> {
+  const { gatewayProvider, modelId, provider } = props
+  if (provider.type === 'ollama') return { kind: 'free' }
+  try {
+    if (
+      gatewayProvider != null &&
+      (provider.type === 'vercel-gateway' || provider.type === 'openrouter')
+    ) {
+      const key = provider.envKey
+        ? await resolveApiKey(provider.envKey, provider.name)
+        : undefined
+      const apiKey = key && key.source !== 'none' ? key.value : undefined
+      const pricing = await fetchEndpointPricing({
+        apiKey,
+        baseURL: provider.baseURL,
+        gatewayProvider,
+        modelId,
+      })
+      if (pricing) return { kind: 'endpoint', pricing }
+      // A pin that fails to resolve must not fall back to the model-aggregate
+      // rates: that would bill the wrong provider's cost as authoritative
+      // `gateway-rates`. Report unavailable instead.
+      return { kind: 'unavailable' }
+    }
+    const meta = await fetchModelMeta({ gatewayProvider, modelId, provider })
+    if (!meta.rates) return { kind: 'unavailable' }
+    if (ratesAreFree(meta.rates)) return { kind: 'free' }
+    return { kind: 'rates', rates: meta.rates }
+  } catch {
+    return { kind: 'unavailable' }
+  }
+}
+
 export function formatExactSessionCostUsd(amount: string) {
   return `$${amount}`
 }
@@ -157,6 +228,38 @@ export function formatStatuslineCost(props: {
   if (props.captureExpected || props.estimatedCost == null) return '—'
   if (ratesAreFree(props.rates)) return props.estimatedCost
   return `~${props.estimatedCost}`
+}
+
+// The pricing of the first active endpoint matching the pin. Mirrors the fetch +
+// filter of `fetchGatewayRateLabel`, but returns usable rates, not a label.
+// Undefined means no matching endpoint (or the fetch failed). A pin must then
+// resolve to unavailable — never fall back to model-aggregate rates.
+async function fetchEndpointPricing(props: {
+  apiKey: string | undefined
+  baseURL: string
+  gatewayProvider: string
+  modelId: string
+}): Promise<EndpointPricing | undefined> {
+  try {
+    const modelPath = props.modelId.split('/').map(encodeURIComponent).join('/')
+    const body = await fetchJson(
+      `${withV1(props.baseURL)}/models/${modelPath}/endpoints`,
+      props.apiKey,
+    )
+    const match = gatewayEndpointsSchema
+      .parse(body)
+      .data.endpoints.find(
+        (endpoint) =>
+          (endpoint.status == null || endpoint.status === 0) &&
+          gatewaySlugMatches(
+            endpoint.tag ?? endpoint.provider_name,
+            props.gatewayProvider,
+          ),
+      )
+    return match?.pricing
+  } catch {
+    return undefined
+  }
 }
 
 // Compact $ for the bar: $1.5, $0.15, $12 — drop trailing zeros past 2 decimals
@@ -193,6 +296,89 @@ export function sessionCostUsd(
       usage.cacheWrite * cacheWriteRate) /
     1_000_000
   return formatSessionCostUsd(usd)
+}
+
+// Cost of eh's own normalized usage against a resolved rate card. Returns the
+// cost source so unavailable rates are reported, never fabricated as $0.
+export function headlessCost(
+  card: HeadlessRateCard,
+  usage: NormalizedUsage,
+): { costSource: HeadlessCostSource; costUsd: number | undefined } {
+  if (card.kind === 'free') return { costSource: 'free', costUsd: 0 }
+  if (card.kind === 'unavailable') {
+    return { costSource: 'unavailable', costUsd: undefined }
+  }
+  const rates =
+    card.kind === 'endpoint' ? endpointRates(card.pricing, usage) : card.rates
+  if (!rates) return { costSource: 'unavailable', costUsd: undefined }
+  if (ratesAreFree(rates)) return { costSource: 'free', costUsd: 0 }
+  return { costSource: 'gateway-rates', costUsd: gatewayCostUsd(rates, usage) }
+}
+
+// Numeric cost from per-million rates. Unlike sessionCostUsd this never returns
+// undefined for missing cache rates: AC-4 bills cache reads/writes at the
+// regular input rate when the endpoint publishes no cache rate — a provider that
+// gives no cache discount charges cache tokens as ordinary input, so input-rate
+// is the non-fabricating default (zero would understate the bill).
+export function gatewayCostUsd(rates: ModelRates, usage: NormalizedUsage) {
+  const cacheReadRate = rates.cacheReadPerMillion ?? rates.inputPerMillion
+  const cacheWriteRate = rates.cacheWritePerMillion ?? rates.inputPerMillion
+  return (
+    (usage.input * rates.inputPerMillion +
+      usage.output * rates.outputPerMillion +
+      usage.cacheRead * cacheReadRate +
+      usage.cacheWrite * cacheWriteRate) /
+    1_000_000
+  )
+}
+
+// Convert per-endpoint pricing to per-million rates for the given usage. Tiers
+// are treated as context brackets: the bucket is charged at the matched tier's
+// rate. Returns undefined when neither a base rate nor a tier resolves.
+export function endpointRates(
+  pricing: EndpointPricing,
+  usage: NormalizedUsage,
+): ModelRates | undefined {
+  // The prompt tier is a context bracket: it keys on the full context, cache
+  // tokens included, matching `contextUsedPercentage`'s context definition.
+  const inputPerMillion = tierRate(
+    pricing.prompt,
+    pricing.prompt_tiers,
+    usage.input + usage.cacheRead + usage.cacheWrite,
+  )
+  const outputPerMillion = tierRate(
+    pricing.completion,
+    pricing.completion_tiers,
+    usage.output,
+  )
+  if (inputPerMillion == null || outputPerMillion == null) return undefined
+  return {
+    cacheReadPerMillion: perTokenToPerMillion(
+      pricing.cachedInputTokens ?? pricing.input_cache_read,
+    ),
+    cacheWritePerMillion: perTokenToPerMillion(
+      pricing.cacheCreationInputTokens ?? pricing.input_cache_write,
+    ),
+    inputPerMillion,
+    outputPerMillion,
+  }
+}
+
+// Pick the tier bracket containing `count` and return its per-million rate;
+// fall back to the base rate, then the first tier.
+function tierRate(
+  base: number | string | undefined,
+  tiers: undefined | z.infer<typeof priceTierSchema>[],
+  count: number,
+) {
+  const match = tiers?.find(
+    (tier) =>
+      count >= (tier.min ?? 0) && (tier.max == null || count <= tier.max),
+  )
+  if (match) return perTokenToPerMillion(match.cost)
+  const fromBase = perTokenToPerMillion(base)
+  if (fromBase != null) return fromBase
+  return perTokenToPerMillion(tiers?.[0]?.cost)
 }
 
 // Context % matching Claude Code's formula (input-side only; not output):
