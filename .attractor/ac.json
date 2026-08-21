@@ -1,0 +1,22 @@
+{
+  "acs": [
+    {
+      "id": 1,
+      "criterion": "`eh run --read-only` maps each of the five harnesses to its verified mechanism exactly per the spike's table, via a new mapping module analogous to `src/approval-mode.ts` (not an extension of `APPROVAL_MODES` — approval and write-restriction are independent axes). Proof: per-harness subprocess tests asserting the exact args, per the `createFakeHarness` pattern.",
+      "status": null,
+      "evidence": null
+    },
+    {
+      "id": 2,
+      "criterion": "Invariant: a lane started with `--read-only` is never silently unrestricted — a harness the spike marked \"no mechanism\" behaves exactly as the spike decided (refuse to launch or loud warning, per the decision), with a test for that path.",
+      "status": null,
+      "evidence": null
+    },
+    {
+      "id": 3,
+      "criterion": "`--read-only` composes with `defaultApprovalMode: auto` per the spike's decided interaction (both active in one run), with a test covering the combined args.",
+      "status": null,
+      "evidence": null
+    }
+  ]
+}

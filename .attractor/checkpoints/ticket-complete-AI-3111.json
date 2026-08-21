@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:48:30.863Z",
-  "currentNodeId": "plan",
+  "currentNodeId": "verify_plan",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -107,12 +107,181 @@
         "inputTokens": 9768,
         "outputTokens": 1524
       }
+    },
+    "plan": {
+      "completedAt": "2026-08-21T15:53:55.442Z",
+      "nodeId": "plan",
+      "artifacts": [
+        {
+          "agentRunId": "d5cc1ecb-54e2-44ff-ae79-bad3056d6863",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "c620fa6adeb8e6368c590735c13fc7c8fa814da067a8b224b37b25d80530d1c7",
+              "sizeBytes": 435520
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0e9834e9-07ef-4454-b066-99c7035a85fa.request.json",
+              "sha256": "97c0d1b717d780cdb5024292db615b986bb4661f20fe60c4180d6c27bf38930d",
+              "sizeBytes": 314134
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/15ee1c2f-c7ae-488c-bfdc-46f70cb14702.request.json",
+              "sha256": "9170c219bfb92e0efc02a40276a9ed25069d801fe13a4cd9f6ee69f911425a07",
+              "sizeBytes": 158442
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/1ded50e9-b4d3-4bd3-8b47-9ac0fe239ab3.request.json",
+              "sha256": "38bb675e48d601cfd17b1c5d35792650cb5a5c10d146f2b9beea696a801a5b58",
+              "sizeBytes": 236839
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/68cc3562-1621-496c-a245-6b93efeca15c.request.json",
+              "sha256": "9c34a98cb043db541f86d867722a07268c5e7581debfc7aec236d88d27c81cb2",
+              "sizeBytes": 14145
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/69ccff50-c2e8-46a7-a07d-f8baa4cf3e0f.request.json",
+              "sha256": "36bce6e4854f04c86729699e52f24a825818fcae521a2a566e82e66b502a54ac",
+              "sizeBytes": 269608
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/83584792-7dd1-42d7-aa16-7763674c3906.request.json",
+              "sha256": "df68b9ca24aedfb535f4a81fb5fb6c660eb10336e4630032e48efaad884a8920",
+              "sizeBytes": 149570
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8db7035d-98f3-49b0-aa57-e52d502d517d.request.json",
+              "sha256": "b8080278c2ce63aa286f4bc9d99cce23ad7a63b24cbab092e3bcba38f3b7d105",
+              "sizeBytes": 275405
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8e35afff-ec32-4661-b2aa-7584eb8ed734.request.json",
+              "sha256": "d2d6013374473de5ed482eaa66581dc7e97a73df8cae9418927098a6e955487e",
+              "sizeBytes": 87573
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ca21b71d-272d-4c11-8d21-3e804be8fe96.request.json",
+              "sha256": "5bd0b0de2a63c57f508d54631c070ace72814d18daa3743635350645ef421d22",
+              "sizeBytes": 312894
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d8dd758c-569c-4007-bbad-e0e3995227a1.request.json",
+              "sha256": "7b610d0666625b50a1ef981149ecaf2d95ec9b775ff392cdf51751b092b58875",
+              "sizeBytes": 231493
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA5troiYGBMyQCQCoWn.response.json",
+              "sha256": "b12b2d922d6928c017be35a8ffdc04265f6b9fae4db9a5b65cbfe01e0331fbb5",
+              "sizeBytes": 819
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA5vP5istcV9XxUbdzP.response.json",
+              "sha256": "62a7b7b89791bc127aafff72b0db5d4ce03db8563c7ebd3425bc50995606f475",
+              "sizeBytes": 2503
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA6MK2EpbEffViLX12g.response.json",
+              "sha256": "4bb441f28e451baca5365418b0c68a11651ed618a69be31b45e7183f0934a327",
+              "sizeBytes": 5298
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA7mMQyEpYo2aM2FVT4.response.json",
+              "sha256": "9d277b87684f0d9afaf81633bc76538874149f13b94070210f42b5d3d6a73161",
+              "sizeBytes": 2054
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA878YqN4r7GeJUs5to.response.json",
+              "sha256": "b2eee30c50d1f2720b58149b80b10573a15775f58c93b4dd4614c62b0ed2fe5d",
+              "sizeBytes": 2280
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA8eKH7HxUAjD9sSacH.response.json",
+              "sha256": "0a5a0280d67752c85c72b23fff8f5ff1474ad26273e54b848ea9c083fb3de01c",
+              "sizeBytes": 25192
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAF9oyU3gygYJZf6GH3.response.json",
+              "sha256": "7ac6d0d53c09ebc00b27d82bebcf04dd50f80aed6990b3ce3df1bf436028f5ee",
+              "sizeBytes": 2268
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAFgyDRWfdcGvGACgbs.response.json",
+              "sha256": "5d8ef62dd6c2362f0f3198fe8457beba1fe7f4e117dfc42bf1dc46a335ece108",
+              "sizeBytes": 37470
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGASV8su9zC7ufVTuN2v.response.json",
+              "sha256": "d980cfd711e2faffba5344c3bc1b013c197c77050b81ec5301da19defea7cf25",
+              "sizeBytes": 1697
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGASmPgAevXQg3dodSD9.response.json",
+              "sha256": "bc56ecc207433e9d14e7be772715f760ba37edd804dc5642aea86503f7fd3d3f",
+              "sizeBytes": 2638
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "b20136850371999180cfc0cff496451c4842454396dd1c2d7b53bdac129c17ab",
+              "sizeBytes": 23846
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/plan/attempt-0-d5cc1ecb-54e2-44ff-ae79-bad3056d6863",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/plan/attempt-0-d5cc1ecb-54e2-44ff-ae79-bad3056d6863/manifest.json",
+          "nodeId": "plan",
+          "pipelineId": "ticket-complete-AI-3111",
+          "runtime": "claude",
+          "sessionId": "315dbb5b-6948-4c33-b6e5-9ce04cafb934",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll start by exploring the key files this ticket depends on. Let me read them in parallel.\nNow let me explore the remaining pieces: `main.ts` run command, the test file, types, and all usages of the approval functions.\nNow let me look at the run command in main.ts, the test file with the `createFakeHarness` pattern, and the reference commit.\nLet me read the exact `run` command definition in main.ts and check the config/flow for the approval-mode label handling.\nLet me read the remaining doc sections and version file needed for precise plan instructions.\nLet me check the QA doc's relevant section and confirm the plans directory state.\nI have everything I need. This ticket fits comfortably in one run (9 authored file units, 3 tasks). No staging needed. Let me write the plan and sidecar files.\nPlan and sidecar files written. Let me verify the plan's line count is within budget.\nPlan complete. Summary of what I produced for **AI-3111**:\n\n## Exploration findings (verified against real code)\n- **Spec source**: `docs/read-only.md` (spike AI-3110) — mapping table (lines 27–33), collision findings (41–53), and decision (56–89). All read-only args and suppression rules verified there.\n- **Reference pattern**: `src/approval-mode.ts:1-46` — the switch + `unreachable` guard structure the new module mirrors.\n- **Wiring path**: 5 `approvalArgsForHarness` call sites in `src/harnesses.ts` (lines 139/198/226/286/346), threaded via `HarnessPlanOptions` → `buildLaunchPlan` → `runHeadless` (`src/headless-run.ts`) → `--read-only` on the `run` command (`src/main.ts`).\n- **Test pattern**: `createFakeHarness` fixtures in `src/headless-run.test.ts` (approval-default test at :289-333 is the direct model for the composition test).\n\n## Key design decision (from the spike, not re-litigated)\nBecause native flags collide on codex (`--sandbox` vs `--approve-for-me`) and grok (repeated `--permission-mode`), read-only can't be an independent arg-appender. The new `src/permission-posture.ts` is the **single resolution point over both axes**: read-only wins and suppresses approval args — except opencode, where `--agent plan` composes with `--auto`. It reuses `approvalArgsForHarness` rather than replacing it, so `approval-mode.ts` and its tests stay untouched.\n\n## Deliverables\n- `.plans/AI-3111-read-only-across-harness-adapters.md` (289 lines, under budget) — 3 committable tasks, full module transcription, all load-bearing assumptions marked VERIFIED with evidence.\n- `.attractor/ac.json` — all 3 ticket acceptance criteria, verbatim.\n- `.attractor/plan-meta-draft.json` — 3 task titles, 10 file-map entries (9 authored units, ≤10).\n\nWhole ticket fits one run — **no staging**, no `plan-remainder.json`.\n",
+      "retryCount": 0,
+      "sessionId": "315dbb5b-6948-4c33-b6e5-9ce04cafb934",
+      "startedAt": "2026-08-21T15:48:59.313Z",
+      "usage": {
+        "cacheReadTokens": 641255,
+        "cacheWriteTokens": 100809,
+        "costUsd": 1.59320175,
+        "inputTokens": 10721,
+        "outputTokens": 23418
+      }
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3111",
   "status": "running",
-  "updatedAt": "2026-08-21T15:48:57.983Z",
+  "updatedAt": "2026-08-21T15:53:55.444Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -154,6 +323,20 @@
         "outputTokens": 1524
       },
       "visits": 1
+    },
+    "plan": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 296129,
+      "usage": {
+        "cacheReadTokens": 641255,
+        "cacheWriteTokens": 100809,
+        "costUsd": 1.59320175,
+        "inputTokens": 10721,
+        "outputTokens": 23418
+      },
+      "visits": 1
     }
-  }
+  },
+  "workPushed": true
 }
