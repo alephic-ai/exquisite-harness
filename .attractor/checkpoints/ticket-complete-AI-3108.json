@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:48:36.411Z",
-  "currentNodeId": "evaluate_review",
+  "currentNodeId": "fix_count_gate",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1567,6 +1567,127 @@
         "inputTokens": 9781,
         "outputTokens": 3697
       }
+    },
+    "evaluate_review": {
+      "completedAt": "2026-08-21T16:19:08.873Z",
+      "nodeId": "evaluate_review",
+      "artifacts": [
+        {
+          "agentRunId": "9f45b088-f122-4e06-ab9d-6e2220597a35",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "21ea5702597ef3c144d1dd61abacde328e1d2deff55b30bb2e259b2ef8608851",
+              "sizeBytes": 149635
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/419dfc01-8ce6-4faf-828c-bba9785b6f38.request.json",
+              "sha256": "eee14badce9fd3062b50649e014a95ac6d14c12c69f0b5944f9481c212db51c7",
+              "sizeBytes": 118630
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/43a7816b-a73f-440d-abbe-4a864513bd82.request.json",
+              "sha256": "1c5d26125d65fc6cfdee14e75b8589f7a4ffee4e93a9fec40b68d34e0c99ef57",
+              "sizeBytes": 98250
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d38bc039-546f-4411-be6e-77a83d66c4a9.request.json",
+              "sha256": "8b02e055b1db6e1d5c8acb7e19938fedbec759669b27e6c52303c8d12bafaf1e",
+              "sizeBytes": 146352
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d97b96c9-9a33-4ed9-bcf3-bae004da2d74.request.json",
+              "sha256": "d46054f8fdc437ae1f34e930a247d3ccd40b1fdb5b9be5717492246e1f1fc7de",
+              "sizeBytes": 174924
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e2dc4277-560b-4d39-b654-b44c94b0dd25.request.json",
+              "sha256": "285576ef88c3393bf813cd80476d2c3cd883ca857213a7b264d6417a0b88deb0",
+              "sizeBytes": 24900
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f947d685-f641-4efb-a580-b4ef248f9169.request.json",
+              "sha256": "dcc420d23f5490e2f8d4d1585dc0c022424b06546d0aaa2346e3fd4e3b31e510",
+              "sizeBytes": 176607
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC8NdC8KRDtty9KHZqf.response.json",
+              "sha256": "fd2cb8aaebfa3504dad1b5bb1bd753ac33b5f17f2dfe05986033e768e7a940ff",
+              "sizeBytes": 831
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC8PQ5RfzBzqKogR4Si.response.json",
+              "sha256": "34110b3eb5ed697e574067eb4eebb31d839fb138577448423aac51ac405e1604",
+              "sizeBytes": 3635
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGC9AL3N6iVyPsQ6gh4V.response.json",
+              "sha256": "b486b778e2372454ec8f0ccc64312b8b786c37797f8bed8deecf9afc9d89532f",
+              "sizeBytes": 19587
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCERrKyAJSsPNggcsty.response.json",
+              "sha256": "ea77c3c0772d5bba68f5ceafa4473fc6acfc253e84e131eb619e37f9f7075ab3",
+              "sizeBytes": 28556
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCMmcucbpoGCBMs96UZ.response.json",
+              "sha256": "56bca355b8fb00d00be5be092a05ca13256f2a64125af2971368b17add72b412",
+              "sizeBytes": 2106
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCN9N7Q2ktAZ76MuKoq.response.json",
+              "sha256": "247a7ef4650534f075f381196b03b6e9d375e5e1e50b7609103d3a09297ca5df",
+              "sizeBytes": 3539
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "a0bc4e80439e10df0a2445373b6d704a73e7ce7dce52fc56c31b4273cf85bc30",
+              "sizeBytes": 30379
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3108/b3eb78e84ea1-1cfa0b6f-3c2f-43f4-95f5-1fa23136a318/agent-artifacts/evaluate_review/attempt-0-9f45b088-f122-4e06-ab9d-6e2220597a35",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3108/b3eb78e84ea1-1cfa0b6f-3c2f-43f4-95f5-1fa23136a318/agent-artifacts/evaluate_review/attempt-0-9f45b088-f122-4e06-ab9d-6e2220597a35/manifest.json",
+          "nodeId": "evaluate_review",
+          "pipelineId": "ticket-complete-AI-3108",
+          "runtime": "claude",
+          "sessionId": "45b2d166-35d0-40e8-b6a2-115900ae429c",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "fail",
+      "output": "I'll start by reading the review artifacts, the classified Codex fixes, and supporting docs in parallel.\nNow let me verify the Codex non-correctness finding (DESIGN.md wording) and the guillaumeify finding against the actual source/docs before classifying. I'll also confirm the load-bearing assumptions.\nI now have what I need. Let me analyze the findings against the actual code and docs.\n\n**Classification analysis:**\n\n1. **Codex Blocker** (`headless-run.ts` — unwritable `--result-file` drops `run.completed`): Already adopted as immutable Cat-1 by the ticket-blind `classify_codex` node. I copy it verbatim — confirmed real: grep shows `writeResultFile` awaited at lines 363 & 390 *before* the `run.completed` emit, and line 152 (`if (state.executionStarted) throw error`) re-throws once spawned, so a write failure skips the terminal event.\n\n2. **guillaumeify Suggestion** (`headless-run.ts:805-807` — same `writeFile` no-error-handling → `run.completed` dropped): This is the **same defect at the same location** as the adopted Codex Cat-1 fix (same root cause, same prescribed change). It is fully subsumed — I will not add a duplicate `## Fix:` block.\n\n3. **Codex Suggestion** (non-correctness, `DESIGN.md:114`): Verified real but minor. DESIGN.md says \"empty for no-result or error runs\"; actual behavior + README say empty only \"when the run produced no result text\" — an error run carrying a native result / prior `assistant.text` yields a non-empty file. Capped at Cat-2/Cat-3 (Codex non-correctness). README (the orchestrator-facing doc) is already precise; DESIGN.md is the internal design doc; the fix is a ~3-word tweak, not standalone-PR-worthy. → **Category 3 (skip)**, not a \"clear value\" follow-up.\n\n**Load-bearing assumptions:** All 5 in the plan are marked VERIFIED with recorded evidence; none are UNVERIFIED, so no independent probe is required. The most load-bearing one (`run.completed` is the final line on every path) is exactly what the adopted Cat-1 fix protects on the new write path.\n\nNow writing the artifacts.\nNow the required producer self-validation checks, plus a quick confirmation of the fix-block count.\nBoth self-validation checks passed (`test -s` OK; validator exit 0, \"0 candidates valid\"). `review-fixes.md` has 1 `## Fix:` block, matching meta `{\"fixCount\":1,\"band\":\"tactical\"}`. Since it contains a `## Fix:` block, no stale-file cleanup runs.\n\n**Classification result:**\n- **Cat-1 (carried verbatim):** Codex — `src/headless-run.ts:390-391` (also 363-367): result-file write awaited before `run.completed`; unwritable path throws past `runHeadless`'s catch (`executionStarted` true → line 152 re-throws), dropping the terminal event. Copied byte-verbatim from `codex-correctness-fixes.md`.\n- **Subsumed (no new block):** guillaumeify `headless-run.ts:805-807` — same defect/location/fix as the adopted Codex Cat-1; not duplicated.\n- **Cat-3 (skip):** Codex non-correctness — `DESIGN.md:114` \"empty for no-result or error runs\" is imprecise (error runs carrying a native result or prior `assistant.text` yield non-empty files), but README already states the precise wording; a ~3-word internal-doc tweak, not \"clear value\" for a follow-up. Blind node also judged it non-correctness.\n- **Load-bearing check:** All 5 plan assumptions recorded VERIFIED; none UNVERIFIED, no probe required. The `run.completed`-is-final assumption on the new write path is exactly what the adopted Cat-1 fix protects.\n\nArtifacts: `review-fixes.md` (1 fix), `review-fixes-meta.json` (`{\"fixCount\":1,\"band\":\"tactical\"}`), `follow-up-candidates.json` (0 candidates, validated).\n\nSTATUS:fail\n",
+      "retryCount": 0,
+      "sessionId": "45b2d166-35d0-40e8-b6a2-115900ae429c",
+      "startedAt": "2026-08-21T16:15:47.014Z",
+      "usage": {
+        "cacheReadTokens": 190344,
+        "cacheWriteTokens": 44908,
+        "costUsd": 0.811905,
+        "inputTokens": 9908,
+        "outputTokens": 15202
+      }
     }
   },
   "parallelBranches": {
@@ -1577,7 +1698,7 @@
   },
   "pipelineId": "ticket-complete-AI-3108",
   "status": "running",
-  "updatedAt": "2026-08-21T16:15:45.805Z",
+  "updatedAt": "2026-08-21T16:19:08.878Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1851,6 +1972,19 @@
         "costUsd": 0.43597175,
         "inputTokens": 9781,
         "outputTokens": 3697
+      },
+      "visits": 1
+    },
+    "evaluate_review": {
+      "handler": "codergen",
+      "outcome": "fail",
+      "totalDurationMs": 201859,
+      "usage": {
+        "cacheReadTokens": 190344,
+        "cacheWriteTokens": 44908,
+        "costUsd": 0.811905,
+        "inputTokens": 9908,
+        "outputTokens": 15202
       },
       "visits": 1
     }
