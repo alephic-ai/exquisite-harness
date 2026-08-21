@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:47:30.420Z",
-  "currentNodeId": "plan",
+  "currentNodeId": "verify_plan",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -107,12 +107,277 @@
         "inputTokens": 9768,
         "outputTokens": 1497
       }
+    },
+    "plan": {
+      "completedAt": "2026-08-21T15:56:25.087Z",
+      "nodeId": "plan",
+      "artifacts": [
+        {
+          "agentRunId": "c411e415-0982-4196-97f9-64e42d449ae5",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "9db9dca385ae6541139b6fea39d41d2b8c65ab790de4512b32a2a36c829def57",
+              "sizeBytes": 502970
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/04470156-ba54-4a57-80ef-66d64c38259e.request.json",
+              "sha256": "d201e8209575de147625b89ba80f46d97c6e78fc76b90041e5c17161697dbaa3",
+              "sizeBytes": 351790
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/256ac1fb-3486-4122-bc59-85677ebbbdca.request.json",
+              "sha256": "90bda4dfaca2273b195b4e06ee05ea8014be7f7690bf96d944f2581c844943fe",
+              "sizeBytes": 320656
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2994495e-dd6b-4dd4-bed8-7e78f0b44b74.request.json",
+              "sha256": "2bdda550dc6bafaee42b8a0e4f5c008651d9fc40cbd635bddccf9bdd161fe24f",
+              "sizeBytes": 256913
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2d8bfbb8-7047-483f-8e23-883b2a6ba6eb.request.json",
+              "sha256": "aaf12452733fa28255b069aff5da2838f3d32bdeb2f8638cb3e9db22719ba201",
+              "sizeBytes": 13546
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6379b870-3c6e-44db-a3ac-94b3301c4e27.request.json",
+              "sha256": "7228c1f11fe721a12e48d61491746db495d67b0f4c96e05e15077ac8c708a352",
+              "sizeBytes": 285767
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6f6927dd-5aa0-4eec-9d3f-989b34063c28.request.json",
+              "sha256": "38caeb0cfbd4078029fc29dd8a98269d6e31bac229225ece496158f479d8b945",
+              "sizeBytes": 318529
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/74b07865-7fc5-4a37-ab2d-def66977ed47.request.json",
+              "sha256": "d21a00f2ae94e21a9d8ce1c219f707c7391caffc15caa5eacd0dc015b9b881b0",
+              "sizeBytes": 348969
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/74c7f8d1-b2ee-46ea-aee4-cfdc16206888.request.json",
+              "sha256": "62d26e0f43d2b159b282d9419e424fc022a8827da3d1f6ec3e57d5b77967a2df",
+              "sizeBytes": 156484
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/79f87f8d-4918-4f8f-9276-d45073d8e80e.request.json",
+              "sha256": "b3f5a24750867ada62f24c5c77a5597a2dad2e1611b823e7e332560b9158f2ca",
+              "sizeBytes": 216067
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/98efe96b-6339-45c9-92a1-9216c391435c.request.json",
+              "sha256": "67f484a7ca2f01f09145614e4accc00dfb10b9878ac716011cb5e730f5422bcb",
+              "sizeBytes": 324963
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a761e9eb-b87c-47a7-805b-e4ddb3563c39.request.json",
+              "sha256": "de8267eac0abaae8520a3b3e73248bc7f51dee49d21a7a8e23a2231931b2540f",
+              "sizeBytes": 262439
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a8895333-7959-441f-9fa2-0d4df96ff6cc.request.json",
+              "sha256": "7e5c5c716fea912c00fde4fa73d78b1521442b45fe7d0381b40393d81ed0bd0c",
+              "sizeBytes": 352858
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a9cbf5c5-61b9-439f-bcfe-e0241de42fc4.request.json",
+              "sha256": "70415b8213030aa93d1010e6f92ef4a32f631e1bd3a88254d03c6d859bc9c68d",
+              "sizeBytes": 208930
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bdfc69d1-a524-42c7-8f5f-1824f15f4001.request.json",
+              "sha256": "6823a088ff7f2d59a4938f94273ec60707ba8c12751e73a47a5a701008710ca1",
+              "sizeBytes": 86972
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bff33c4a-c16b-4e5f-b396-09a894695646.request.json",
+              "sha256": "5806156fe22d38c591699940211eeed16aec36b53f6b96b6f4f233a58334e0a1",
+              "sizeBytes": 289765
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c5a6a2da-327b-4937-a20c-50623d0892f8.request.json",
+              "sha256": "7ea7c492adbb1bd7e5fd6d3dc255acdbbe1e6334f4c3c69cde82e2f8b118988c",
+              "sizeBytes": 354545
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cca6f8c3-24f6-4aa0-adcb-e7f7d1c2671e.request.json",
+              "sha256": "fa653db040c30c8a7f25c36349340a9687d12a803a7a336139a0c8d02d56f87d",
+              "sizeBytes": 205813
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/fdf1f824-f097-4831-8c14-edf54dee508d.request.json",
+              "sha256": "ffe769e6afc4c249e262e9d57b8db68fc03401a2c84718b71447f939eb519a6a",
+              "sizeBytes": 293989
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA1F8ZntV71WemrZLo5.response.json",
+              "sha256": "f8ecb0020fc1d9a8e9fc09b307228b3479852e3d1410338d7ad47cd9a4d23c2f",
+              "sizeBytes": 824
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA1Fqj6fXhpsur6Jc4f.response.json",
+              "sha256": "aa9220aa630eae78469b20ae8bb795b032cd1e782a06a7d44031a3c922bbd6fc",
+              "sizeBytes": 1912
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA1XXJCd7uDTbwskodr.response.json",
+              "sha256": "9d1a05b105e21104e32477d2052f33aa3f3f77416a7e2545f79b64382f960138",
+              "sizeBytes": 2268
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA1xzz2SCEBWoWYheXn.response.json",
+              "sha256": "07ce737edb5b6255fcd038e7a43897ac56986061887c448771e443299f30619a",
+              "sizeBytes": 2164
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA2PFVoQM1PRDjsaanc.response.json",
+              "sha256": "3e0f0010f5fa46827ed66fa27fd1f9faa637525fc2282842e03c360199774b7c",
+              "sizeBytes": 1125
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA2edDEa4Tp1sfvuoEe.response.json",
+              "sha256": "79768c66a09e6ecaae21e2ae669924323f99776303ddef4d06d9be3287513b93",
+              "sizeBytes": 36519
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGACPKEs7uqosncEdZPY.response.json",
+              "sha256": "817ade67023a3e3c62ee1c5c0dc95b933e745b195d0798f75464192dd0661d48",
+              "sizeBytes": 2243
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGACuSULKJsnGuc349T5.response.json",
+              "sha256": "3f48fbc8a000e8747c7dc24bdf63d6dadc1aa85378cb6ddeb3867347bd85382e",
+              "sizeBytes": 22239
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAKDwPAKs44muGWUqsA.response.json",
+              "sha256": "d04f4fa986a640d14246666a0736e385f6ce4bcaa1fa3f51d1ebd6da619bedb4",
+              "sizeBytes": 930
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAKQT9kHvuyR1rW5zcr.response.json",
+              "sha256": "135ebbd9ab0b1a00a5121274cbecfe0948838f50dc77b53d93b6d670832b4b22",
+              "sizeBytes": 2598
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAKyBQ4Vf4Hue39Q7RK.response.json",
+              "sha256": "f41d072f82ef3f66332762c314821127a28756652691bcd55321644c9f573343",
+              "sizeBytes": 24893
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAT5bYutJCX9UBR9x6V.response.json",
+              "sha256": "53003156408def53c4244c4f2d2f74a20cb794e65454b8bff9b7c8842c5da5ef",
+              "sizeBytes": 2199
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGATYyqJNjoKvLmvnCVb.response.json",
+              "sha256": "0e15cfc6e14c43ac84d05f7e473f33b1cd61c032d6fec51c5f99ea5925b07acf",
+              "sizeBytes": 945
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGATjoD55vLnyhRTjeZD.response.json",
+              "sha256": "d1cbf9ab81ec0f3bf21b73ab1948dcbf89580c7037505bbb4464a4bda5832793",
+              "sizeBytes": 24446
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAcE6XZFNvZrhc9LszH.response.json",
+              "sha256": "2bf95278df91c9cfcd65db9ab893ab89ce15149bba2e67cdaa32fd4fe0ff701e",
+              "sizeBytes": 3288
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAd23m4crjxqjDNNLEG.response.json",
+              "sha256": "e63ffb89b222bbd64078ee1697b6944567d4f8999fb3540da02e4562350377be",
+              "sizeBytes": 1518
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAdLGP6vsn5S2Sn6bMN.response.json",
+              "sha256": "42983cecf91cf4ed3e3363c8a97c5721a8e1a7825800264579b055a19b04eaa6",
+              "sizeBytes": 1719
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAde9fd9mPw5n4pEMFt.response.json",
+              "sha256": "c3be0703304ee4f485efc0eefcec5e8fa6218a5c572e3334f26139cbcc424db5",
+              "sizeBytes": 2835
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "c6eda15ab13bc433b68950e5d1e41baded4b6a3b3e1705250ec77ad9adf2e400",
+              "sizeBytes": 31711
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/plan/attempt-0-c411e415-0982-4196-97f9-64e42d449ae5",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/plan/attempt-0-c411e415-0982-4196-97f9-64e42d449ae5/manifest.json",
+          "nodeId": "plan",
+          "pipelineId": "ticket-complete-AI-3129",
+          "runtime": "claude",
+          "sessionId": "cc5d0d45-ac71-427f-993a-7c75ad745b69",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll start by exploring the codebase to verify the ticket's claims before writing the plan.\nLet me examine the supporting modules and tests to understand the structure.\nLet me look at the harnesses launch plan, where `fetchModelMeta` is used, and the headless-run test patterns.\nLet me look at the test patterns for pricing and headless-run to ground the plan's testing approach.\nI have enough understanding. Let me verify the existing state of `.attractor/` and `.plans/` before writing.\nNo remainder file exists. I have full verification. Writing the plan and sidecars now.\nPlan and sidecars written. Let me confirm the plan size and that no remainder file exists (single-run, no staging).\nPlan complete. Summary of what I produced:\n\n**Plan:** `.plans/AI-3129-gateway-rate-costusd-headless.md` (258 lines, under budget)\n\nThe key discovery that shaped the plan: I verified against `src/pricing.test.ts` that `fetchModelMeta`'s gateway `rates` are **model-aggregate**, not per-endpoint — the pinned-vs-unpinned assertions return identical `rates`, only `rateLabel` reflects the pin. So AC-1 (\"per-endpoint pricing, not model-aggregate\") genuinely requires a new rate-resolution path, not just wiring up existing rates. This is the kind of ticket claim (\"eh already owns the authoritative rate source\") that's *true* but hides that the existing source is used at the wrong granularity.\n\n**Design across 3 committable tasks / 6 files (4 authored units):**\n\n1. **Pricing** — new pure/fetch functions in `src/pricing.ts`: `fetchHeadlessRateCard` (returns a discriminated `free` / `endpoint` / `rates` / `unavailable` card), `endpointRates` (tier bracket selection), `gatewayCostUsd`, `headlessCost`. Extends the endpoint schema with cache fields. Fully unit-testable via the existing `createServer` fixture pattern.\n2. **Headless** — accumulate eh's own normalized usage (with a \"cumulative total wins; else sum deltas\" rule that avoids grok's double-emit), rename per-event harness cost to `harnessCostUsd`, emit a final summary `usage` event with computed `costUsd` + `costSource`, bump `PROTOCOL_VERSION` to `2`.\n3. **Docs** — README + DESIGN.\n\n**Two delegated judgment calls, both marked UNVERIFIED (no live gateway key in this repo) with defensive designs and synthetic-fixture test coverage:**\n- AC-4 cache fallback → bill missing cache rates at the **input rate** (a no-discount provider bills cache as ordinary input; zero would understate).\n- Tier semantics → context brackets, matched tier's rate applied to the bucket.\n\n`.attractor/ac.json` carries all 5 acceptance criteria verbatim; `.attractor/plan-meta-draft.json` mirrors the tasks and file map. No `plan-remainder.json` — the honest plan fits one run.\n",
+      "retryCount": 0,
+      "sessionId": "cc5d0d45-ac71-427f-993a-7c75ad745b69",
+      "startedAt": "2026-08-21T15:47:56.678Z",
+      "usage": {
+        "cacheReadTokens": 1535050,
+        "cacheWriteTokens": 110178,
+        "costUsd": 2.4170125000000002,
+        "inputTokens": 10190,
+        "outputTokens": 36263
+      }
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3129",
   "status": "running",
-  "updatedAt": "2026-08-21T15:47:55.413Z",
+  "updatedAt": "2026-08-21T15:56:25.088Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -154,6 +419,20 @@
         "outputTokens": 1497
       },
       "visits": 1
+    },
+    "plan": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 508409,
+      "usage": {
+        "cacheReadTokens": 1535050,
+        "cacheWriteTokens": 110178,
+        "costUsd": 2.4170125000000002,
+        "inputTokens": 10190,
+        "outputTokens": 36263
+      },
+      "visits": 1
     }
-  }
+  },
+  "workPushed": true
 }

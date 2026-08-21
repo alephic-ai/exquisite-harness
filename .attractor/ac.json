@@ -1,0 +1,9 @@
+{
+  "acs": [
+    { "id": 1, "criterion": "`eh run` computes cost from its own cumulative normalized usage x the resolved model's gateway rates — honoring `--gateway-provider` pins (per-endpoint pricing, not model-aggregate) and tiered prompt/completion rates — and emits it on the final `cumulative: true` `usage` event and/or `run.completed` as `costUsd` with `costSource: \"gateway-rates\"`.", "status": null, "evidence": null },
+    { "id": 2, "criterion": "A harness-reported cost, when present, is preserved in a separate field (e.g. `harnessCostUsd`), never silently preferred over the computed one.", "status": null, "evidence": null },
+    { "id": 3, "criterion": "When rates are unavailable (ollama, unknown model), no fabricated cost is emitted and `costSource` says why.", "status": null, "evidence": null },
+    { "id": 4, "criterion": "Cache read/write tokens are billed at the endpoint's published cache rates; when an endpoint publishes no cache rates, the chosen behavior (bill as regular input vs zero) is explicit and documented in the code.", "status": null, "evidence": null },
+    { "id": 5, "criterion": "If the event shape changes, the NDJSON event `v` field is bumped per eh's versioned-stream convention.", "status": null, "evidence": null }
+  ]
+}
