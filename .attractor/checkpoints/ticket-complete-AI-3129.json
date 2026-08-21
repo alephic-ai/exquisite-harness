@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:47:30.420Z",
-  "currentNodeId": "plan_size_gate",
+  "currentNodeId": "plan_review_gate",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -386,12 +386,26 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-21T15:56:26.408Z"
+    },
+    "plan_size_gate": {
+      "completedAt": "2026-08-21T15:56:29.041Z",
+      "nodeId": "plan_size_gate",
+      "outcome": "success",
+      "output": "STATUS:success",
+      "outputCapture": {
+        "capturedLength": 14,
+        "lengthUnit": "utf16_code_units",
+        "originalLength": 14,
+        "truncated": false
+      },
+      "retryCount": 0,
+      "startedAt": "2026-08-21T15:56:28.767Z"
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3129",
   "status": "running",
-  "updatedAt": "2026-08-21T15:56:27.307Z",
+  "updatedAt": "2026-08-21T15:56:29.041Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -451,6 +465,19 @@
       "handler": "tool",
       "outcome": "success",
       "totalDurationMs": 898,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "plan_size_gate": {
+      "handler": "tool",
+      "outcome": "success",
+      "totalDurationMs": 274,
       "usage": {
         "cacheReadTokens": 0,
         "cacheWriteTokens": 0,
