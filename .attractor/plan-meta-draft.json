@@ -1,1 +1,15 @@
-{"files":[{"changeType":"edit","path":"src/pricing.ts"},{"changeType":"edit","path":"src/pricing.test.ts"},{"changeType":"edit","path":"src/headless-run.ts"},{"changeType":"edit","path":"src/headless-run.test.ts"},{"changeType":"edit","path":"DESIGN.md"},{"changeType":"edit","path":"README.md"}],"taskTitles":["Pricing: rate-card fetch + cost computation","Headless: accumulate usage, emit computed cost","Docs"]}
+{
+  "files": [
+    { "changeType": "edit", "path": "src/pricing.ts" },
+    { "changeType": "edit", "path": "src/pricing.test.ts" },
+    { "changeType": "edit", "path": "src/headless-run.ts" },
+    { "changeType": "edit", "path": "src/headless-run.test.ts" },
+    { "changeType": "edit", "path": "DESIGN.md" },
+    { "changeType": "edit", "path": "README.md" }
+  ],
+  "taskTitles": [
+    "Pricing: rate-card fetch + cost computation",
+    "Headless: accumulate usage, emit computed cost",
+    "Docs"
+  ]
+}
