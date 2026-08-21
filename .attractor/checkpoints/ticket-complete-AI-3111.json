@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:48:30.863Z",
-  "currentNodeId": "evaluate_review",
+  "currentNodeId": "validate_followups",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -2108,6 +2108,199 @@
         "inputTokens": 9777,
         "outputTokens": 1574
       }
+    },
+    "evaluate_review": {
+      "completedAt": "2026-08-21T16:30:27.914Z",
+      "nodeId": "evaluate_review",
+      "artifacts": [
+        {
+          "agentRunId": "b700fe95-d091-40f9-ba8e-b66ffa148ca2",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "c261b2c565eabcf506d29f5c91f588368731e74084ed2b17c5d18c181f99c7db",
+              "sizeBytes": 222472
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/098588ef-bf4f-4f23-bb62-bc67068474c2.request.json",
+              "sha256": "d442964dfcd793f9afde82dea20657d11c2f4ff6678a5891d443f292abeab9f5",
+              "sizeBytes": 106886
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3df2f3c6-0e82-4a9e-8861-eda257daa551.request.json",
+              "sha256": "472a67cfa0c1c52c5287f9111d4857eb088f040afb58c70244ed05fd4befcfd2",
+              "sizeBytes": 206647
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/592ef05b-11c0-47a6-bf78-13caa967441f.request.json",
+              "sha256": "fc8da3bb51f9c9a27372b27e07ecc00b9c77dad437b77872deb4d87a93af10e1",
+              "sizeBytes": 177574
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5f938086-f504-4c75-bac4-dea5227e3fb5.request.json",
+              "sha256": "a3ebf80598c4e294d2d2012cf7715cd512837c2fdf5df90e9c292d071b5840ed",
+              "sizeBytes": 124697
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6a3fe399-7be6-4f45-9c6f-957fe4b65533.request.json",
+              "sha256": "c51f8206835e4de45652bf9a14618d8a16f241c3c039d0f20516e85a1f8d7c06",
+              "sizeBytes": 24966
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8cede596-b160-429a-8de3-507e39aa6141.request.json",
+              "sha256": "5f761b2a93cc43547593461a743c510cb5afe29a075dfdc7ba69e1c5e645b435",
+              "sizeBytes": 133771
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9d017045-4d64-4d77-ab99-d72bf09888bd.request.json",
+              "sha256": "b434d356d95b470a492b93edab61e1694e3327dc24715368cd7716b3263c9776",
+              "sizeBytes": 163003
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a92db529-e26e-48a2-af40-65daf56cec82.request.json",
+              "sha256": "cb0604c2b8b1a96581ec49e4d63314899b90bf705898d4e294a2cf859f7f4846",
+              "sizeBytes": 215638
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b30f82a1-b268-47a2-bd88-8d0280500e62.request.json",
+              "sha256": "c028672ea66ae801d5f03fceb71e89cf5df3fdc423593764126b78f446f7f283",
+              "sizeBytes": 98651
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bff22a97-8c0c-4bed-a847-59e29b809438.request.json",
+              "sha256": "b29520fadf292805a77b549b23a13f361524ca8a25ad2e973b6ee24fe43256e2",
+              "sizeBytes": 136096
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cb297d51-c08b-4bd3-ad96-3086fc0c3a24.request.json",
+              "sha256": "592e174befcca72acaf4cc28723b57077b29c21578649d1454daec523970115d",
+              "sizeBytes": 157273
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d5fd5605-2038-478d-832c-7bf1eaeb3cc9.request.json",
+              "sha256": "78d3ce9149f17d3288560d0191ea637684e9bbc7054428d0b974b82982037653",
+              "sizeBytes": 213860
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCpAW3k7ZscUUA3p1Nq.response.json",
+              "sha256": "2126c23b73e941010e4aa2bbfa8fd7a36a861bf768876101afdfddbe849e50b6",
+              "sizeBytes": 819
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCpBpRf8tDF57dB7RMR.response.json",
+              "sha256": "510803bcd47a588cb5954e0f819b386af0cf68900d2f06824447cc6588292ea9",
+              "sizeBytes": 4123
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCq8ku5WCUSGDLhP1uy.response.json",
+              "sha256": "94358fb9f0d8c13104ee0f0aab9fc544c33b38b44c86fb5655e4e4cc99a893b8",
+              "sizeBytes": 9472
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCsQv49aDPgt3zqxZV5.response.json",
+              "sha256": "28d66976445365b3a9eaeee734d4a9dff993c75002f329d2431d1a9c3807a89f",
+              "sizeBytes": 6492
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCu5RqYC7DRLx2Kdpdj.response.json",
+              "sha256": "0ad6f0ded114e5f5d496cfeec7d4274a4fb8bfbb2695e7cababbbd756b0dd84f",
+              "sizeBytes": 1813
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCuRhjvNCxpzEet1dmE.response.json",
+              "sha256": "c03924909c7c2dddad5fcf0a5b6bcdff858e1ec774f4ee551896feb984de3ef4",
+              "sizeBytes": 20317
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCzZ2ADfpdp4hdu2RLc.response.json",
+              "sha256": "af30d1656e9e1307a44a61b53e2fe8b2bb5ae94737630ff8eb366b7e7a9562fd",
+              "sizeBytes": 2672
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGD1AkEfFBoAiGBm76ky.response.json",
+              "sha256": "0267eda42646cd1465c5e600799e26bbfc5ea6f37bae1e473910481c39b13790",
+              "sizeBytes": 9008
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGD3GMtQmArPY8d5EA7j.response.json",
+              "sha256": "bab7836aa94666d1561c71b1c56e4a626c0efb03f20a85977cb19b54b1e127a4",
+              "sizeBytes": 25899
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGD9yxMVqTAiJyvSURUA.response.json",
+              "sha256": "2d0895eb67e13872eb2d8ea19c62a9159683290deb0eaf62cfbbe375e3b0dce6",
+              "sizeBytes": 7479
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGDBy2MCCF2Hf89fSetf.response.json",
+              "sha256": "6b4bee2938b48013a561b2b91df2c1cd1f6e7d40979eb43342abce3b753708bb",
+              "sizeBytes": 2126
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGDCU9JWUWuTvsRWU42m.response.json",
+              "sha256": "f167622fd007e514f0104c4702d777640c79de42dfb1f54a56d83ee5d95dfca7",
+              "sizeBytes": 4598
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "900e66f6a5c5c1375876fdc626e92b8cc9911727fb119aac5886fe414b7550db",
+              "sizeBytes": 36793
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/evaluate_review/attempt-0-b700fe95-d091-40f9-ba8e-b66ffa148ca2",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/evaluate_review/attempt-0-b700fe95-d091-40f9-ba8e-b66ffa148ca2/manifest.json",
+          "nodeId": "evaluate_review",
+          "pipelineId": "ticket-complete-AI-3111",
+          "runtime": "claude",
+          "sessionId": "63eee08e-c53a-44ae-b087-cf054ede29b6",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll start by reading all the relevant artifacts and context files in parallel.\nNow let me verify the two Codex findings against the actual code, and read the plan for the load-bearing assumption check. Reading these in parallel.\nLet me verify the underlying claims. I need to check the Codex trust-check behavior (Finding 1) and the Grok resolver path (Finding 2) against the actual code and spike doc.\nThe grep confirms a relevant note in the spike doc. Let me read that section of `docs/read-only.md` to evaluate Finding 1 properly.\nThe spike doc (line 99-101) confirms Finding 1's underlying claim: Codex refuses to run in untrusted non-git directories without `--skip-git-repo-check`. Now let me check the plan's Load-Bearing Assumptions section and verify Grok's approval mapping (Finding 2).\nBoth findings' premises are now verified. Grok shares the exact code path with claude (`case 'claude': case 'grok':`) in both mappers. Now let me read the plan's Load-Bearing Assumptions section.\nAll five load-bearing assumptions are marked VERIFIED with recorded citations. Since the check targets UNVERIFIED assumptions, none formally require action — but assumption #2's wording (\"collide for **codex** and grok\") is worth verifying directly, because the code suppresses codex's `--approve-for-me` under `auto + readOnly`, and AC #3 requires the spike's *decided* interaction. Let me read the spike's collision findings and decision.\nThe spike's Decision (lines 67–74) confirms the code matches exactly: codex → `--sandbox read-only` with `--approve-for-me` **suppressed** is the *decided* interaction (codex hard-errors when both are present, line 45–47). So the plan's assumption #2 wording is accurate, not a typo — codex genuinely collides via a different flag pair than grok. All five load-bearing assumptions hold.\n\nOne cheap independent check remains: confirm no `planX` call site still calls `approvalArgsForHarness` directly (that would silently bypass `--read-only` — a real Cat-1 bug). Let me grep.\nWiring is verified complete and clean: all 5 `planX` sites use `permissionArgsForHarness` (none call `approvalArgsForHarness` directly), `approvalArgsForHarness` has exactly one production consumer (`permission-posture.ts`), and `readOnly` threads end-to-end from `main.ts:146` → `runHeadless` → `buildLaunchPlan` → all five sites. No Cat-1 bug.\n\n**Classification summary:**\n- **guillaumeify**: no findings.\n- **Codex Finding 1** (`docs/qa/eh-cli.md:103`) — REAL, confirmed by `docs/read-only.md:99–101`: codex refuses in non-git scratch dirs on its git-trust check before the read-only sandbox runs, so the documented codex live probe won't exercise `--sandbox read-only`. Capped at Cat 2/3 (non-adopted Codex finding). → **Category 2** (genuine value: undermines the one manual verification for codex).\n- **Codex Finding 2** (`src/permission-posture.test.ts:32`) — grok shares the *identical* code line with claude (`case 'claude': case 'grok':`) in both mappers; claude's collision case is already tested, and grok's auto+readOnly path is already exercised by the no-bypass test (line 78–89). Zero incremental bug-catching value. → **Category 3** (skip).\n- **Load-bearing assumptions**: all 5 marked VERIFIED; I independently confirmed the two critical ones (mapping table + collision/decision) against `docs/read-only.md:25–84` and the code — they hold exactly. No blocker.\n\nNo Category 1 blockers, and no `codex-correctness-fixes.md` to preserve. Writing the follow-up candidate and clearing stale fix artifacts.\nNow the required producer self-validation — both checks must exit 0 before I emit a terminal STATUS.\nBoth self-validation checks pass (exit 0). Final state confirmed:\n\n- **No Category 1 blockers.** guillaumeify clean; both Codex findings were non-adopted upstream and are correctly capped at Cat 2/3.\n- **`review-fixes.md` / `review-fixes-meta.json`**: cleared (no blockers, no `codex-correctness-fixes.md` to preserve) — no `## Fix:` blocks exist.\n- **`follow-up-candidates.json`**: overwritten with 1 candidate (Cat 2 — codex live QA probe git-trust footgun), schema-valid.\n- **Load-bearing assumptions**: all 5 VERIFIED; independently reconfirmed the mapping table and the codex/grok collision decision against `docs/read-only.md` — code matches the spike line-for-line. Wiring is complete end-to-end with no orphaned `approvalArgsForHarness` call sites.\n\nClassification decisions:\n- **Codex `docs/qa/eh-cli.md:103`** → Cat 2 (real, spike-confirmed doc-accuracy gap; capped at Cat 2/3 as a non-adopted Codex finding, so recorded as a follow-up rather than a blocker).\n- **Codex `src/permission-posture.test.ts:32`** → Cat 3 (grok is byte-identical to the already-tested claude case and already exercised by the no-bypass test; zero incremental value).\n\nSTATUS:success\n",
+      "retryCount": 0,
+      "sessionId": "63eee08e-c53a-44ae-b087-cf054ede29b6",
+      "startedAt": "2026-08-21T16:24:46.716Z",
+      "usage": {
+        "cacheReadTokens": 521033,
+        "cacheWriteTokens": 56937,
+        "costUsd": 1.28047275,
+        "inputTokens": 11444,
+        "outputTokens": 24012
+      }
     }
   },
   "parallelBranches": {
@@ -2118,7 +2311,7 @@
   },
   "pipelineId": "ticket-complete-AI-3111",
   "status": "running",
-  "updatedAt": "2026-08-21T16:24:45.365Z",
+  "updatedAt": "2026-08-21T16:30:27.919Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -2405,6 +2598,19 @@
         "costUsd": 0.308427,
         "inputTokens": 9777,
         "outputTokens": 1574
+      },
+      "visits": 1
+    },
+    "evaluate_review": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 341198,
+      "usage": {
+        "cacheReadTokens": 521033,
+        "cacheWriteTokens": 56937,
+        "costUsd": 1.28047275,
+        "inputTokens": 11444,
+        "outputTokens": 24012
       },
       "visits": 1
     }
