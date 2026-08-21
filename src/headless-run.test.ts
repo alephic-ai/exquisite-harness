@@ -89,21 +89,23 @@ describe('eh run', () => {
       cacheReadTokens: 4,
       cacheWriteTokens: 0,
       cumulative: true,
-      inputTokens: 10,
+      inputTokens: 6,
       outputTokens: 2,
       type: 'usage',
       v: 2,
     })
     // Final summary usage event: eh computes cost from its own usage. On the
     // free ollama provider that is $0 from `gateway-rates`-free, and codex
-    // reports no cost of its own, so no harnessCostUsd is present.
+    // reports no cost of its own, so no harnessCostUsd is present. Codex
+    // cached_input_tokens (4) is nested in input_tokens (10), so exclusive
+    // input is 6.
     expect(events).toContainEqual({
       cacheReadTokens: 4,
       cacheWriteTokens: 0,
       costSource: 'free',
       costUsd: 0,
       cumulative: true,
-      inputTokens: 10,
+      inputTokens: 6,
       outputTokens: 2,
       type: 'usage',
       v: 2,
@@ -841,6 +843,122 @@ describe('eh run', () => {
     expect(summary.costUsd).toBeCloseTo(0.000034, 10)
     // AC-2: the harness's own $0.25 estimate is preserved, never preferred.
     expect(summary.harnessCostUsd).toBe(0.25)
+  })
+
+  test('bills Codex cache as a subset of input_tokens on a pinned run', async () => {
+    const fixture = createFakeCodex()
+    const server = createServer((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [
+                {
+                  pricing: { completion: '0.000005', prompt: '0.000001' },
+                  provider_name: 'bedrock',
+                  status: 0,
+                },
+              ],
+            },
+          }),
+        )
+        return
+      }
+      response.statusCode = 500
+      response.end('unexpected request')
+    })
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject)
+      server.listen(0, '127.0.0.1', () => {
+        server.off('error', reject)
+        resolve()
+      })
+    })
+    const address = server.address()
+    if (!address || typeof address === 'string') {
+      server.close()
+      throw new Error('gateway stub did not bind a TCP port')
+    }
+    const ehConfigDir = path.join(fixture.configDir, 'eh')
+    mkdirSync(ehConfigDir, { recursive: true })
+    writeFileSync(
+      path.join(ehConfigDir, 'config.json'),
+      JSON.stringify({
+        profiles: {},
+        providers: {
+          'test-gateway': {
+            baseURL: `http://127.0.0.1:${String(address.port)}`,
+            envKey: 'EH_TEST_GATEWAY_KEY',
+            type: 'vercel-gateway',
+          },
+        },
+        recent: [],
+        version: 1,
+      }),
+    )
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'codex',
+        'test-gateway',
+        'test-model',
+        '--gateway-provider',
+        'bedrock',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TEST_GATEWAY_KEY: 'qa-key',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('estimate the cost')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+    const events = parseEvents(stdout)
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    const summary = z
+      .object({
+        cacheReadTokens: z.number(),
+        costSource: z.string(),
+        costUsd: z.number(),
+        inputTokens: z.number(),
+        outputTokens: z.number(),
+      })
+      .parse(
+        events.find(
+          (event) =>
+            event.type === 'usage' && typeof event.costSource === 'string',
+        ),
+      )
+    // Fixture is input_tokens 10 with cached_input_tokens 4 nested inside.
+    // Exclusive buckets: 6 input + 4 cache-read, billed at the $1/1M input
+    // rate (no published cache rate) + 2 output at $5/1M = $0.000020.
+    // Inclusive billing would be $0.000024.
+    expect(summary.costSource).toBe('gateway-rates')
+    expect(summary.inputTokens).toBe(6)
+    expect(summary.cacheReadTokens).toBe(4)
+    expect(summary.outputTokens).toBe(2)
+    expect(summary.costUsd).toBeCloseTo(0.00002, 10)
   })
 
   test('routes an opencode Gateway provider pin through the proxy', async () => {

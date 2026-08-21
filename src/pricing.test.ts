@@ -283,6 +283,15 @@ test('fetchHeadlessRateCard resolves per-endpoint pricing for a gateway pin', as
       provider,
     })
     expect(unknown).toEqual({ kind: 'unavailable' })
+
+    // A pin that matches no endpoint must not fall back to the model-aggregate
+    // rates on /v1/models ($1/$4) and label them gateway-rates.
+    const missingPin = await fetchHeadlessRateCard({
+      gatewayProvider: 'missing',
+      modelId: 'test/model',
+      provider,
+    })
+    expect(missingPin).toEqual({ kind: 'unavailable' })
   } finally {
     await new Promise<void>((resolve, reject) => {
       server.close((error) => {

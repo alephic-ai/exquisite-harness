@@ -232,7 +232,8 @@ export function formatStatuslineCost(props: {
 
 // The pricing of the first active endpoint matching the pin. Mirrors the fetch +
 // filter of `fetchGatewayRateLabel`, but returns usable rates, not a label.
-// Returns undefined on any failure so the caller can fall back to model rates.
+// Undefined means no matching endpoint (or the fetch failed). A pin must then
+// resolve to unavailable — never fall back to model-aggregate rates.
 async function fetchEndpointPricing(props: {
   apiKey: string | undefined
   baseURL: string

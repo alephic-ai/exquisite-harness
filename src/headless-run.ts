@@ -582,14 +582,18 @@ function normalizeCodexEvent(
   if (event.type === 'turn.completed') {
     const usage = asRecord(event.usage)
     if (usage) {
+      // Codex cached_input_tokens is a subset of input_tokens (OpenAI-style),
+      // not a disjoint bucket. Subtract so the four usage fields stay exclusive.
+      const cacheReadTokens = numberField(usage, 'cached_input_tokens')
+      const inputTokens = numberField(usage, 'input_tokens')
       nextState = recordUsage(nextState, {
-        cacheReadTokens: numberField(usage, 'cached_input_tokens'),
+        cacheReadTokens,
         cacheWriteTokens: 0,
         cumulative: true,
         harnessCostUsd:
           optionalNumberField(event, 'total_cost_usd') ??
           optionalNumberField(event, 'cost_usd'),
-        inputTokens: numberField(usage, 'input_tokens'),
+        inputTokens: Math.max(0, inputTokens - cacheReadTokens),
         outputTokens: numberField(usage, 'output_tokens'),
       })
     }
