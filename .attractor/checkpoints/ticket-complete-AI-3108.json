@@ -1,0 +1,147 @@
+{
+  "createdAt": "2026-08-21T15:48:36.411Z",
+  "currentNodeId": "plan",
+  "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
+  "nodeStates": {
+    "start": {
+      "completedAt": "2026-08-21T15:48:36.674Z",
+      "nodeId": "start",
+      "outcome": "success",
+      "output": "Pipeline started",
+      "retryCount": 0,
+      "startedAt": "2026-08-21T15:48:36.673Z"
+    },
+    "scope_gate": {
+      "completedAt": "2026-08-21T15:48:55.621Z",
+      "nodeId": "scope_gate",
+      "artifacts": [
+        {
+          "agentRunId": "4e7cc6e2-8e75-4a00-908f-73d0d8a87f25",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "ba2172875b3959a9e283cd7d0d5d7eddc051a9dfccaaaea2d4c638974a755ac2",
+              "sizeBytes": 18373
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0bdd292e-3fcf-4078-a863-0b67336472af.request.json",
+              "sha256": "27f350bc5b48d3536ce28bfc0b70c745804b6b67296349949a4406d80a64903a",
+              "sizeBytes": 87035
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7607ddfb-c561-4946-bce1-4e23248089e9.request.json",
+              "sha256": "5ab528d0711d913ee45f32037aa13ba0511ba4685d0180ffc2c47c18617164c1",
+              "sizeBytes": 83991
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/940d7d58-18dc-4201-ab1e-5714248241fe.request.json",
+              "sha256": "be071bc3fd65a6e2b6ddc9c7af665a8afea47b84d12f0eb000ab9d0b9562d032",
+              "sizeBytes": 10570
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA4EVwp6ywiE2uW3AYb.response.json",
+              "sha256": "b1eacdbe3859b01823bdfad94e0b40196963ea2836a5f8bbd77d6f22b1751fc5",
+              "sizeBytes": 834
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA4FCs3gAargNuCmxKQ.response.json",
+              "sha256": "2221e1ca6519cc24dfa86759e50daafbef77e0c6897753024395f201c4a913ff",
+              "sizeBytes": 2000
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA4d3GPVFDWVHQ3Pg1U.response.json",
+              "sha256": "51e458c178c10645dd4e36d5a60d0cf8c28d14f76e699581bc0e12a1354b2092",
+              "sizeBytes": 3423
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "0a6807eeadf3c3ac486eaf0a8b2745bd9e82caefad31ea9bfb1f5596545275bb",
+              "sizeBytes": 12862
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3108/b3eb78e84ea1-1cfa0b6f-3c2f-43f4-95f5-1fa23136a318/agent-artifacts/scope_gate/attempt-0-4e7cc6e2-8e75-4a00-908f-73d0d8a87f25",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3108/b3eb78e84ea1-1cfa0b6f-3c2f-43f4-95f5-1fa23136a318/agent-artifacts/scope_gate/attempt-0-4e7cc6e2-8e75-4a00-908f-73d0d8a87f25/manifest.json",
+          "nodeId": "scope_gate",
+          "pipelineId": "ticket-complete-AI-3108",
+          "runtime": "claude",
+          "sessionId": "71b10a15-6dfd-4e41-bacf-0c94160c1563",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll evaluate the scope of this ticket by verifying the referenced files and code exist in this checkout.\nEverything checks out. The referenced files (`src/headless-run.ts`, `src/headless-run.test.ts`, `README.md`, `DESIGN.md`, `docs/qa/eh-cli.md`) all exist, and the named symbols (`emitRunError` at ~198, `run.completed`, per-harness `normalize*Event` functions, `assistant.text` events) are present at roughly the documented line ranges.\n\n**Assessment:**\n\n- **Single deliverable:** Add `--result-file <path>` to `eh run` and document the `run.completed` terminal-event guarantee. These are tightly coupled — both concern how orchestrators consume the final result — and ship coherently in one PR.\n- **Scope is identifiable:** the flag plumbing, result extraction in `headless-run.ts`, per-harness normalizers, plus doc updates (README, DESIGN.md, `docs/qa/eh-cli.md`) and subprocess tests.\n- **Design decisions already made:** native-result-with-concat-fallback is chosen and justified, with rejected alternatives recorded. No author decision is left dangling.\n- **Verification is concrete:** per-harness fixture tests, an invariant test, and a regression test — all specified. `verification_strength: high`.\n- **Right repo:** this is the `exquisite-harness` (`eh`) repo, and the code all lives here.\n\nThe three ACs are behavior-adjacent facets of one feature (write the file, don't perturb anything else, document the guarantee), not independent deliverables — well within a single focused PR. No ambiguity that requires the author to make a call before planning.\n\nSTATUS:proceed\n",
+      "retryCount": 0,
+      "sessionId": "71b10a15-6dfd-4e41-bacf-0c94160c1563",
+      "startedAt": "2026-08-21T15:48:36.676Z",
+      "usage": {
+        "cacheReadTokens": 33745,
+        "cacheWriteTokens": 16200,
+        "costUsd": 0.19659550000000003,
+        "inputTokens": 9766,
+        "outputTokens": 1085
+      }
+    }
+  },
+  "parallelBranches": {},
+  "pipelineId": "ticket-complete-AI-3108",
+  "status": "running",
+  "updatedAt": "2026-08-21T15:48:55.626Z",
+  "variables": {
+    "repo.defaultBranch": "main",
+    "repo.fullName": "alephic-ai/exquisite-harness",
+    "repo.lintCommand": "pnpm lint",
+    "repo.packageManager": "pnpm",
+    "repo.testCommand": "pnpm test",
+    "repo.verificationCommand": "echo \"Verification skipped: no verification command configured for this repository\"",
+    "branch": "intelligencev2/ai-3108-eh-run-add-result-file-path-and-document-the-terminal-event",
+    "ticket.comments": "",
+    "ticket.description": "# eh run: add `--result-file <path>` and document the terminal-event guarantee\n\n## Problem\n\nAn orchestrator that wants the run's final assistant result must parse the NDJSON stream and reimplement per-harness knowledge of where the result lives. eh already normalizes harness events; it should own result extraction once. Separately, `run.completed` is provably the last NDJSON line by construction (emitted only after stdout EOF and child close, with no code path after it), but this is documented nowhere as a guarantee orchestrators can rely on.\n\n## Context\n\n* Branch from `origin/main` (local main is 7 commits behind).\n* Claude's native terminal `result` event carries a top-level result string that the codebase currently reads only as an error-message fallback in `emitRunError` (`src/headless-run.ts` ~line 151) — never surfaced on the success path. Check each harness's normalizer (`normalize*Event`, lines ~292–521) for an equivalent native terminal result; harnesses without one (at minimum grok, opencode) use the fallback.\n* Decision (made with repo owner): the result text is the harness-native terminal result where the harness defines one, else the concatenation of the run's `assistant.text` events. Not \"last text block only\".\n\n## Acceptance Criteria\n\n- [ ] `eh run` accepts `--result-file <path>`. After the run, the file contains exactly the run's final result text: the harness-native terminal result string for harnesses that define one, else all `assistant.text` content concatenated in stream order. The file is always created — empty when the run produced no result text (including error runs). Proof: subprocess tests per fake harness comparing file bytes against the canned expected result, including one no-result error case.\n- [ ] Invariant: `--result-file` changes nothing else — the NDJSON stream, exit code, and stderr are byte-identical with and without the flag (aside from the file write). Proof: subprocess test running the same fake-harness scenario twice, with and without the flag, asserting identical event streams and exit codes.\n- [ ] README `### Headless runs` and DESIGN.md document `run.completed` as the guaranteed final NDJSON line, with a regression test asserting no event is ever emitted after it.\n\n## Out of Scope\n\n* Exit-code semantics (separate ticket).\n* A structured JSON result envelope (metadata, usage, cost) — plain text only; usage already flows as `usage` events.\n* Result extraction for the interactive (non-`run`) mode.\n\n## Key Decisions\n\n* Chosen: native-result-with-concat-fallback. Rejected: always-concatenate (multi-turn runs would embed intermediate narration in the \"result\"); last-text-only (truncates multi-part answers). Failure mode of the chosen shape: a harness whose native result field is empty on some path would yield an empty file where concatenation had content — the per-harness fixture tests must include a multi-turn case to catch this.\n\n## Verification\n\n* `pnpm lint:ci`; `bun test src/headless-run.test.ts`; full `pnpm test`.\n* Version bump required; update README, DESIGN.md, `docs/qa/eh-cli.md`.\n\n## Delegability\n\n```yaml\ndesign_freedom: low\nverification_strength: high\nsilent_failure_cost: medium\ncontext_volatility: low\nrecommended_tier: medium\nrecommended_effort: medium\n```",
+    "ticket.id": "AI-3108",
+    "ticket.state": "Triage",
+    "ticket.title": "eh run: add --result-file <path> and document the terminal-event guarantee",
+    "ticket.url": "https://linear.app/alephic/issue/AI-3108/eh-run-add-result-file-path-and-document-the-terminal-event-guarantee"
+  },
+  "nodeVisitTotals": {
+    "start": {
+      "handler": "start",
+      "outcome": "success",
+      "totalDurationMs": 1,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "scope_gate": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 18945,
+      "usage": {
+        "cacheReadTokens": 33745,
+        "cacheWriteTokens": 16200,
+        "costUsd": 0.19659550000000003,
+        "inputTokens": 9766,
+        "outputTokens": 1085
+      },
+      "visits": 1
+    }
+  }
+}
