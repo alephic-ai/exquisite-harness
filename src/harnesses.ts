@@ -4,9 +4,9 @@ import path from 'node:path'
 
 import type { ResolvedProvider } from './config.js'
 
-import { approvalArgsForHarness } from './approval-mode.js'
 import { prepareGrokApiKeyHome } from './grok-home.js'
 import { opencodeConfigContent, opencodeProviderId } from './opencode.js'
+import { permissionArgsForHarness } from './permission-posture.js'
 import { piModelsJsonHint, piProviderCompat, resolvePiProvider } from './pi.js'
 import { fetchModelMeta } from './pricing.js'
 import {
@@ -60,6 +60,7 @@ interface HarnessPlanOptions {
   effort?: string
   gatewayProvider?: string
   gatewayZdr?: boolean
+  readOnly?: boolean
   statusline?: boolean
 }
 
@@ -136,7 +137,12 @@ async function planClaude(
     notes.push('context window unknown — falling back to Claude context size')
   }
   const args = statusline ? ['--settings', writeClaudeStatuslineSettings()] : []
-  args.push(...approvalArgsForHarness('claude', options.approvalMode))
+  args.push(
+    ...permissionArgsForHarness('claude', {
+      approvalMode: options.approvalMode,
+      readOnly: options.readOnly ?? false,
+    }),
+  )
   return {
     args,
     bin: 'claude',
@@ -195,7 +201,12 @@ async function planCodex(
   if (effort && effort !== 'auto') {
     args.push('-c', `model_reasoning_effort=${tomlString(effort)}`)
   }
-  args.push(...approvalArgsForHarness('codex', options.approvalMode))
+  args.push(
+    ...permissionArgsForHarness('codex', {
+      approvalMode: options.approvalMode,
+      readOnly: options.readOnly ?? false,
+    }),
+  )
   return {
     args,
     bin: 'codex',
@@ -223,7 +234,12 @@ async function planGrok(
   if (effort && effort !== 'auto') {
     args.push('--reasoning-effort', effort)
   }
-  args.push(...approvalArgsForHarness('grok', options.approvalMode))
+  args.push(
+    ...permissionArgsForHarness('grok', {
+      approvalMode: options.approvalMode,
+      readOnly: options.readOnly ?? false,
+    }),
+  )
   const gatewayRouting = gatewayRoutingFor(
     provider,
     options.gatewayProvider,
@@ -283,7 +299,12 @@ async function planPi(
   const args = ['--provider', match.piName, '--model', model]
   // pi's thinking levels are eh's effort levels (auto = send nothing).
   if (effort && effort !== 'auto') args.push('--thinking', effort)
-  args.push(...approvalArgsForHarness('pi', options.approvalMode))
+  args.push(
+    ...permissionArgsForHarness('pi', {
+      approvalMode: options.approvalMode,
+      readOnly: options.readOnly ?? false,
+    }),
+  )
   const gatewayRouting = gatewayRoutingFor(
     provider,
     options.gatewayProvider,
@@ -343,7 +364,12 @@ async function planOpencode(
     env[provider.envKey] = await authTokenFor(provider)
   }
   const args = ['-m', `${opencodeProviderId(provider)}/${model}`]
-  args.push(...approvalArgsForHarness('opencode', options.approvalMode))
+  args.push(
+    ...permissionArgsForHarness('opencode', {
+      approvalMode: options.approvalMode,
+      readOnly: options.readOnly ?? false,
+    }),
+  )
   return {
     args,
     bin: 'opencode',
@@ -477,6 +503,7 @@ export async function buildLaunchPlan(
     effort?: string
     gatewayProvider?: string
     gatewayZdr?: boolean
+    readOnly?: boolean
     resume?: boolean
     resumeSessionId?: string
     searchBackend?: SearchBackend
@@ -490,6 +517,7 @@ export async function buildLaunchPlan(
     effort: options.effort,
     gatewayProvider: options.gatewayProvider,
     gatewayZdr: options.gatewayZdr,
+    readOnly: options.readOnly,
     statusline: options.statusline,
   })
   const plan = {

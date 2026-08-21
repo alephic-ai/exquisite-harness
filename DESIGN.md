@@ -316,6 +316,13 @@ and Grok `--permission-mode auto`, Codex `--approve-for-me`, and opencode
 adds no argument. The mapping never uses unrestricted bypass flags, and native
 availability/errors remain owned by the selected harness.
 
+`eh run --read-only` resolves together with approval mode in
+`permission-posture.ts` — one point owns both axes because the native flags
+collide on Codex and Grok. Read-only wins and the approval-mode argument is
+suppressed, except opencode, whose `--agent plan` composes with `--auto`. A
+harness with no read-only mechanism hits an exhaustiveness guard and refuses to
+launch rather than run silently unrestricted (`docs/read-only.md`).
+
 For an OpenRouter or Vercel AI Gateway selection, `--gateway-provider <slug>`
 adds a process-scoped loopback proxy to Claude, Codex, Grok, opencode, and pi
 launch plans. The proxy preserves the harness's native Anthropic Messages,
@@ -490,6 +497,7 @@ src/main.ts       entry: commander wiring
 src/flow.ts       positional/profile resolution → pickers → launch
 src/headless-run.ts  non-interactive harness execution + NDJSON normalization
 src/approval-mode.ts  approval labels + per-harness native argument mapping
+src/permission-posture.ts  read-only + approval resolution (one point, both axes)
 src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
 src/pricing.ts    provider rates/ranges ($/1M) and fallback cost estimates

@@ -142,6 +142,10 @@ program
     '--timeout <seconds>',
     'fail the run if the harness runs longer than <seconds> (SIGTERM, then SIGKILL after a grace period)',
   )
+  .option(
+    '--read-only',
+    "restrict the harness to its strongest read-only / no-write mode (see docs/read-only.md); composes with an 'auto' approval default",
+  )
   .action(async (harness, provider, model, opts) => {
     process.exitCode = await runHeadless({
       cwd: opts.cwd,
@@ -154,6 +158,7 @@ program
       model,
       nativeArgsJson: opts.nativeArgsJson,
       provider,
+      readOnly: opts.readOnly,
       resumeSessionId: opts.resumeSession,
       timeout: opts.timeout,
     })
