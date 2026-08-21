@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:47:30.420Z",
-  "currentNodeId": "fork",
+  "currentNodeId": "join",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -2608,12 +2608,345 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-21T16:40:55.748Z"
+    },
+    "review_guillaumeify": {
+      "completedAt": "2026-08-21T16:44:54.954Z",
+      "nodeId": "review_guillaumeify",
+      "artifacts": [
+        {
+          "agentRunId": "a8a40857-9228-44c9-a605-b3e2b44cd6fd",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "8f285be48e298fb888d6f48002d6f5c9f589f6a82a55315c8d5d64d9256260df",
+              "sizeBytes": 500439
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/1d891c31-ecad-4f34-93ba-5e97dbcd8cb5.request.json",
+              "sha256": "f73f2844c99a7c6ba28ad11b4bd4fc26b32b79d78d88b87973b2414abfa7c6f7",
+              "sizeBytes": 213341
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/1f48b99b-2e9f-4aff-adba-54ff4c06464a.request.json",
+              "sha256": "b5ddb82e160bf07a71fb66423986a9ae7bc79f0ebb70d119c56c246361939765",
+              "sizeBytes": 82049
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2068144f-b215-424f-b3b8-322028d2f166.request.json",
+              "sha256": "f7c565db715007d50ccc1e7b955f09f8e14fa50331c8daa14a3da20c30ce1a63",
+              "sizeBytes": 221307
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2a480810-c049-4e2d-b115-f865e4173f06.request.json",
+              "sha256": "b8b2c700a62ea0033d56db80e33a24fff36b8e8ff815280e7074a840ba20bacf",
+              "sizeBytes": 250450
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2be45592-5d56-4958-8495-d926ebfd5a3c.request.json",
+              "sha256": "751244c93a34d863e24a5c3470fed39f452c39402dc8c8b7968116b77da30591",
+              "sizeBytes": 8331
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2d46df3c-f38c-45af-85af-c9325ae13bff.request.json",
+              "sha256": "df74eb2e86f22215cfeefeacc524e6ebfdd2d1fcfa576455f4cdc0a9648735b8",
+              "sizeBytes": 227114
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/393e3a27-803b-44f7-b795-d666cee4e7a2.request.json",
+              "sha256": "b3d1b584c09f45549cc975f1f910d0da58623e982ed7c0e02b0ab2a54a49025a",
+              "sizeBytes": 109993
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3bdd84de-c999-45f3-b77c-81d10042932a.request.json",
+              "sha256": "3e304b83094573e4ed5f2a1a78e99400906ff01d34c08743dd58bb770d124aef",
+              "sizeBytes": 215805
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6173669b-7153-4c32-a424-a4ea1c5d89a9.request.json",
+              "sha256": "4a7877a178e94846463db2ef1daa60303697d13cf9aa8e087bd50951e3faaa6b",
+              "sizeBytes": 112838
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/658b2ff3-5f98-4797-a465-508002bc6ced.request.json",
+              "sha256": "746b2b23470391c45b1eb6ffd96d7b062285a26d4503197174845f414794f1e7",
+              "sizeBytes": 167144
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7acb0675-9970-4afc-a36d-a765f9be279d.request.json",
+              "sha256": "59a82e04bbc9270dc8dc3f673baf4b630412a826d050f6ec414cccfa580162f3",
+              "sizeBytes": 227191
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/8763b236-d27a-4540-be22-d02d83e29728.request.json",
+              "sha256": "dcf1229556767c056065770b39458e4ec81bf4959099bd15287557d197658f1d",
+              "sizeBytes": 239595
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/943ebcfe-4825-4d9a-8058-3f921e6a8591.request.json",
+              "sha256": "543c8012995d75666d6700a3bb38a3ac7fcb09f9eb47a4c4acbb928790d9e0b3",
+              "sizeBytes": 226460
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b1d5f877-7c84-4c97-ba5f-853ec5ad4083.request.json",
+              "sha256": "79e4aaf8e03350a003b60a2b701d06cc3df078add8522c78e5429b658edc166a",
+              "sizeBytes": 171407
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b7e28c6b-65f9-4f42-9866-b9a6744c18b8.request.json",
+              "sha256": "c46d5e15d154dfd40902ea087d5c1c381717446a1c4af97a7f0e8f45be5e6005",
+              "sizeBytes": 224650
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c8165f20-031a-4c68-9597-99e3562ebf59.request.json",
+              "sha256": "f05430a6644a7a27dae1fafb73dfca1ece0bf8b83ea537337723558e40098292",
+              "sizeBytes": 49802
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ebf589ca-890a-42c5-9fa7-6dfaefe19a85.request.json",
+              "sha256": "24a6478df69b3dcfdd8dcef0f21615efcfc0cda906a78e39a5d7f6f2f3fd7bf8",
+              "sizeBytes": 173407
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f9a6e471-717c-4740-a046-8fcb58042768.request.json",
+              "sha256": "acbc01b7ffd42745149b0f01dd26323e7259a8bb645ed8495e884f160a7eac73",
+              "sizeBytes": 142302
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGE3iMwFbY1YRKeH5aMj.response.json",
+              "sha256": "f40fda8c0624d70abd8c0358e786eb809b637d594042d757cd7c5900c42d03ea",
+              "sizeBytes": 824
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGE3iRf7TjZQRCiypBrK.response.json",
+              "sha256": "977fc45280a56982a7d404bcff6548cd8a34bceffe686c4fe6f69f52902ae212",
+              "sizeBytes": 1403
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGE3uURfxvYBzhAjQrWo.response.json",
+              "sha256": "4d2e1969555a7cac5979ba4ae5007d6e97e2dc0f30bbeff33dcabfb81f1def69",
+              "sizeBytes": 1810
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGE4GDM174tquZjTcjP9.response.json",
+              "sha256": "97e6601b866ece0ae1bb235f843571847a0b77da069f8d4b9b3b7b16d78ebc7f",
+              "sizeBytes": 1781
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGE4aNzqFDwnLnj6TrEM.response.json",
+              "sha256": "08b2ac3a036acee9130d2a8a05b7ba980d27d5518b9bc0f79a8858683ccc698e",
+              "sizeBytes": 17340
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGE9BPmcDUAKgd8TvggK.response.json",
+              "sha256": "2297636ffc8451018f9490b06f9b836d181b88ca4aada84e75aafab7f0e5e292",
+              "sizeBytes": 2415
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGE9fpZCW9BgrZS3z5mA.response.json",
+              "sha256": "88848822d175d15d63600afafd34616a437fae13c2368ce4c8c5c834151de06d",
+              "sizeBytes": 1288
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGE9z6A5P5JvxtkWDuSU.response.json",
+              "sha256": "e75776f7dbb1de8259900b540088a50baacae52025932d11addb7466a8d33316",
+              "sizeBytes": 4000
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEBHxDxnRHFcKczyqyd.response.json",
+              "sha256": "03937d192a2caec38552ebb5a330538041ebc6881a45863e1cb677330cc20340",
+              "sizeBytes": 1644
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEBcuF38NEYvkhAwkWL.response.json",
+              "sha256": "51e1f1cb920792888930e0ea595044239c0a300fdbe868e2714a05afedf5e6eb",
+              "sizeBytes": 1179
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEBvjYy2H7aaa6GDpWq.response.json",
+              "sha256": "28f4e144e91992910351253cb01727f14331c3299387a8cfc45ae78588819030",
+              "sizeBytes": 998
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEC83SoKGtX476BjAKN.response.json",
+              "sha256": "8ed8e66f7e86f796f5a55e20218d549f2199b8c9534507ac597c76a5a335b937",
+              "sizeBytes": 1184
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGECPYqzt2TsqY2FRXBr.response.json",
+              "sha256": "3957e127f431a406edfb794d0577ffb5086cf8f8bf95f7204233a0f70bcc9d68",
+              "sizeBytes": 1132
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGECn2CibohsfCofY7mg.response.json",
+              "sha256": "133ad56ec0267df48fd09a7e54ef5361bce32929be232e17e8180996ad4f2bbc",
+              "sizeBytes": 1826
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEDKHtZkXkjqQm3UEQ8.response.json",
+              "sha256": "0015acdb14895aa75322085b14bc75e86ffa8428cdc3882cee3a6e3b59a0cd3e",
+              "sizeBytes": 2238
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEDyqPS5ni8tTkvV7ns.response.json",
+              "sha256": "f46187b436922f8bb3cf205303014d7e184330ad566082a7bafeda5527696d43",
+              "sizeBytes": 9076
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEHRDSmuur1GknyDdub.response.json",
+              "sha256": "4d52ab9f592d56e3cdf49b9bde335b60b665afc430fb02cf90b02a7d03c374dc",
+              "sizeBytes": 11311
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGELXam8mjwz7kALb1EC.response.json",
+              "sha256": "12e911a0097ffb808c57e10fe18c95cf353d459c38f567c436638b2c178a872d",
+              "sizeBytes": 2071
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "cd8d0dd7542f83d5d526500883927c66a28f944be1f3eb4b7a207144e9806bb0",
+              "sizeBytes": 26505
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/review_guillaumeify/attempt-0-a8a40857-9228-44c9-a605-b3e2b44cd6fd",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/review_guillaumeify/attempt-0-a8a40857-9228-44c9-a605-b3e2b44cd6fd/manifest.json",
+          "nodeId": "review_guillaumeify",
+          "pipelineId": "ticket-complete-AI-3129",
+          "runtime": "claude",
+          "sessionId": "b85345ba-d7a1-4e93-a94c-ed08097e47fe",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "Now let me look at the headless-run.ts around the emit summary and error paths.\nLet me check the guillaumeify skill and the providers helpers used.\nI have the behavior context (AC-1 to AC-5) and the diff. Let me check for a project override and dispatch a reviewer agent for the 6-file scope.\nThe reviewer surfaced findings. Let me verify the two substantive ones before recording them.\n\nThe double-key-resolution (pricing.ts:172-175 resolves the key, then the unpinned path calls `fetchModelMeta` which re-resolves at 131-134) is real — confirmed in the file I read. The tier-bracket-on-input-only concern (pricing.ts:337) is also accurate but is a defensible provider-semantics judgment call that the ticket explicitly delegated. The codex \"cumulative\" flag was pre-existing (unchanged by this PR), and the spawn-path summary skip is functionally correct (zero usage). Neither of the latter two holds as a defect.\n\nLet me write the review artifact.\nAh, mon ami... 🥐 the review is plated.\n\n**Mergeable: YES** — no blockers. AC1–AC5 are all implemented and well-tested: the cumulative-wins accumulator guards against grok/codex double-counting, the `??` cache-rate fallback correctly distinguishes published-`0` from unpublished, `costSource` never fabricates `$0`, `harnessCostUsd` is kept separate from the computed `costUsd`, and `v` is bumped to `2` across the stream.\n\nTwo non-blocking suggestions, both in `src/pricing.ts`:\n1. **Duplicate API-key resolution** (172-189) — the key is resolved locally and again inside `fetchModelMeta` on the unpinned path; only the pinned branch needs the local copy.\n2. **Tier bracket keyed on `usage.input` only** (337-346) — excludes cache tokens, at odds with the \"context brackets\" wording; a heavily-cached long-context run could select a cheaper tier and under-bill. This is the cache/tier judgment area the ticket explicitly delegated, so it's a suggestion, not a blocker.\n\nI dismissed two reviewer flags after verifying: the codex `cumulative: true` mapping is pre-existing (unchanged by this PR), and the spawn-error path skipping `emitCostSummary` is functionally correct (no usage accumulated).\n\nArtifact written to `.attractor/review-guillaumeify.md`. C'est fini! 🍷🧀\n",
+      "retryCount": 0,
+      "sessionId": "b85345ba-d7a1-4e93-a94c-ed08097e47fe",
+      "startedAt": "2026-08-21T16:40:57.150Z",
+      "usage": {
+        "cacheReadTokens": 554698,
+        "cacheWriteTokens": 77607,
+        "costUsd": 1.9892435,
+        "inputTokens": 9916,
+        "outputTokens": 10343
+      }
+    },
+    "review_codex": {
+      "completedAt": "2026-08-21T16:45:41.137Z",
+      "nodeId": "review_codex",
+      "artifacts": [
+        {
+          "agentRunId": "7dac258e-5dc7-44fc-88e3-af77e428ddf7",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "4d1d8aff78c215403bfa175f2a5f7fca8ca2c43578862b983a8bd8c61fb9a34d",
+              "sizeBytes": 272960
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "5a126306e1a2e4a1bb5c62967dd429064e93ed0d2574ede8edc8ce64e0aff3b0",
+              "sizeBytes": 1493
+            },
+            {
+              "contentType": "application/x-ndjson",
+              "relativePath": "codex-sessions/2026/08/21/rollout-2026-08-21T16-40-57-01a02532-6f7d-73d2-be59-dd560a7a603a.jsonl",
+              "sha256": "516fde287e3fb591004a9df34adea6514c84a6e7123ac446dd9531f8f583815c",
+              "sizeBytes": 436216
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "e3dc8df25e7ca2759f63b9a698b9cf48385a7ec050314a2df4200524b8968cff",
+              "sizeBytes": 4757
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/review_codex/attempt-0-7dac258e-5dc7-44fc-88e3-af77e428ddf7",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/review_codex/attempt-0-7dac258e-5dc7-44fc-88e3-af77e428ddf7/manifest.json",
+          "nodeId": "review_codex",
+          "pipelineId": "ticket-complete-AI-3129",
+          "runtime": "codex",
+          "sessionId": "01a02532-6f7d-73d2-be59-dd560a7a603a",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I’ll use the `guillaumeify` review posture for this pass. I’m reading the required blocker/suggestion rubric first, then I’ll inspect only the blind packet under `.attractor/` and follow references outward into the codebase as needed.\nThe rubric path isn’t present at the current working directory as given. I’m checking the workspace shape now so I can find whether this is a path issue without touching the restricted `.attractor` contents.\nThere is no `.claude/commands/codex-review.md` in this checkout, and no `codex-review.md` outside `.attractor` was found. I’m continuing with the blind-review constraints the prompt gave, plus the local review skill, and I’ll record the missing rubric only if it affects the verdict.\nThe local skill has a broader branch-review workflow, but this task is narrower: review only the blind packet and write the requested artifact. I’m going to keep the review basis inferred from code and avoid any off-limits ticket or acceptance-criteria sources.\nThe blind packet covers six files and no UI-facing code. I’ve reached the implementation/test diff now, so I’ll inspect the changed hunks and then only open referenced helpers or callers needed to confirm behavior.\nThe tests mention acceptance-criteria labels in comments, but I’m treating those comments as non-authoritative because the instruction says the review basis stays inferred from code. The actual behavior under review is the runtime’s event normalization, accumulation, and pricing lookup.\nI’m checking the changed runtime functions and the pricing helpers they mirror. The key things to confirm are whether the new rate lookup can change pre-run failure behavior, whether usage folding keeps state correctly, and whether endpoint pricing is interpreted consistently with existing gateway metadata parsing.\nOne suspicious area is the endpoint-schema/rate conversion path, so I’m reading the rest of `pricing.ts` around the existing model-rate parsers and gateway label code before deciding whether it’s a real defect.\nSo far, the state transitions look deliberate: usage events are emitted as before with renamed harness cost, and a final summary is added before completion. I’m checking whether the new helper can silently fall back in the right places and whether any existing tests/docs contradict the inferred stream contract.\nThe key resolver doesn’t appear to throw in ordinary missing-key cases, so the new preflight lookup probably won’t turn “no API key” into a run failure. I’m now checking the provider schemas around `/endpoints` because the pricing helper shares that API shape with model listing/statusline behavior.\nThe protocol version bump touches a wide stream contract, so I’m searching for remaining `v: 1` expectations and downstream consumers before treating the docs/test updates as complete.\nI found stale QA runbook text still expecting `v: 1`; since the changed README now documents `v: 2`, that is probably at most a documentation follow-up unless the local rubric would classify stale QA instructions differently. I’m keeping it in mind while I focus on runtime correctness.\nI have one likely correctness blocker: pinned gateway runs can fall back to aggregate model rates when endpoint pricing cannot be resolved, even though the new rate-card shape and comments make aggregate rates the unpinned fallback. I’m checking keychain/error paths and the CLI call graph once more before writing the artifact.\nI’m going to run the focused test files now. This won’t replace the review, but it helps distinguish “this is untested” from “this already breaks locally.”\nThe focused test run is still executing; while it runs, I’m checking one small behavior case for the pinned-endpoint fallback so the blocker, if reported, is grounded in the actual code path rather than just the comments.\nThe focused tests are passing so far, including the new pinned-cost happy path. I’m still going to report confirmed gaps when they are outside the happy path covered by those tests.\nThe focused tests passed. I’m running a tiny inline reproduction for the pinned-endpoint-missing-pricing branch because that exact branch is not covered by the current tests and it determines whether the fallback is a blocker.\nI confirmed the pinned fallback with an inline reproduction: a pinned provider with no endpoint pricing but aggregate model rates returns a paid aggregate `rates` card. I’m writing the review artifact with that as a blocker and no broader transcript.\nWrote the review artifact to [.attractor/review-codex.md](/vercel/sandbox/project/.attractor/review-codex.md).\n\nVerdict: `Mergeable: NO` with 1 blocker in `src/pricing.ts:189`: pinned gateway runs can fall back to aggregate model rates when endpoint pricing is unresolved, which can emit the wrong cost for the pinned provider.\n\nFocused verification run passed: `pnpm test src/pricing.test.ts src/headless-run.test.ts` → 44 passing tests.\n\nNote: `.claude/commands/codex-review.md` was not present in this checkout, so I followed the blind-packet constraints and local review rubric.\n",
+      "retryCount": 0,
+      "sessionId": "01a02532-6f7d-73d2-be59-dd560a7a603a",
+      "startedAt": "2026-08-21T16:40:57.152Z",
+      "usage": {
+        "cacheReadTokens": 1261824,
+        "cacheWriteTokens": 0,
+        "costUsd": 2.904019,
+        "inputTokens": 1369789,
+        "outputTokens": 12501
+      }
+    },
+    "fork": {
+      "completedAt": "2026-08-21T16:45:41.138Z",
+      "nodeId": "fork",
+      "outcome": "success",
+      "output": "Parallel branches: review_guillaumeify: success, review_codex: success",
+      "retryCount": 0,
+      "startedAt": "2026-08-21T16:40:57.149Z"
     }
   },
-  "parallelBranches": {},
+  "parallelBranches": {
+    "join": [
+      "review_guillaumeify",
+      "review_codex"
+    ]
+  },
   "pipelineId": "ticket-complete-AI-3129",
   "status": "running",
-  "updatedAt": "2026-08-21T16:40:56.001Z",
+  "updatedAt": "2026-08-21T16:45:41.142Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -2809,6 +3142,45 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "fork": {
+      "handler": "parallel",
+      "outcome": "success",
+      "totalDurationMs": 283989,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "review_guillaumeify": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 237804,
+      "usage": {
+        "cacheReadTokens": 554698,
+        "cacheWriteTokens": 77607,
+        "costUsd": 1.9892435,
+        "inputTokens": 9916,
+        "outputTokens": 10343
+      },
+      "visits": 1
+    },
+    "review_codex": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 283985,
+      "usage": {
+        "cacheReadTokens": 1261824,
+        "cacheWriteTokens": 0,
+        "costUsd": 2.904019,
+        "inputTokens": 1369789,
+        "outputTokens": 12501
       },
       "visits": 1
     }
