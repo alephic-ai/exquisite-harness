@@ -1,1 +1,19 @@
-{"files":[{"changeType":"create","path":"src/permission-posture.ts"},{"changeType":"create","path":"src/permission-posture.test.ts"},{"changeType":"edit","path":"src/harnesses.ts"},{"changeType":"edit","path":"src/headless-run.ts"},{"changeType":"edit","path":"src/main.ts"},{"changeType":"edit","path":"src/headless-run.test.ts"},{"changeType":"edit","path":"package.json"},{"changeType":"edit","path":"README.md"},{"changeType":"edit","path":"DESIGN.md"},{"changeType":"edit","path":"docs/qa/eh-cli.md"}],"taskTitles":["Create the permission-posture mapping module + unit tests","Wire readOnly through the launch plan and CLI + subprocess tests","Docs"]}
+{
+  "files": [
+    { "changeType": "create", "path": "src/permission-posture.ts" },
+    { "changeType": "create", "path": "src/permission-posture.test.ts" },
+    { "changeType": "edit", "path": "src/harnesses.ts" },
+    { "changeType": "edit", "path": "src/headless-run.ts" },
+    { "changeType": "edit", "path": "src/main.ts" },
+    { "changeType": "edit", "path": "src/headless-run.test.ts" },
+    { "changeType": "edit", "path": "package.json" },
+    { "changeType": "edit", "path": "README.md" },
+    { "changeType": "edit", "path": "DESIGN.md" },
+    { "changeType": "edit", "path": "docs/qa/eh-cli.md" }
+  ],
+  "taskTitles": [
+    "Create the permission-posture mapping module + unit tests",
+    "Wire readOnly through the launch plan and CLI + subprocess tests",
+    "Docs"
+  ]
+}
