@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:48:30.863Z",
-  "currentNodeId": "fork",
+  "currentNodeId": "join",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1769,12 +1769,225 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-21T16:18:27.699Z"
+    },
+    "review_guillaumeify": {
+      "completedAt": "2026-08-21T16:19:26.129Z",
+      "nodeId": "review_guillaumeify",
+      "artifacts": [
+        {
+          "agentRunId": "6a5d5f15-fbc2-4f34-b082-2c77cc15a49a",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "15dd8fc2031a96039c0bc6b42941c4e075396f6d8a51ea1a073ed66a067c843b",
+              "sizeBytes": 132513
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/05897eab-facf-4d29-b454-e9aa9fe68c0f.request.json",
+              "sha256": "01e9f66106d574ae84419c6989145c1fc480ee0c9f0987e5396499fd58e22939",
+              "sizeBytes": 110638
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/1240dc6e-d593-4aef-b97c-7208d1c7bd33.request.json",
+              "sha256": "f6555ac276c18299517e9983042c7572ab444daaaeace06925c116199770b9b5",
+              "sizeBytes": 123463
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4b268772-0c62-45b3-9ff7-6a7e362acfbb.request.json",
+              "sha256": "60b1b12e23d4f3974a8ec82c03116b6a3c40226bb0c721db13ded34c5ae58d66",
+              "sizeBytes": 156701
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/86ddd2eb-13ed-4643-be9e-8fda67dcb7b9.request.json",
+              "sha256": "6b7fa77ffacd63539456177415a2510a7aa524dfbdd454c21de02de3a1374e35",
+              "sizeBytes": 147921
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/95fb9a64-aa54-4f60-afb6-f519682815d7.request.json",
+              "sha256": "cef499ec8e7ba24673c9d3ad01e13ac6da633caea81f9fda644e5d30ba23b27b",
+              "sizeBytes": 9088
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a6fd5f51-b485-4374-b028-cc829ff1f94d.request.json",
+              "sha256": "0a1c48c10c4be23a83f50e8e8309c48dbe5faec0b0c000a8f6196de0e68b250f",
+              "sizeBytes": 153894
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cede05b8-c5ed-4ce1-b2be-bcf9bcb8c4b5.request.json",
+              "sha256": "aed544c6e1e9db5a392b9904712dea319a270f3e339827efee4e4db3bde3c92e",
+              "sizeBytes": 82765
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f5b1768f-2015-4a8e-89ee-6726cd51b6b7.request.json",
+              "sha256": "9b98ed8d5e6bd82d65be4d18567cbf1c2430fcc0d8131068e00049f338584ea5",
+              "sizeBytes": 113802
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCLNg1AgqYqyYi9h8AR.response.json",
+              "sha256": "c64cf3b9cec5b02aae127dbca331da3ae084e4e98afcc18dd2cac830cddcb296",
+              "sizeBytes": 819
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCLPweXdRif9zWXDfyr.response.json",
+              "sha256": "a5be66db368130910e64db77da4f5fa79e9d34b8ddcabde73b27f51111747e1b",
+              "sizeBytes": 1403
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCLdLoTk851EJqPiWYg.response.json",
+              "sha256": "ca195dce3d587693f7f233ab35bd27de22f64e81752988e0fa4109a15011cbf9",
+              "sizeBytes": 2528
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCM9r6rzaVMFP4t9wMU.response.json",
+              "sha256": "befd5bdb3497c7b85ec2e26606203d896511fb1379d12c9525f762ae34b2089d",
+              "sizeBytes": 1427
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCMKeiF2TXKqzh7ihjK.response.json",
+              "sha256": "b8e9161bd91c3cd84f554530c7eb2e44e6beec2830fa9797318ce620b66bbf13",
+              "sizeBytes": 1862
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCMbtGypaqE7YUKjaE8.response.json",
+              "sha256": "864a0ccbc2aecf42d95013015eb35d61519dda460a59b47851ae341492ccef76",
+              "sizeBytes": 5634
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCNweSJCqhgMKVrQCMT.response.json",
+              "sha256": "7c84d809ababca9aecd815f8eb92b70e8fc6a5f323192e8edd34f8cb2fd2c474",
+              "sizeBytes": 3257
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGCPiTTtUEhzrAnRFSYP.response.json",
+              "sha256": "64eff32809fccc9264f30d3897c0a6dcf0d8c6a308ed775fafade6cb0af52513",
+              "sizeBytes": 2274
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "c3f638bdcea4cb8c0c24419085f3c86bb6ce95bca1dc031013453c72a04685f6",
+              "sizeBytes": 16681
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/review_guillaumeify/attempt-0-6a5d5f15-fbc2-4f34-b082-2c77cc15a49a",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/review_guillaumeify/attempt-0-6a5d5f15-fbc2-4f34-b082-2c77cc15a49a/manifest.json",
+          "nodeId": "review_guillaumeify",
+          "pipelineId": "ticket-complete-AI-3111",
+          "runtime": "claude",
+          "sessionId": "befa0f0d-15cb-47b1-9f7d-d1411d1d2f54",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "The implementation matches the spike spec exactly. Let me run the review skill.\nThis is a focused 10-file changeset I've already analyzed against the spec. Let me verify a couple of loose ends before writing the review.\nAll five `planX` sites migrated; `approvalArgsForHarness` now has exactly one consumer (`permission-posture.ts`) — no orphaned call sites. The mappings match the spike table verbatim, the collision-suppression logic matches the Decision section, and tests cover all three ACs including the refuse-to-launch guard and the no-bypass invariant.\nAh, mon ami... 🥐 I have reviewed zis code.\n\n**Mergeable: YES** — no blockers, no suggestions.\n\nThe change is clean and spec-compliant against all three acceptance criteria:\n\n- **AC1** — New `src/permission-posture.ts` maps all five harnesses to the exact args from the spike table (`--permission-mode plan` for claude/grok, `--sandbox read-only` for codex, `--agent plan` for opencode, `--tools read,grep,find,ls` for pi). It's a standalone module structured like `approval-mode.ts`, not an extension of `APPROVAL_MODES`. Subprocess tests in `headless-run.test.ts` pin the exact argv per harness.\n- **AC2** — The `unreachable(harness: never)` guard throws for any harness with no mechanism, so a `--read-only` lane refuses to launch rather than run silently unrestricted; `permission-posture.test.ts` covers that path plus the no-bypass invariant.\n- **AC3** — Read-only composes with `defaultApprovalMode: auto`: it wins and suppresses the colliding approval arg for claude/codex/grok, while opencode keeps `--auto` alongside `--agent plan`, exactly as the spike's Decision section dictates. Covered by both unit and subprocess tests.\n\nVerified independently: all five `planX` call sites were migrated to `permissionArgsForHarness`, leaving `approvalArgsForHarness` with a single consumer and no orphaned direct calls; the collision-suppression matrix matches `docs/read-only.md` line-for-line; and DESIGN.md/README/QA docs are updated consistently.\n\nC'est fini! 🇫🇷 Ship it.\n",
+      "retryCount": 0,
+      "sessionId": "befa0f0d-15cb-47b1-9f7d-d1411d1d2f54",
+      "startedAt": "2026-08-21T16:18:29.641Z",
+      "usage": {
+        "cacheReadTokens": 268857,
+        "cacheWriteTokens": 41533,
+        "costUsd": 0.5274407499999999,
+        "inputTokens": 9783,
+        "outputTokens": 3282
+      }
+    },
+    "review_codex": {
+      "completedAt": "2026-08-21T16:24:10.167Z",
+      "nodeId": "review_codex",
+      "artifacts": [
+        {
+          "agentRunId": "74981199-3aaf-448f-b893-73631b2daa51",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "d3ed39370d6c83fddd25fcf7127a36f2e7727bd7c0dda7665a2bc969587548ea",
+              "sizeBytes": 290316
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "b9404a9148eff735ee83ea695521de91f47151c69966193cd1e03e37f1213903",
+              "sizeBytes": 1493
+            },
+            {
+              "contentType": "application/x-ndjson",
+              "relativePath": "codex-sessions/2026/08/21/rollout-2026-08-21T16-18-30-01a0251d-e036-7543-8b41-51e9638d88bb.jsonl",
+              "sha256": "312fd06eb42104005a4cd068c811124b25aa8bbb5d8fa55365b1d2af4d8586e3",
+              "sizeBytes": 489908
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "61ed30e4a99546952f9c3eae1921b812c87c606f1c557e87ae2ab7897bcbd669",
+              "sizeBytes": 4761
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/review_codex/attempt-0-74981199-3aaf-448f-b893-73631b2daa51",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/review_codex/attempt-0-74981199-3aaf-448f-b893-73631b2daa51/manifest.json",
+          "nodeId": "review_codex",
+          "pipelineId": "ticket-complete-AI-3111",
+          "runtime": "codex",
+          "sessionId": "01a0251d-e036-7543-8b41-51e9638d88bb",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I’ll use the `guillaumeify` review workflow for this pass, and I’ll keep the review scope to the blind packet plus directly referenced code needed to verify findings. First I’m reading the requested rubric file, then I’ll inspect the packet and targeted code paths.\nThe rubric path was not present at the repository root. I’m locating that exact file without touching `.attractor` contents, then I’ll continue with the requested order.\nI couldn’t find `.claude/commands/codex-review.md` under the project root. I’m checking nearby workspace paths for that exact file, excluding `.attractor`, before falling back to the review artifact’s stated structure and the available review skill.\nThe requested rubric file is not present anywhere under `/vercel/sandbox`, so I’ll note that limitation and apply the review structure from your prompt plus the `guillaumeify` review instructions. Next I’m loading the skill instructions and then the blind packet.\nThe skill’s default workflow expects sub-reviewers, but this task’s output is a single blind review artifact and forbids PR comments. I’m checking whether there is a project override, then I’ll review the packet directly if no additional reviewer tooling is available.\nNo project override is present. I’m going to keep this as a direct review rather than spawning PR-comment automation, and I’ll use the skill’s blocker criteria: correctness first, inferred behavior only, no style-only findings unless they represent a real maintenance or behavior problem.\nI’m reading the blind packet now. After that I’ll inspect only the specific code paths the diff touches, using the codebase itself as the behavior source.\nThe packet covers ten changed files, with no UI-facing files. The behavior basis is intentionally inferred from the existing CLI, tests, and harness adapter patterns.\nThe diff adds a new shared permission-posture resolver and threads `readOnly` through CLI options into launch planning. I’m checking the resolver, launch call sites, and tests around config/default approval behavior before deciding whether any issue is real.\nI’ve finished the blind packet. Before making calls, I’m reading the local standards files the review workflow treats as source standards, then I’ll verify the affected functions rather than relying only on the diff.\nThere is no `ARCHITECTURE.md`, so architecture context is from nearby modules. I’m checking project-specific standards overrides and the TypeScript/testing review references, then I’ll inspect the changed paths.\nI’m moving from the diff into source verification now: the launch-plan options, CLI parser, resolver, and the existing approval-mode mapper are the critical path for this change.\nThe headless runner does pass `readOnly` into `buildLaunchPlan`. I’m checking how launch-plan args are assembled with native args and gateway/session options, because an option-ordering collision would be a real behavior bug here.\nThe existing code has two stages: `buildLaunchPlan` creates harness/provider permission args, and `prepareHeadlessPlan` wraps them with headless machine-mode/native args. I’m reading those exact regions and the harness definitions now.\nThe arg order looks deliberate: generated permission args come before per-run native args and machine-mode flags, matching the existing plan/preparation split. I’m checking the referenced read-only doc and adjacent approval tests to see whether the new docs and tests contradict existing behavior.\nThe referenced doc exists, but I’m not using its ticket/spec claims as the review basis. I’m using it only to check that new documentation links are not dead, and I’m treating behavior as inferred from code and test names.\nThe new test helper parses the emitted fake harness argv from the normalized event stream, which is the right observable boundary for these subprocess tests. I’m checking the fake harness scripts and config loading to make sure the tests are not passing for the wrong reason.\nOne potential issue is in the manual QA runbook rather than runtime code: its scratch-directory instruction may not exercise Codex’s read-only path. I’m checking the test command set and package scripts before deciding how to classify it.\nI have two review candidates: a small test gap around Grok’s auto-default collision, and a QA-doc instruction that conflicts with the existing Codex scratch-dir limitation. I’m running the focused test files before I write the artifact so I don’t report anything based on stale assumptions.\nThe focused tests are running; the early headless cases are passing. I’m waiting for the full result before finalizing the review artifact.\nThe focused runtime tests passed. I’m running the TypeScript checker once because the new exported resolver and `@ts-expect-error` test case are type-level touch points that Bun tests won’t validate.\nThe type-check is still running quietly, which is normal for this repo. After it returns I’ll write the terse `.attractor/review-codex.md` artifact.\nRuntime and type checks are clean. I’m doing one final targeted pass over interactive launch-plan callers to make sure replacing the approval mapper did not drop the existing approval default outside `eh run`.\nThe existing interactive caller still passes the approval default through the shared launch-plan path, so the approval refactor did not drop that behavior. I’m writing the review artifact with two non-blocking suggestions and no runtime blockers.\nThe review artifact has been written. I’m verifying the saved file matches the requested terse structure exactly before I wrap up.\nSaved the independent review artifact to [.attractor/review-codex.md](/vercel/sandbox/project/.attractor/review-codex.md:1).\n\nResult: mergeable, with 0 blockers and 2 suggestions.\n\nVerification run:\n- `bun test src/permission-posture.test.ts src/headless-run.test.ts` passed: 57 tests\n- `pnpm exec tsc --noEmit` passed\n\nNote: `.claude/commands/codex-review.md` was not present under `/vercel/sandbox`, so I used the prompt’s rubric plus the `guillaumeify` review criteria.\n",
+      "retryCount": 0,
+      "sessionId": "01a0251d-e036-7543-8b41-51e9638d88bb",
+      "startedAt": "2026-08-21T16:18:29.642Z",
+      "usage": {
+        "cacheReadTokens": 1966080,
+        "cacheWriteTokens": 0,
+        "costUsd": 4.0409749999999995,
+        "inputTokens": 2110844,
+        "outputTokens": 13939
+      }
+    },
+    "fork": {
+      "completedAt": "2026-08-21T16:24:10.168Z",
+      "nodeId": "fork",
+      "outcome": "success",
+      "output": "Parallel branches: review_guillaumeify: success, review_codex: success",
+      "retryCount": 0,
+      "startedAt": "2026-08-21T16:18:29.640Z"
     }
   },
-  "parallelBranches": {},
+  "parallelBranches": {
+    "join": [
+      "review_guillaumeify",
+      "review_codex"
+    ]
+  },
   "pipelineId": "ticket-complete-AI-3111",
   "status": "running",
-  "updatedAt": "2026-08-21T16:18:28.028Z",
+  "updatedAt": "2026-08-21T16:24:10.175Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -1983,6 +2196,45 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "fork": {
+      "handler": "parallel",
+      "outcome": "success",
+      "totalDurationMs": 340528,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "review_guillaumeify": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 56488,
+      "usage": {
+        "cacheReadTokens": 268857,
+        "cacheWriteTokens": 41533,
+        "costUsd": 0.5274407499999999,
+        "inputTokens": 9783,
+        "outputTokens": 3282
+      },
+      "visits": 1
+    },
+    "review_codex": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 340525,
+      "usage": {
+        "cacheReadTokens": 1966080,
+        "cacheWriteTokens": 0,
+        "costUsd": 4.0409749999999995,
+        "inputTokens": 2110844,
+        "outputTokens": 13939
       },
       "visits": 1
     }
