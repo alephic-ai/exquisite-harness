@@ -40,11 +40,14 @@ export interface HeadlessRunOptions {
   model: string
   nativeArgsJson?: string
   provider: string
+  resultFile?: string
   resumeSessionId?: string
   timeout?: string
 }
 
 interface NormalizerState {
+  assistantText: string
+  nativeResult: string | undefined
   pendingGrokText: string
   resultIsError: boolean
   sessionId: string | undefined
@@ -58,6 +61,7 @@ interface ResolvedHeadlessRunOptions {
   model: string
   nativeArgs: string[]
   provider: string
+  resultFile: string | undefined
   resumeSessionId: string | undefined
   timeoutSeconds: number | undefined
 }
@@ -86,6 +90,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
           ? []
           : parseNativeArgsJson(options.nativeArgsJson),
       provider: options.provider,
+      resultFile: options.resultFile,
       resumeSessionId: options.resumeSessionId,
       timeoutSeconds: parseTimeoutSeconds(options.timeout),
     }
@@ -137,6 +142,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
             state.executionStarted = true
           },
           plan: prepared.plan,
+          resultFile: resolved.resultFile,
           stdin: prepared.stdin,
           timeoutSeconds: resolved.timeoutSeconds,
         })
@@ -144,6 +150,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
     })
   } catch (error) {
     if (state.executionStarted) throw error
+    await writeResultFile(options.resultFile, '')
     emit({ message: errorMessage(error), type: 'run.error' })
     emit({
       exitCode: EH_EXIT_PREFLIGHT,
@@ -173,6 +180,15 @@ function assertRunnableCwd(cwd: string) {
 
 function emit(event: Record<string, unknown>) {
   process.stdout.write(`${JSON.stringify({ ...event, v: PROTOCOL_VERSION })}\n`)
+}
+
+function emitAssistantText(text: string, state: NormalizerState) {
+  emit({ text, type: 'assistant.text' })
+  return {
+    ...state,
+    assistantText:
+      state.assistantText === '' ? text : `${state.assistantText}\n${text}`,
+  }
 }
 
 function emitGrokUsage(event: Record<string, unknown>, cumulative: boolean) {
@@ -244,6 +260,7 @@ async function executeHeadlessPlan(options: {
   harness: string
   markSpawned: () => void
   plan: LaunchPlan
+  resultFile?: string
   stdin?: string
   timeoutSeconds?: number
 }) {
@@ -257,6 +274,7 @@ async function executePreparedHeadlessPlan(options: {
   harness: string
   markSpawned: () => void
   plan: LaunchPlan
+  resultFile?: string
   stdin?: string
   timeoutSeconds?: number
 }) {
@@ -319,6 +337,8 @@ async function executePreparedHeadlessPlan(options: {
     }
 
     let state: NormalizerState = {
+      assistantText: '',
+      nativeResult: undefined,
       pendingGrokText: '',
       resultIsError: false,
       sessionId: undefined,
@@ -331,6 +351,7 @@ async function executePreparedHeadlessPlan(options: {
       })
     }
     if (options.harness === 'grok') state = flushGrokText(state)
+    const resultText = state.nativeResult ?? state.assistantText
 
     const completed = await completion
     if ('error' in completed) {
@@ -339,6 +360,7 @@ async function executePreparedHeadlessPlan(options: {
           completed.error.message || `Failed to spawn "${options.plan.bin}"`,
         type: 'run.error',
       })
+      await writeResultFile(options.resultFile, resultText)
       emit({
         exitCode: EH_EXIT_SPAWN,
         resultIsError: true,
@@ -365,8 +387,10 @@ async function executePreparedHeadlessPlan(options: {
       resultIsError && childExitCode === 0
         ? EH_EXIT_HARNESS_ERROR
         : childExitCode
-    emit({ exitCode, resultIsError, type: 'run.completed' })
-    return exitCode
+    const resultWriteOk = await writeResultFile(options.resultFile, resultText)
+    const finalExitCode = resultWriteOk ? exitCode : EH_EXIT_HARNESS_ERROR
+    emit({ exitCode: finalExitCode, resultIsError, type: 'run.completed' })
+    return finalExitCode
   } finally {
     if (timeoutTimer) clearTimeout(timeoutTimer)
     if (killTimer) clearTimeout(killTimer)
@@ -378,8 +402,10 @@ async function executePreparedHeadlessPlan(options: {
 
 function flushGrokText(state: NormalizerState) {
   if (!state.pendingGrokText) return state
-  emit({ text: state.pendingGrokText, type: 'assistant.text' })
-  return { ...state, pendingGrokText: '' }
+  return emitAssistantText(state.pendingGrokText, {
+    ...state,
+    pendingGrokText: '',
+  })
 }
 
 function isGrokTextDelta(
@@ -392,9 +418,9 @@ function normalizeClaudeEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  let sessionId = state.sessionId
+  let next = state
   if (event.type === 'system') {
-    sessionId = emitSession(event.session_id, sessionId)
+    next = { ...next, sessionId: emitSession(event.session_id, next.sessionId) }
   }
 
   if (event.type === 'assistant') {
@@ -403,14 +429,14 @@ function normalizeClaudeEvent(
       for (const rawBlock of message.content) {
         const block = asRecord(rawBlock)
         if (block?.type === 'text' && typeof block.text === 'string') {
-          emit({ text: block.text, type: 'assistant.text' })
+          next = emitAssistantText(block.text, next)
         }
       }
     }
   }
 
-  if (event.type !== 'result') return { ...state, sessionId }
-  sessionId = emitSession(event.session_id, sessionId)
+  if (event.type !== 'result') return next
+  next = { ...next, sessionId: emitSession(event.session_id, next.sessionId) }
   const usage = asRecord(event.usage)
   if (usage) {
     emitUsage({
@@ -427,9 +453,10 @@ function normalizeClaudeEvent(
     (typeof event.subtype === 'string' && event.subtype !== 'success')
   if (resultIsError) emitRunError(event, 'Claude reported a failed result')
   return {
-    ...state,
-    resultIsError: state.resultIsError || resultIsError,
-    sessionId,
+    ...next,
+    nativeResult:
+      typeof event.result === 'string' ? event.result : next.nativeResult,
+    resultIsError: next.resultIsError || resultIsError,
   }
 }
 
@@ -437,15 +464,15 @@ function normalizeCodexEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  const sessionId =
+  let next =
     event.type === 'thread.started'
-      ? emitSession(event.thread_id, state.sessionId)
-      : state.sessionId
+      ? { ...state, sessionId: emitSession(event.thread_id, state.sessionId) }
+      : state
 
   if (event.type === 'item.completed') {
     const item = asRecord(event.item)
     if (item?.type === 'agent_message' && typeof item.text === 'string') {
-      emit({ text: item.text, type: 'assistant.text' })
+      next = emitAssistantText(item.text, next)
     }
   }
 
@@ -467,10 +494,10 @@ function normalizeCodexEvent(
 
   if (event.type === 'turn.failed' || event.type === 'error') {
     emitRunError(event, 'Codex reported a failed turn')
-    return { ...state, resultIsError: true, sessionId }
+    return { ...next, resultIsError: true }
   }
 
-  return { ...state, sessionId }
+  return next
 }
 
 function normalizeGrokEvent(
@@ -546,7 +573,7 @@ function normalizeOpencodeEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  const nextState = emitNewSession(event.sessionID, state)
+  let next = emitNewSession(event.sessionID, state)
   const part = asRecord(event.part)
 
   if (
@@ -554,7 +581,7 @@ function normalizeOpencodeEvent(
     part?.type === 'text' &&
     typeof part.text === 'string'
   ) {
-    emit({ text: part.text, type: 'assistant.text' })
+    next = emitAssistantText(part.text, next)
   }
 
   if (event.type === 'step_finish' && part?.type === 'step-finish') {
@@ -574,25 +601,25 @@ function normalizeOpencodeEvent(
 
   if (event.type === 'error') {
     emitRunError(event, 'OpenCode reported an error')
-    return { ...nextState, resultIsError: true }
+    return { ...next, resultIsError: true }
   }
-  return nextState
+  return next
 }
 
 function normalizePiEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  const nextState = emitNewSession(event.id, state)
-  if (event.type !== 'message_end') return nextState
+  let next = emitNewSession(event.id, state)
+  if (event.type !== 'message_end') return next
 
   const message = asRecord(event.message)
-  if (message?.role !== 'assistant') return nextState
+  if (message?.role !== 'assistant') return next
   if (Array.isArray(message.content)) {
     for (const rawBlock of message.content) {
       const block = asRecord(rawBlock)
       if (block?.type === 'text' && typeof block.text === 'string') {
-        emit({ text: block.text, type: 'assistant.text' })
+        next = emitAssistantText(block.text, next)
       }
     }
   }
@@ -614,8 +641,8 @@ function normalizePiEvent(
     message.stopReason === 'error' || message.stopReason === 'aborted'
   if (resultIsError) emitRunError(message, 'Pi reported a failed result')
   return {
-    ...nextState,
-    resultIsError: nextState.resultIsError || resultIsError,
+    ...next,
+    resultIsError: next.resultIsError || resultIsError,
   }
 }
 
@@ -774,4 +801,21 @@ function timeoutKillGraceMs() {
   if (raw === undefined) return TIMEOUT_KILL_GRACE_MS
   const parsed = Number(raw)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : TIMEOUT_KILL_GRACE_MS
+}
+
+async function writeResultFile(
+  resultFile: string | undefined,
+  text: string,
+): Promise<boolean> {
+  if (resultFile === undefined) return true
+  try {
+    await writeFile(resultFile, text)
+    return true
+  } catch (error) {
+    emit({
+      message: `failed to write --result-file "${resultFile}": ${errorMessage(error)}`,
+      type: 'run.error',
+    })
+    return false
+  }
 }

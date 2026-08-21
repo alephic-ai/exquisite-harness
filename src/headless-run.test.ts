@@ -7,6 +7,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
@@ -1680,6 +1681,180 @@ describe('eh run', () => {
     expect(without.exitCode).toBe(0)
     expect(withTimeout.events).toEqual(without.events)
   }, 20_000)
+
+  describe('--result-file', () => {
+    const runWithResultFile = async (options: {
+      env?: Record<string, string>
+      fixture: { binDir: string; configDir: string }
+      harness: string
+      prompt: string
+    }) => {
+      const dir = mkdtempSync(path.join(tmpdir(), 'eh-result-file-'))
+      tempDirs.push(dir)
+      const resultPath = path.join(dir, 'result.txt')
+      const child = spawn(
+        process.execPath,
+        [
+          'run',
+          'src/main.ts',
+          'run',
+          options.harness,
+          'ollama',
+          'qwen3-coder',
+          '--result-file',
+          resultPath,
+        ],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            ...options.env,
+            PATH: `${options.fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+            PI_CODING_AGENT_DIR: options.fixture.configDir,
+            XDG_CONFIG_HOME: options.fixture.configDir,
+          },
+        },
+      )
+      child.stdin.end(options.prompt)
+      const [exitCode] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stdout),
+        readStream(child.stderr),
+      ])
+      return { exitCode, resultPath }
+    }
+
+    test.each([
+      ['claude', createFakeClaude, 'claude-result: fix the parser'],
+      ['codex', createFakeCodex, 'saw: fix the parser'],
+      ['grok', createFakeGrok, 'saw: fix the parser'],
+      ['opencode', createFakeOpencode, 'saw: fix the parser'],
+      ['pi', createFakePi, 'saw: fix the parser'],
+    ] as const)(
+      'writes the final result text for %s',
+      async (harness, createFixture, expected) => {
+        const { exitCode, resultPath } = await runWithResultFile({
+          fixture: createFixture(),
+          harness,
+          prompt: 'fix the parser',
+        })
+
+        expect(exitCode).toBe(0)
+        expect(readFileSync(resultPath, 'utf8')).toBe(expected)
+      },
+    )
+
+    test('joins multi-turn assistant text in stream order with newlines', async () => {
+      const { exitCode, resultPath } = await runWithResultFile({
+        env: { EH_TEST_CODEX_MULTITURN: '1' },
+        fixture: createFakeCodex(),
+        harness: 'codex',
+        prompt: 'do the task',
+      })
+
+      expect(exitCode).toBe(0)
+      expect(readFileSync(resultPath, 'utf8')).toBe('part one\npart two')
+    })
+
+    test('creates an empty result file for a no-result error run', async () => {
+      const { exitCode, resultPath } = await runWithResultFile({
+        env: { EH_TEST_CODEX_FAIL: '1' },
+        fixture: createFakeCodex(),
+        harness: 'codex',
+        prompt: 'fail this run',
+      })
+
+      expect(exitCode).toBe(66)
+      expect(readFileSync(resultPath, 'utf8')).toBe('')
+    })
+
+    test('leaves the NDJSON stream, exit code, and stderr unchanged aside from the file write', async () => {
+      const runCodex = async (extraArgs: string[]) => {
+        const fixture = createFakeCodex()
+        const child = spawn(
+          process.execPath,
+          [
+            'run',
+            'src/main.ts',
+            'run',
+            'codex',
+            'ollama',
+            'qwen3-coder',
+            ...extraArgs,
+          ],
+          {
+            cwd: repoRoot,
+            env: {
+              ...process.env,
+              PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+              XDG_CONFIG_HOME: fixture.configDir,
+            },
+          },
+        )
+        child.stdin.end('do the task')
+        const [exitCode, stderr, stdout] = await Promise.all([
+          childExitCode(child),
+          readStream(child.stderr),
+          readStream(child.stdout),
+        ])
+        return { events: parseEvents(stdout), exitCode, stderr }
+      }
+
+      const dir = mkdtempSync(path.join(tmpdir(), 'eh-result-file-'))
+      tempDirs.push(dir)
+      const withFlag = await runCodex([
+        '--result-file',
+        path.join(dir, 'result.txt'),
+      ])
+      const without = await runCodex([])
+
+      expect(withFlag.exitCode).toBe(0)
+      expect(withFlag.events).toEqual(without.events)
+      expect(withFlag.exitCode).toBe(without.exitCode)
+      expect(withFlag.stderr).toBe(without.stderr)
+    })
+  })
+
+  test.each([
+    { env: {}, expectedExit: 0, name: 'a successful run' },
+    {
+      env: { EH_TEST_CODEX_FAIL: '1' },
+      expectedExit: 66,
+      name: 'a semantic-error run',
+    },
+  ])(
+    'emits run.completed as the final NDJSON line for $name',
+    async ({ env, expectedExit }) => {
+      const fixture = createFakeCodex()
+      const child = spawn(
+        process.execPath,
+        ['run', 'src/main.ts', 'run', 'codex', 'ollama', 'qwen3-coder'],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            ...env,
+            PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+            XDG_CONFIG_HOME: fixture.configDir,
+          },
+        },
+      )
+      child.stdin.end('do the task')
+
+      const [exitCode, stdout] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stdout),
+        readStream(child.stderr),
+      ])
+      const events = parseEvents(stdout)
+
+      expect(exitCode).toBe(expectedExit)
+      const completedIndex = events.findIndex(
+        (event) => event.type === 'run.completed',
+      )
+      expect(completedIndex).toBe(events.length - 1)
+    },
+  )
 })
 
 function asRecord(value: unknown) {
@@ -1720,6 +1895,7 @@ emit({
 })
 emit({
   type: 'result',
+  result: 'claude-result: ' + prompt,
   session_id: 'claude-session',
   total_cost_usd: 0.25,
   usage: {
@@ -1747,6 +1923,15 @@ if (process.env.EH_TEST_CODEX_EXIT_CODE) {
 }
 if (process.env.EH_TEST_CODEX_FAIL === '1') {
   emit({ type: 'turn.failed', error: { message: 'expected failure' } })
+  process.exit(0)
+}
+if (process.env.EH_TEST_CODEX_MULTITURN === '1') {
+  emit({ type: 'item.completed', item: { type: 'agent_message', text: 'part one' } })
+  emit({ type: 'item.completed', item: { type: 'agent_message', text: 'part two' } })
+  emit({
+    type: 'turn.completed',
+    usage: { input_tokens: 10, cached_input_tokens: 4, output_tokens: 2 },
+  })
   process.exit(0)
 }
 emit({

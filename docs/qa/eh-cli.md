@@ -361,6 +361,17 @@ Drive each with the PTY; assert on screen text.
    → the harness runs in `/tmp`; a nonexistent `--cwd` exits `64` with a
    `run.error` before any `harness.event`.
 
+6. Step 1's automated suite also covers `--result-file`: a per-harness byte
+   comparison of the written file (Claude's native `result` string wins over its
+   assistant text; codex/grok/opencode/pi fall back to `assistant.text` joined
+   in stream order), multi-turn concat joined with `\n`, a no-result error run
+   that yields an empty file at exit `66`, and the with/without invariant
+   proving the flag leaves the NDJSON stream, exit code, and stderr
+   byte-identical. It also asserts `run.completed` is the final NDJSON line for
+   both a successful and a semantic-error run. For a live check, add
+   `--result-file /tmp/eh-result.txt` to the step 2 pi request and confirm the
+   file holds exactly the reply text.
+
 ## Known limitations
 
 - Interactive steps are driven by a PTY harness, not a human; rendering quirks

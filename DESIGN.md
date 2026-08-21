@@ -105,7 +105,15 @@ spawned), `65` (spawn failure — binary missing/unspawnable), and `66` (semanti
 harness failure — `resultIsError` while the child exited `0`). Every other code
 is the raw child exit code passed through unchanged (including `128 + signal`),
 so a harness's own code can collide with the reserved block only in that
-passthrough case.
+passthrough case. `run.completed` is by construction the final NDJSON line: it
+is emitted exactly once per run, after stdout EOF and child close, and every
+completion path returns immediately after emitting it, so no event can follow —
+orchestrators treat it as the end-of-run marker. `--result-file <path>` writes
+the run's final result text — the harness-native terminal result string where a
+harness defines one (only Claude's `result` event does today), otherwise every
+`assistant.text` value joined in stream order — and always creates the file,
+empty for no-result or error runs. The write completes before `run.completed` is
+emitted, so the file is ready once that line appears.
 
 **Phase 2 (later): local router.** An opt-in localhost proxy that receives
 Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
