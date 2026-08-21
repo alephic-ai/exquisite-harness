@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:47:30.420Z",
-  "currentNodeId": "verify_review_fixes",
+  "currentNodeId": "validate_followups",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -3600,6 +3600,61 @@
         "inputTokens": 121669,
         "outputTokens": 12378
       }
+    },
+    "verify_review_fixes": {
+      "completedAt": "2026-08-21T16:55:41.211Z",
+      "nodeId": "verify_review_fixes",
+      "artifacts": [
+        {
+          "agentRunId": "09ce3bb3-488d-468b-928d-875de72d1120",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "21771fa933469aaf33fbf2eae42ed1cef3861381c5fc0ab69e53f52c9ea380ff",
+              "sizeBytes": 80519
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "ebc78bfffceb3c1c9756024aea0e33853f7cb65e5737b8176713169aba686809",
+              "sizeBytes": 1493
+            },
+            {
+              "contentType": "application/x-ndjson",
+              "relativePath": "codex-sessions/2026/08/21/rollout-2026-08-21T16-54-36-01a0253e-efa8-7943-b1ca-1870992d09c1.jsonl",
+              "sha256": "d966a8e90d2c165bb6eb59e9479627c981107e77b97e5f4e8662655bd783b804",
+              "sizeBytes": 196717
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "024c2e903cdb4e4b7a266b9525c2e42f997eda5892522c6c4a1397ad3d4f485a",
+              "sizeBytes": 14328
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/verify_review_fixes/attempt-0-09ce3bb3-488d-468b-928d-875de72d1120",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/verify_review_fixes/attempt-0-09ce3bb3-488d-468b-928d-875de72d1120/manifest.json",
+          "nodeId": "verify_review_fixes",
+          "pipelineId": "ticket-complete-AI-3129",
+          "runtime": "codex",
+          "sessionId": "01a0253e-efa8-7943-b1ca-1870992d09c1",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I’ll verify only the previously listed fixes, skipping guillaumeify as requested, then update the two review artifacts and either prune or retain `.attractor/review-fixes.md` based on the result.\nThe repair artifact exists. I’m reading that list now and will cross-check only those items against the current implementation and focused tests.\nThe current `fetchHeadlessRateCard` already separates the pinned branch, and I’m checking the focused regression tests so the verification report can cite concrete evidence rather than just code shape.\nTwo fixes are directly covered by tests already. I’m checking the pinned-unresolved headless path next, because that was the correctness blocker from the prior Codex pass.\nThe previously reported issues look resolved in code: unresolved pinned pricing returns `unavailable`, prompt tiers include cache tokens, and API-key resolution moved into the pinned branch. I’m running the focused pricing/headless tests now as repair verification, not a new review.\nThe focused test run is still in progress; it has started through the headless suite cleanly so far.\nThe focused verification passed: 45 tests, 0 failures. I’m updating the repair-pass artifacts now and removing the resolved fix list.\nThe review artifacts are updated and the resolved fix list has been removed. I’m doing a final filesystem/status check so the pipeline gets the expected state.\nSTATUS:success\n",
+      "retryCount": 0,
+      "sessionId": "01a0253e-efa8-7943-b1ca-1870992d09c1",
+      "startedAt": "2026-08-21T16:54:36.583Z",
+      "usage": {
+        "cacheReadTokens": 292224,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.903064,
+        "inputTokens": 336451,
+        "outputTokens": 3746
+      }
     }
   },
   "parallelBranches": {
@@ -3610,7 +3665,7 @@
   },
   "pipelineId": "ticket-complete-AI-3129",
   "status": "running",
-  "updatedAt": "2026-08-21T16:54:35.349Z",
+  "updatedAt": "2026-08-21T16:55:41.211Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -3923,6 +3978,19 @@
         "costUsd": 0.041926258,
         "inputTokens": 121669,
         "outputTokens": 12378
+      },
+      "visits": 1
+    },
+    "verify_review_fixes": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 64628,
+      "usage": {
+        "cacheReadTokens": 292224,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.903064,
+        "inputTokens": 336451,
+        "outputTokens": 3746
       },
       "visits": 1
     }

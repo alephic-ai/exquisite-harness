@@ -1,21 +1,22 @@
-## Codex Review Complete
+## Repair Verification
 
-**Files reviewed**: 6 **Issues found**: 1 **Blockers**: 1 **Suggestions**: 0
+Verified only the prior fixes listed in `.attractor/review-fixes.md`; no fresh
+full review was run.
 
----
+- Resolved: pinned gateway runs no longer fall back to aggregate model rates
+  when endpoint pricing is unresolved. `fetchHeadlessRateCard` now returns
+  `{ kind: 'unavailable' }` immediately after an unresolved pinned
+  `fetchEndpointPricing` lookup.
+- Resolved: prompt-tier selection includes cache tokens. `endpointRates` now
+  keys the prompt tier on `usage.input + usage.cacheRead + usage.cacheWrite`,
+  with a regression test crossing a tier boundary via cache reads.
+- Resolved: duplicate API-key resolution on the unpinned path was removed.
+  `resolveApiKey` now runs only inside the pinned endpoint-pricing branch, while
+  the unpinned path lets `fetchModelMeta` resolve its own key.
 
-## Verdict
+Focused verification passed:
 
-**Mergeable**: NO **Blockers**: src/pricing.ts:189 - Pinned gateway runs fall
-back to aggregate model rates when endpoint pricing is unresolved, which can
-emit the wrong cost for the pinned provider; return unavailable for unresolved
-pinned endpoint pricing and use aggregate rates only for unpinned runs.
-**Suggestions**: None
+`pnpm test src/pricing.test.ts src/headless-run.test.ts` -> 45 pass, 0 fail.
 
-## Findings
-
-- **Blocker:** src/pricing.ts:189 — Pinned gateway runs fall back to aggregate
-  model rates when endpoint pricing is unresolved, which can emit the wrong cost
-  for the pinned provider. Fix: Return `{ kind: 'unavailable' }` after a failed
-  pinned endpoint-pricing lookup, and fetch aggregate model rates only when no
-  gateway provider is pinned.
+No critical regression causing data loss, a security vulnerability, or a
+production crash was identified during this scoped repair verification.
