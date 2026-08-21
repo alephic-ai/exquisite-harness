@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:48:36.411Z",
-  "currentNodeId": "tactical_fix",
+  "currentNodeId": "lint",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1703,6 +1703,415 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-21T16:19:10.313Z"
+    },
+    "tactical_fix": {
+      "completedAt": "2026-08-21T16:22:30.428Z",
+      "nodeId": "tactical_fix",
+      "artifacts": [
+        {
+          "agentRunId": "29d478c3-084f-4bf9-adeb-f5522499d298",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "975476860cee44680caddc5f8f7f22a83c9f0ebe31ff6095855c61207bd5bcb5",
+              "sizeBytes": 1811793
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0181806f-e978-467d-8034-702e70ed7cb1.request.json",
+              "sha256": "6a5b05d1fd7e18a5249315f232df60bdfaaf966522ab1509779a64421bee5451",
+              "sizeBytes": 124451
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/030d16a7-de5b-41a7-a02b-72d236c04193.request.json",
+              "sha256": "2b8f57e59b3620ae6fa3778f0804f93b0ffda61806d9333a4b3c277f919332e9",
+              "sizeBytes": 137527
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/036f8276-6013-492b-8bdb-5cc241452bcd.response.json",
+              "sha256": "23b88a91489f77afefed4f258b84b8774bd0a8b25253f75e297c2715b2ddcba4",
+              "sizeBytes": 1249
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/05792920-242e-4bb9-9b68-e4bb8ffda777.response.json",
+              "sha256": "fb924317875333286d039a36fcc5eac99f2fd0757c927b91d545fae6996c9c30",
+              "sizeBytes": 2364
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0c22648d-bf81-407a-87f9-5c29d604d758.response.json",
+              "sha256": "278307ff613362856ed3b518e0e9fa29e49cbcfef3a8ad9dd32fc2e1741eb163",
+              "sizeBytes": 916
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/10797f73-fae0-4b0e-bdc6-a2ba0419d02e.request.json",
+              "sha256": "d092f8be6d29e7e6208acebfdee706c4c6705ebdc3dc86936070f65f641e4446",
+              "sizeBytes": 106297
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/11b95ad0-a14c-4c3d-9118-02ede18a1c3f.response.json",
+              "sha256": "337912d53505b25e15ab285aac06c08b1badeae118087b24ecd343a0613857cf",
+              "sizeBytes": 842
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/14bf079c-385c-4f64-af56-1503c2dc929d.response.json",
+              "sha256": "219098e5272b5f4047de9a43ea712a3ca56692ef1f984256272b3e24e16d66b8",
+              "sizeBytes": 745
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/17d6f03e-c497-41e7-9d78-9e84fbcdddcd.request.json",
+              "sha256": "202d44bb8a1c06f11ef21db67f694aba3423544f0374a464433c46083137316b",
+              "sizeBytes": 140819
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/1ae5d59a-28c8-45c8-9a7b-0a8bd8284b46.response.json",
+              "sha256": "d68544bc67c76e21ce1f08684e56b98e543f4a249bf929ee58584d4ac3236632",
+              "sizeBytes": 1013
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/1e6dd829-b3a6-4d3e-a461-edb85c448ad7.response.json",
+              "sha256": "7316292b74f86e029d0745836a5ef25394e6a9270a87410a96d06a5536b47cc8",
+              "sizeBytes": 740
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/22b1b790-eedc-4b41-aae8-fa9ec503e70f.request.json",
+              "sha256": "569cb684b873c2bcf47d2dce9557a8df02d4e7c0894a05a45764fc90d85e8294",
+              "sizeBytes": 129456
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/28a9d6c1-a0d9-41cd-a309-99b7f5f4508e.request.json",
+              "sha256": "e58e9b58aaaacd292e1105dc7da06c9adf90a288ff43e3467181c0e41fadec1e",
+              "sizeBytes": 136497
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2caf3948-2245-4b57-b7fc-7d99f114eb28.response.json",
+              "sha256": "ddc27acf45e27a62a9448c96a571fba6ecf2c9bbf360030ada1f1ae431c8f3ef",
+              "sizeBytes": 590
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/39a8cfed-a269-487b-970b-d29bc869fd60.request.json",
+              "sha256": "ad7616b064ce2c0b9dfc55ad69049b376bf8746251ef18d87605ebaafe16af54",
+              "sizeBytes": 135028
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3b264eb5-8e90-487d-b8c6-54667a9a0579.response.json",
+              "sha256": "509135f075ceb5f9bd76241ce034c27a478ac1a6cb61230c5b2e6f218fee127f",
+              "sizeBytes": 934
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3fcf6b60-4bdc-4f7d-9051-d683b08658ea.response.json",
+              "sha256": "8fe20ed79f438623aab53801898ae543b14169f0cf99dcc15c1b4f2c52fe15b1",
+              "sizeBytes": 1005
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/41375ef2-f7cf-452f-83d8-30cb952c9325.response.json",
+              "sha256": "b4c1639767a0c3efab78d2e993ab9dee2ea54f721309e7096175ef6da30c0956",
+              "sizeBytes": 746
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4997ddb2-28b9-436f-ad88-a82181ce1245.request.json",
+              "sha256": "d2a5a3d7b905ffa98593a7b6b8118c3feb8336332cb4bde314acf07255199733",
+              "sizeBytes": 133045
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5f2a692f-a8f2-43b8-8ce5-3857bc972300.request.json",
+              "sha256": "a770aa13a48e04e0626be8b2f1d8a939a86438339f67b75ec68346c2965a7763",
+              "sizeBytes": 142526
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/60ec6e1e-c747-445d-aeb8-34c10dea898e.response.json",
+              "sha256": "61387cb7c091e66691fc756ccc1894fe1fe8aabe28de723f3c1b0e9867c3e9d8",
+              "sizeBytes": 1689
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/60fba89f-f897-4a1c-a004-75bb03ddadaa.request.json",
+              "sha256": "cee04cd2172632a2aef4eb0c5127ce9c76605a037e600f355a1c51fb2840acb8",
+              "sizeBytes": 106048
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6201fd9a-ccd1-4573-a8e0-220c917356d4.response.json",
+              "sha256": "ed30ecded1aeef0ab8787c5b15a8cea31ff1eddace5c9d4527597f1bf1bc1e36",
+              "sizeBytes": 995
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6680db43-22a0-4ce9-bcce-b61a2565a6a5.response.json",
+              "sha256": "9859b66750ae7d0f1f74dac6c4d924899975f973143bff9ca654b9f6db5370ce",
+              "sizeBytes": 2222
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/67255d8d-584e-46c5-b9ed-ac23b54852a1.request.json",
+              "sha256": "7c9c190da9d41f7869765b6f2fef21d89a19b53448c6f72b5174de70191128dd",
+              "sizeBytes": 154613
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6b84b7c5-bae9-4383-8d7f-fcdf4752c282.request.json",
+              "sha256": "a8c1aa86ef42e851e421451fa9780544d4059e7ea7d91ce6254658632d73af76",
+              "sizeBytes": 120425
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/727cabf8-4ee7-4901-980a-458c24943346.request.json",
+              "sha256": "6f24a7664083fe5e39b9b795ba6dfc1ca833f41bd19e5f2ffb1d6ebead71a7fe",
+              "sizeBytes": 134186
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/73836995-e492-4178-9915-450d1e3151e9.request.json",
+              "sha256": "55b0bc6e42d6b56db63dada9a3cbdd7cc8e4ac14d47ccc5240362ba89744e850",
+              "sizeBytes": 159272
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/769650f8-984e-44b6-b2bb-8e6db402fd80.request.json",
+              "sha256": "6c66ef65d3a221703f86aefb824471fe00c0cc804ffb7dd06c4e87891ee4285e",
+              "sizeBytes": 155879
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7764b79a-722c-4b89-8095-902efaf1ee88.request.json",
+              "sha256": "0930c0ace820652d54d63600e9f3777cfd899497c2ebbd4aabbbbe34ba375610",
+              "sizeBytes": 13512
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7832d04f-b3fc-4a39-8727-28bf5464baa7.response.json",
+              "sha256": "42e62559661591c4e9d415fa90bb3b39b378e6d1bfb480ae41891d64198f33f1",
+              "sizeBytes": 874
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7946dc37-61a9-47f9-bd05-af430a2d6cd7.response.json",
+              "sha256": "3a1d61bf573351f2f8b295e12d2467d65724ff87a60adfdd356cd4c82666d503",
+              "sizeBytes": 932
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/88232b62-dda3-4052-87fe-00902c13ef07.response.json",
+              "sha256": "08db3a81bc2b1a5b1e7ef0b4ed3bdf369909f0f796fd956a621b47d18734e47a",
+              "sizeBytes": 748
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/92bddedf-94a2-4222-bc6c-dee679f163e1.response.json",
+              "sha256": "6e05c3dafd27db44b558482e624b81b3cbd804737607b4b200fe26fedaab637a",
+              "sizeBytes": 1169
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/93ff5962-7e6c-4d85-9548-6633defa6bce.response.json",
+              "sha256": "5b4afc09165b211455395dc1f32b4ae9dec571f23938f1eb40b6802b5a803012",
+              "sizeBytes": 670
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/947dd1d7-2a82-47d5-9716-7389ed7a4253.request.json",
+              "sha256": "620596660d673925bc60dccb24cba8c7b8773c27222b73759662e902b923d7b3",
+              "sizeBytes": 110061
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/97a9b614-58bc-4129-8b4d-e1894d6b6cf8.request.json",
+              "sha256": "502e813c1d27345096c74368a71dd56c703c282961170611aeafe4e18017703f",
+              "sizeBytes": 119250
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9f6c5f3c-50e6-40d5-ad10-048bc84a5360.response.json",
+              "sha256": "2793f519c98ebfa1a9c6501148a4ed3a12c7ac5c0bd1958fa1c7c2700ffb695e",
+              "sizeBytes": 739
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9fa0de03-300b-4515-8ab3-ca773810e50c.response.json",
+              "sha256": "d288c11a32e5c406e54b112fb94834c8a0c093c1a57085bc2d091cd5494ab016",
+              "sizeBytes": 3137
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a2c2b304-3bfa-40fa-9dc3-0975c9d5089a.response.json",
+              "sha256": "574a089f051059da540ea5bac785acf23776491d0bcd88825044bdd0e8af418e",
+              "sizeBytes": 1097
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a598d571-b91c-4bb3-903f-00e079c5012e.request.json",
+              "sha256": "ceff7c380d6a7f214f84116a1872bf0773bee433d07e97b5431bf484303cecb8",
+              "sizeBytes": 147113
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a8cf3fdb-489c-4168-abe1-14f197e0d6cb.request.json",
+              "sha256": "6598f37911a4cbb6649cd0fd37e1f04c53e8aa0588e1f727933c558022e1ea31",
+              "sizeBytes": 156898
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b010e960-fb75-4b5f-bbf1-66b493be63bb.request.json",
+              "sha256": "dd4cc80923e26ab5cb8ebf49dd9d3b5bd009b74e3759195ca0617759a5200294",
+              "sizeBytes": 165728
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b1b9cc99-9bb1-4431-a5b9-05ff107cdf12.response.json",
+              "sha256": "be106ac18bb4c072eb2b91630c0160b7752c6c5d665ba82c78c31f9307e673c5",
+              "sizeBytes": 877
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bcc560e0-668b-47db-b699-6b2abb62cafd.request.json",
+              "sha256": "d090f2b45844f6968106ab82215e751ab33c98396b7e7284c07db63f2ea9aa2e",
+              "sizeBytes": 122826
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bf4f0228-11b6-4b5b-bc8c-46883ec8d60d.response.json",
+              "sha256": "ff3846704022d8595a5c4a15959c3082dea7d78158a3cd2a43713e8e0b1144c7",
+              "sizeBytes": 746
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c269c859-1ed0-45fe-8a2c-ca0acf19ddaa.request.json",
+              "sha256": "90007d94c21b1adf19b93a8d09651f7211de65e3941c24fcf187c0cad9cf1916",
+              "sizeBytes": 163004
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c29d92a1-6905-4bcb-9315-609d2987aa71.response.json",
+              "sha256": "94b41c640f638b4f4b081faeaca2ed6e7ad43eb3f63beacd81b354e1da2d830d",
+              "sizeBytes": 739
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ca4dea17-72cb-4357-a871-b66721964cdc.response.json",
+              "sha256": "37bc01d414cc726d2596a5629e0fff9a46fc6679a1daec058e999881af9bae57",
+              "sizeBytes": 1128
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cd70fae4-1c3b-4d07-9eb2-1729b8415198.response.json",
+              "sha256": "3a779b77043364030c1f901057f83e6ebff35b898e7823b03bdecf4eb4114359",
+              "sizeBytes": 745
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d00da607-31cf-419c-9b72-463940fad84e.response.json",
+              "sha256": "13989a27c09ed5af9fbd709d97e126ece844145e5f74c6cbb510815579a7b49d",
+              "sizeBytes": 846
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d455d34d-d164-43ef-828a-aa5a2db30ed6.response.json",
+              "sha256": "5f26ac55b77204ec6cf5d436dbff3910b75dfe3c2bd87e5da2e906f23f6688e2",
+              "sizeBytes": 980
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/de2c300e-e6ed-4fad-9842-63c9d9ed7519.request.json",
+              "sha256": "30f00ed157d3bb8b9dc128d2cd5bdef45d65dc95a7c069777cdd9021c9a9b104",
+              "sizeBytes": 155341
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e5e009da-cb63-451a-a0aa-6117357bb966.request.json",
+              "sha256": "9d3a66697ec7be2f40aa113ce5abad7bd7d42d01d55b43eed249d2a390b1d787",
+              "sizeBytes": 165005
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e6f62b29-de6e-4331-a7a0-c2d08ffa6f84.request.json",
+              "sha256": "2517a0c61a5e9db35514cfac8a9fe97b4dc7a72a6218f796075fbbc53affda57",
+              "sizeBytes": 143050
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e9aec6d3-39c2-4cd7-93c8-7ab71dc55791.response.json",
+              "sha256": "4e6372dc88147307e13ce24501c302c8fe11e6650730d1adbfbf7c845728a3f6",
+              "sizeBytes": 797
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/eb11a0a3-6f24-492c-b5b3-b5cc82d6e7ed.request.json",
+              "sha256": "3f577afb21484ec80c3dfedd929d835cdc67c68754e18e74a8d57e4c3cbc9916",
+              "sizeBytes": 117979
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f740effa-c47b-4376-a48b-da77549f1ebd.request.json",
+              "sha256": "9019dd04a9be0b1b9b5e7f83c22b160998a269c122658387c3dd65895f3dd58b",
+              "sizeBytes": 151723
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f80e3c67-a82c-47b0-b7ba-964c9894dd5c.request.json",
+              "sha256": "926bea265ce27c4feb5659947edd5028b9f7ec3edbdbad5b13453339bf1dc1ec",
+              "sizeBytes": 147605
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/fe21b4c9-85f4-4a23-af8a-c764b6ef01aa.request.json",
+              "sha256": "51a10e4e0df73fbc4c7297fc95428299a7a1666eed83bfff56fa22aca5474af9",
+              "sizeBytes": 138409
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "eb94872378fe24bfd36baccc9ed34fcf4b26d2613dad9dd273f691499bf4b1c9",
+              "sizeBytes": 44822
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3108/b3eb78e84ea1-1cfa0b6f-3c2f-43f4-95f5-1fa23136a318/agent-artifacts/tactical_fix/attempt-0-29d478c3-084f-4bf9-adeb-f5522499d298",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3108/b3eb78e84ea1-1cfa0b6f-3c2f-43f4-95f5-1fa23136a318/agent-artifacts/tactical_fix/attempt-0-29d478c3-084f-4bf9-adeb-f5522499d298/manifest.json",
+          "nodeId": "tactical_fix",
+          "pipelineId": "ticket-complete-AI-3108",
+          "runtime": "claude",
+          "sessionId": "2eca7135-46ab-4c20-9019-d8bae24d6afb",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "Now let me look at the existing tests for `--result-file` and the terminal-event guarantee to understand expected behavior.\n\n\nLet me check `errorMessage` and the spawn-error path context around line 356-370.\n\n\nI have everything I need. The fix: wrap the result-file write so a write failure can't pre-empt the terminal `run.completed` event. I'll make `writeResultFile` non-throwing (emit a `run.error` and return a success flag), and force a non-zero exit code at the normal-completion site when the write fails.\n\n\nNow the normal-completion site — force a non-zero exit code when the write fails:\n\n\nThe spawn-error site (exit `EH_EXIT_SPAWN`=65) and preflight catch site (exit `EH_EXIT_PREFLIGHT`=64) are already covered — their exit codes are non-zero, and the now-non-throwing `writeResultFile` guarantees `run.completed` is still emitted after the write. Let me verify the targeted test file still passes:\n\n\nAll 44 pass. Let me confirm the fix actually resolves the blocker with a repro — an unwritable `--result-file` path must still emit `run.completed` as the final line. Let me check for reusable fake-harness fixtures:\n\n\nI have everything needed. Let me write a throwaway repro to confirm the fix: an unwritable `--result-file` path must still emit `run.completed` as the final line with a non-zero exit code.\n\n\nThe fix works: exit code 66 (non-zero), `run.completed` is the final line, the write failure is surfaced as a `run.error`, and stderr is untouched. Before the fix this path produced zero NDJSON lines. Let me clean up the repro and check the diff:\n\n\nThe diff is minimal and matches the prescription. Let me check the `.plans/` file change (it was already committed in the `commit_plan` step, so something modified it afterward):\n\n\nThe `.plans/` change is just prettier line-wrapping from the earlier `lint` step — pre-existing, fine to commit. Now let me update AC3's evidence in `.attractor/ac.json`, since the fix directly strengthens the terminal-event guarantee it covers:\n\n\nNow let me commit everything:\n\n\nFix applied and committed. Summary:\n\n## What was done\n\n**The blocker (Codex finding):** An unwritable `--result-file` path made `writeFile` reject *after* the harness ran, throwing past `runHeadless`'s catch (since `state.executionStarted` was true) — so `run.completed` was never emitted, breaking the terminal-event guarantee the PR itself documents.\n\n**The fix** (minimal, exactly as prescribed in `.attractor/review-fixes.md`):\n\n- `src/headless-run.ts` — `writeResultFile` now catches write errors, emits a `run.error` (`failed to write --result-file \"<path>\": <reason>`), and returns a boolean instead of throwing.\n- At the normal-completion site (`src/headless-run.ts:390`), a failed write forces the exit code to `EH_EXIT_HARNESS_ERROR` (66, non-zero) and `run.completed` is still emitted as the final line.\n- The spawn-error site (exit 65) and preflight catch site (exit 64) are already covered by the non-throwing write — both already emit non-zero exit codes after the write, so `run.completed` remains final there too.\n\n## Verification\n\n- `bun test src/headless-run.test.ts` → **44 pass, 0 fail**.\n- Repro of the original bug (unwritable `--result-file` path): now exits **66** with **`run.completed` as the final NDJSON line**, one `run.error` surfacing the write failure, stderr empty. Before the fix this produced zero NDJSON lines.\n\n## Notes\n\n- The fix didn't prescribe a test, so none was added.\n- AC3's evidence in `.attractor/ac.json` was updated to note the write-failure edge case is now covered; no AC marked blocked.\n- Committed as `bb47524 fix: apply review fixes` (also includes a pre-existing prettier reformat of `.plans/AI-3108-result-file-and-terminal-event.md` from the earlier lint step).\n",
+      "retryCount": 0,
+      "sessionId": "2eca7135-46ab-4c20-9019-d8bae24d6afb",
+      "startedAt": "2026-08-21T16:19:11.988Z",
+      "usage": {
+        "cacheReadTokens": 921088,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.065337634,
+        "inputTokens": 215187,
+        "outputTokens": 44511
+      }
     }
   },
   "parallelBranches": {
@@ -1713,7 +2122,7 @@
   },
   "pipelineId": "ticket-complete-AI-3108",
   "status": "running",
-  "updatedAt": "2026-08-21T16:19:10.608Z",
+  "updatedAt": "2026-08-21T16:22:30.428Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -2013,6 +2422,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "tactical_fix": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 198440,
+      "usage": {
+        "cacheReadTokens": 921088,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.065337634,
+        "inputTokens": 215187,
+        "outputTokens": 44511
       },
       "visits": 1
     }
