@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:48:30.863Z",
-  "currentNodeId": "plan_review",
+  "currentNodeId": "commit_plan",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -319,12 +319,289 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-21T15:54:00.995Z"
+    },
+    "plan_review": {
+      "completedAt": "2026-08-21T15:57:54.344Z",
+      "nodeId": "plan_review",
+      "artifacts": [
+        {
+          "agentRunId": "1f808bd9-4959-44ed-8787-72d56059db25",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "3fd72c5ed3d9f15eecad60f211cbd61153a79778fcc0d2cdab21095b538e6c30",
+              "sizeBytes": 312379
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0a643e61-d237-419f-a418-2b6a4b2002a1.request.json",
+              "sha256": "f49fb567c426424298ab5df08502a467a11f36b7fc564280521ec1519d68a53a",
+              "sizeBytes": 189609
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0cec0f4b-bd30-4f53-95f0-74e3ff988504.request.json",
+              "sha256": "559797f11f75b78bc12abd57c7f2032ccd0376bbeeca747f20bcccbe55d0fad0",
+              "sizeBytes": 83524
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/1b50424a-276a-4d6f-9b03-5d1aeb1febb6.request.json",
+              "sha256": "ff8dc9e00df43c1e8df91b2c0e0426afb8a1b222fae75f7a6d8fbae260e691a3",
+              "sizeBytes": 173778
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/50934e2b-7b4d-4795-8620-a8d21dbfb48d.request.json",
+              "sha256": "303aac123062d02ffdcbcb5967147e9faeeb00461a44cef28ad376f104f3579e",
+              "sizeBytes": 116848
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/66936ee5-7767-4b64-bc64-c5681b61c795.request.json",
+              "sha256": "3488a14baafe7588f6f71e20db2a001693a7e037fda0af91c48aecc7de3df0c0",
+              "sizeBytes": 101796
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/67b20465-0d93-416c-acea-b08387b79f33.request.json",
+              "sha256": "8cf9aa6c9da8d34924c6a5166d61768df7243c17bfc4869e3e3a49b2b1c205a1",
+              "sizeBytes": 145696
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/69419904-8585-4a13-9440-1c884703dece.request.json",
+              "sha256": "a2dc6856226f83087d13ed97c663754a68444f60cd2496b9eeae25689e8306e7",
+              "sizeBytes": 126577
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6aefa27d-dcab-45a0-8aac-01b395999804.request.json",
+              "sha256": "e0b74e0c93e92b592a505733963ce224a686e9b346968b6a826c4adfa4ae7192",
+              "sizeBytes": 135956
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/74f6f7a9-bd1e-4e4b-ab96-b1af510389d7.request.json",
+              "sha256": "f905176734c2f801d8af55097849c0916e55aa557c174a4bd384d69f9ac88f3e",
+              "sizeBytes": 168212
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7bb5ce1a-e35a-47ff-a2d6-59cd991a7041.request.json",
+              "sha256": "40e17c66d38242f4a24abfe9d272c302b3793c964e6a868b3c51e3cd8e2c10ec",
+              "sizeBytes": 162665
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/845462ed-faf0-4a19-8cfb-b0b82af603f2.request.json",
+              "sha256": "5bd8801a790662b0288fce6326bf531d0b5e0efe210686bd9f8d79e46f4404ea",
+              "sizeBytes": 152653
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/93d85dad-c0ed-4af1-ba12-e3c99de93366.request.json",
+              "sha256": "2df3f814737a2db06bcfff02879797c48555490d151c79903fb4268c51d5c562",
+              "sizeBytes": 140554
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/94e9b6d2-3710-4ad9-9037-4a5f030326ba.request.json",
+              "sha256": "66212e3c82c02e67117b3f268e8bfa33e75c02512f91349332553557a6990463",
+              "sizeBytes": 143473
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/96488323-6848-44ed-9f9e-4ebbd1b16a5e.request.json",
+              "sha256": "4ef4a9f6f1f8499150ba080aaca3ae7168cc5c250c1a1070334f5edc80f9144f",
+              "sizeBytes": 5674
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/98cc53af-2a45-47c7-a5f5-0a7a7725c384.request.json",
+              "sha256": "82a51b545458aef7706b81d6c93261ce27a9db0928cdf94aaafc181e3b31f158",
+              "sizeBytes": 131152
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c24203cd-b3a0-43f4-a855-695628ac9642.request.json",
+              "sha256": "ae8ef0172924f0a4407ae00871a02413a7f5455563bb1d3e39ec3ed17bc6c3cf",
+              "sizeBytes": 84947
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e50e5cb6-a0e2-4d9a-bf95-079065c11a3b.request.json",
+              "sha256": "9a4e0528bca36f4ce087840c2bd4749902567bac008a6615d8d5a84c2d08e9b4",
+              "sizeBytes": 148571
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ed32fe5e-c005-4cd6-ae5e-3c9ff3adc263.request.json",
+              "sha256": "99b34399b5cff871b509a2948d56c0b566a080cde3bd28b37e863fcf8df599e5",
+              "sizeBytes": 180254
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f716acd2-828b-4c0f-a46b-1e8cb1f06af5.request.json",
+              "sha256": "f89f1cabd52c3d4f62436b1841e0162ed4ad1b436f3d7508000a74e3926bacf3",
+              "sizeBytes": 184716
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAUFPwW1UaeXTHkfrGF.response.json",
+              "sha256": "5f64d3e7d8b1dfb91c04b771a8d1cef5c15234f3b0a2abd207bf43d6afcc7844",
+              "sizeBytes": 822
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAUGko1awmUx14f8v7M.response.json",
+              "sha256": "b360eecd36c4a08b1cd64e4b6038f8f793ebde3cef97532382007707e946bb22",
+              "sizeBytes": 1680
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAUgwqaPRpprYsNQxjP.response.json",
+              "sha256": "fd51b6ab7bd3d567c5ec8621c5fefcf2492cd776f2333e50ae1a9b2df6bde20e",
+              "sizeBytes": 949
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAUxJZW7merUkYqCACd.response.json",
+              "sha256": "ba8953edc2877d49a6ae09dc4abcbfa9d2d7ecf1b894ec1b25233f554c280c19",
+              "sizeBytes": 3893
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAVu8bcfEW6uK7duhU9.response.json",
+              "sha256": "0f2ef87686a0ac78308fe10865a0378ce9064a70372c824f02214ecf48245e9b",
+              "sizeBytes": 4472
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAX7hRGTD3HvCbnuwcf.response.json",
+              "sha256": "aed8f4b8cefc1681a5a3b3483d391243b80163a12c0fa95355d0fdcdcbd336cf",
+              "sizeBytes": 3083
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAXsr1VVPi3LoMEBJCS.response.json",
+              "sha256": "8c11455ea1fbb24e0873cc941f3af279ae58ce12040bb244020e385a0835fff5",
+              "sizeBytes": 2167
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAYPumVzJpquhC4sPGN.response.json",
+              "sha256": "cca5367da20b2e416d9218c3ebc8246beaa92b18e07185eca25d824ecf8259a5",
+              "sizeBytes": 2759
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAZ4SGgHo7vSYEZgBmp.response.json",
+              "sha256": "bd208cf7666525ef3ec960d21c0270e548a6f5bc2ed8bd9cd2325ac84dd0f5ce",
+              "sizeBytes": 2878
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAZoRfKQKpzauTs8R7Z.response.json",
+              "sha256": "fe9f5ad04cff4c6062c7078de6f3fe54e58e778b825d52a5ab18d4d6d4a565e7",
+              "sizeBytes": 1713
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAaBRExanoHR2KKMRJ7.response.json",
+              "sha256": "a80542519eb13f0176e7a6f48978291048d04705399b6fb4a52dab108ebd671e",
+              "sizeBytes": 1202
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAaaN81PZp6s6txxkYK.response.json",
+              "sha256": "ee0494be7a014b866311038b30580f1745db65bd6df01db95e3f9a5b49df8aaa",
+              "sizeBytes": 2938
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAbRYaTZgnfByTJEvu6.response.json",
+              "sha256": "37ec3e75947645ddd683bdbc5deb3d47415e7bda00cc7466d575ea0de07fe573",
+              "sizeBytes": 9291
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAdt8J3eUv8yCykVSSr.response.json",
+              "sha256": "2ad2ecad70e55ccea43ed5c2a33aa2b7767d74de3262ee613feeaba0695e26cc",
+              "sizeBytes": 1905
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAeLsNcuqheAYj1i73U.response.json",
+              "sha256": "08a532ff90af3e761a5598eecac9694c39e33ff586713541aee04cf03a8ded88",
+              "sizeBytes": 4394
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAfdpsZLZwobtGShPWK.response.json",
+              "sha256": "64d0ad58f2069b052e8d896e5ad0ab96ffa44fb7127cd4c87880d8d1cd2604cd",
+              "sizeBytes": 6769
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAhYxEkFF4eGJCpaBDn.response.json",
+              "sha256": "807e0cfbcfb392a5ee16e477847b07e551bb77c977bce2b0f3877189dc5d6656",
+              "sizeBytes": 3634
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAiSe16KTdZvg256tnN.response.json",
+              "sha256": "72c6bd7b7c42be95d2ccca9095aa1254ab888c55acc47b0e8a579e396675bdfe",
+              "sizeBytes": 5320
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGAkGGitQUzPczvxvAG1.response.json",
+              "sha256": "51e71c1613aec1009448aa9a90cea46d5d6f7fe2e08736c5877723c4914cc480",
+              "sizeBytes": 3380
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "f6233996f50fe7e08e5c19963af9663360e6765710e37b52796e6b9e4ad85f2c",
+              "sizeBytes": 24891
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/plan_review/attempt-0-1f808bd9-4959-44ed-8787-72d56059db25",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/plan_review/attempt-0-1f808bd9-4959-44ed-8787-72d56059db25/manifest.json",
+          "nodeId": "plan_review",
+          "pipelineId": "ticket-complete-AI-3111",
+          "runtime": "claude",
+          "sessionId": "1e817219-167a-4b13-8ac8-170d39add712",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "I'll find the newest plan file in `.plans/` and read it, then fact-check its claims against the repo.\nPlan read. Now I'll verify its claims against the repo — starting with the spike doc, the approval-mode module, and the harness call sites.\nThe spike doc and approval-mode call sites check out. Now verifying line references in `harnesses.ts`, `headless-run.ts`, `main.ts`, and the test files.\n`headless-run.ts` line refs check out. Now `main.ts`, the test files, and the docs targets.\n`main.ts` and README refs are correct. Now the test file claims.\nMost claims verify. A few remaining checks: package.json scripts, version-guard script, `types.ts`, and the exact config-write shape in the approval test.\nOne last check on the grok fixture shape, then I'll apply the corrections.\nAll major claims verify. One symbol left to check — the plan mentions `prepareHeadlessPlan` prepending `exec` for codex.\nEverything verifies except four small line-reference errors. Applying corrections now.\nNow appending the `## Plan review` section:\nFact-check complete. The plan at `.plans/AI-3111-read-only-across-harness-adapters.md` was accurate in approach and almost entirely accurate in detail — I verified 38 concrete claims by reading the code and corrected 4 minor line-reference errors in place, without changing the approach or structure. `.attractor/ac.json` was left untouched.\n\nWhat was verified as correct (the load-bearing claims):\n- The spike doc `docs/read-only.md` exists and its mapping table, collision findings, per-harness decision args, and refuse-to-launch invariant all match the plan's table verbatim (claude/grok `--permission-mode plan`, codex `--sandbox read-only`, pi `--tools read,grep,find,ls`, opencode `--agent plan` composing with `--auto`).\n- All five `approvalArgsForHarness` call sites are exactly where the plan says (`src/harnesses.ts:139,198,226,286,346`), and the `headless-run.ts`, `main.ts`, and test-file line anchors (`HeadlessRunOptions:35`, `argsEvent` parse at 104–117, approval-default test at 289–333, fixture functions, `approval-mode.test.ts:32-40` no-bypass test) all check out.\n- All four docs \"insert after line N\" targets (README 203, DESIGN.md 492 and 317, QA doc 102 with last item 17) are correct, as are the version (`0.15.0`), scripts (`lint:ci`, `test`), and `scripts/check-version-guard.sh`.\n\nThe 4 corrections applied:\n1. Spike \"Decision\" section is lines 55–89, not 56–89.\n2. Reference module citation `src/approval-mode.ts:1-46` → `1-47`, noting the plan's quoted snippet omits the `approvalModeLabel` export that stays untouched.\n3. `PI_CODING_AGENT_DIR` test citation was off by one (1116 → 1115); added `src/headless-run.ts:714` as evidence for grok's `--prompt-file`.\n4. `buildLaunchPlan` options object is at `src/harnesses.ts:475`, not 474.\n\nNo assumptions needed flagging — everything in-repo was verifiable, and the live harness-CLI behavior claims are owned by the merged spike, which the plan's scope boundary correctly designates as the specification. A `## Plan review` section with the full verified/corrected/flagged accounting is appended to the plan file.\n",
+      "retryCount": 0,
+      "sessionId": "1e817219-167a-4b13-8ac8-170d39add712",
+      "startedAt": "2026-08-21T15:54:02.395Z",
+      "usage": {
+        "cacheReadTokens": 846492,
+        "cacheWriteTokens": 52890,
+        "costUsd": 2.384561,
+        "inputTokens": 10193,
+        "outputTokens": 15472
+      }
     }
   },
   "parallelBranches": {},
   "pipelineId": "ticket-complete-AI-3111",
   "status": "running",
-  "updatedAt": "2026-08-21T15:54:01.004Z",
+  "updatedAt": "2026-08-21T15:57:54.355Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -416,6 +693,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "plan_review": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 231949,
+      "usage": {
+        "cacheReadTokens": 846492,
+        "cacheWriteTokens": 52890,
+        "costUsd": 2.384561,
+        "inputTokens": 10193,
+        "outputTokens": 15472
       },
       "visits": 1
     }
