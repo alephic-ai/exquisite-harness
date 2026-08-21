@@ -1,0 +1,22 @@
+{
+  "acs": [
+    {
+      "id": 1,
+      "criterion": "`eh run` accepts `--result-file <path>`. After the run, the file contains exactly the run's final result text: the harness-native terminal result string for harnesses that define one, else all `assistant.text` content concatenated in stream order. The file is always created — empty when the run produced no result text (including error runs). Proof: subprocess tests per fake harness comparing file bytes against the canned expected result, including one no-result error case.",
+      "status": null,
+      "evidence": null
+    },
+    {
+      "id": 2,
+      "criterion": "Invariant: `--result-file` changes nothing else — the NDJSON stream, exit code, and stderr are byte-identical with and without the flag (aside from the file write). Proof: subprocess test running the same fake-harness scenario twice, with and without the flag, asserting identical event streams and exit codes.",
+      "status": null,
+      "evidence": null
+    },
+    {
+      "id": 3,
+      "criterion": "README `### Headless runs` and DESIGN.md document `run.completed` as the guaranteed final NDJSON line, with a regression test asserting no event is ever emitted after it.",
+      "status": null,
+      "evidence": null
+    }
+  ]
+}
