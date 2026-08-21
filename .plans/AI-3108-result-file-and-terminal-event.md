@@ -60,9 +60,9 @@ assistant text existed).
   handlers — no `emit`.
 - **Only Claude defines a native terminal result** — VERIFIED by reading every
   `normalize*Event` (`src/headless-run.ts:391-620`): claude reads a `result`
-  event; codex (`item.completed`/`turn.completed`), grok (text deltas),
-  opencode (text parts), pi (`message_end` content) have no top-level terminal
-  result string.
+  event; codex (`item.completed`/`turn.completed`), grok (text deltas), opencode
+  (text parts), pi (`message_end` content) have no top-level terminal result
+  string.
 - **Claude's `result` event carries a top-level `result` string** — VERIFIED:
   `emitRunError` already reads `event.result` (`src/headless-run.ts:206`). The
   fake Claude fixture omits it today; the test adds it.
@@ -105,23 +105,27 @@ assistant text existed).
    `agent_message` items and assert the file equals `'part one\npart two'`.
 3. No-result error case: run codex with `EH_TEST_CODEX_FAIL=1` and
    `--result-file`; assert exit `66` and the file bytes are `''`.
-4. Invariant: run the codex fake twice — with and without `--result-file` —
-   and assert `parseEvents(stdout)` arrays are equal, exit codes equal, and
-   stderr equal. (Template: the existing `leaves a run that finishes before the
-   deadline unchanged` test, `src/headless-run.test.ts:1645-1682`.)
+4. Invariant: run the codex fake twice — with and without `--result-file` — and
+   assert `parseEvents(stdout)` arrays are equal, exit codes equal, and stderr
+   equal. (Template: the existing
+   `leaves a run that finishes before the deadline unchanged` test,
+   `src/headless-run.test.ts:1645-1682`.)
 
 Fixture edits (gated so existing tests are unaffected):
+
 - `createFakeClaude`: add `result: 'claude-result: ' + prompt` to the emitted
   `result` event object.
-- `createFakeCodex`: add a branch `if (process.env.EH_TEST_CODEX_MULTITURN === '1')`
-  that emits two `item.completed` agent_message events (`'part one'`,
-  `'part two'`) then `turn.completed`, and `process.exit(0)`.
+- `createFakeCodex`: add a branch
+  `if (process.env.EH_TEST_CODEX_MULTITURN === '1')` that emits two
+  `item.completed` agent_message events (`'part one'`, `'part two'`) then
+  `turn.completed`, and `process.exit(0)`.
 
 Run `bun test src/headless-run.test.ts` → new tests fail.
 
 **Implement (green):** in `src/headless-run.ts`:
 
 1. Extend `NormalizerState` (`:47-51`):
+
    ```ts
    interface NormalizerState {
      assistantText: string
@@ -131,10 +135,12 @@ Run `bun test src/headless-run.test.ts` → new tests fail.
      sessionId: string | undefined
    }
    ```
+
    Initialize both new fields in the state literal at `:321-325`
    (`assistantText: '', nativeResult: undefined,`).
 
 2. Add the accumulating emit helper (near `flushGrokText`):
+
    ```ts
    function emitAssistantText(text: string, state: NormalizerState) {
      emit({ text, type: 'assistant.text' })
@@ -159,21 +165,25 @@ Run `bun test src/headless-run.test.ts` → new tests fail.
      }
      ```
    - `normalizeClaudeEvent` (`:400-410`): in the content-block loop, thread a
-     local `let next = state` (also carry it through the session/result handling)
-     and call `next = emitAssistantText(block.text, next)`. In the `result`
-     branch return with
+     local `let next = state` (also carry it through the session/result
+     handling) and call `next = emitAssistantText(block.text, next)`. In the
+     `result` branch return with
      `nativeResult: typeof event.result === 'string' ? event.result : next.nativeResult`
      alongside the existing `resultIsError`/`sessionId`.
    - `normalizeCodexEvent` (`:445-450`), `normalizeOpencodeEvent` (`:552-558`),
-     `normalizePiEvent` (`:591-598`): thread a local `let next = state` from that
-     function's existing initial state and replace the assistant-text `emit` with
-     `next = emitAssistantText(<text>, next)`, returning `next` (error branches
-     return `{ ...next, resultIsError: true }`). These emit the identical
-     `assistant.text` object — no stdout change.
+     `normalizePiEvent` (`:591-598`): thread a local `let next = state` from
+     that function's existing initial state and replace the assistant-text
+     `emit` with `next = emitAssistantText(<text>, next)`, returning `next`
+     (error branches return `{ ...next, resultIsError: true }`). These emit the
+     identical `assistant.text` object — no stdout change.
 
 4. Add the write helper:
+
    ```ts
-   async function writeResultFile(resultFile: string | undefined, text: string) {
+   async function writeResultFile(
+     resultFile: string | undefined,
+     text: string,
+   ) {
      if (resultFile === undefined) return
      await writeFile(resultFile, text)
    }
@@ -181,7 +191,8 @@ Run `bun test src/headless-run.test.ts` → new tests fail.
 
 5. Thread `resultFile`:
    - Add `resultFile?: string` to `HeadlessRunOptions` (`:35-45`) and
-     `resultFile: string | undefined` to `ResolvedHeadlessRunOptions` (`:53-63`).
+     `resultFile: string | undefined` to `ResolvedHeadlessRunOptions`
+     (`:53-63`).
    - Set `resultFile: options.resultFile,` in the `resolved` literal (`:78-91`).
    - Add `resultFile?: string` to the option objects of `executeHeadlessPlan`
      (`:242-249`) and `executePreparedHeadlessPlan` (`:255-262`); pass
@@ -193,8 +204,9 @@ Run `bun test src/headless-run.test.ts` → new tests fail.
    flush at `:333`):
    - Before the spawn-error `emit({...run.completed})` (`:342`):
      `await writeResultFile(options.resultFile, resultText)`.
-   - Before the normal `emit({ exitCode, resultIsError, type: 'run.completed' })`
-     (`:368`): `await writeResultFile(options.resultFile, resultText)`.
+   - Before the normal
+     `emit({ exitCode, resultIsError, type: 'run.completed' })` (`:368`):
+     `await writeResultFile(options.resultFile, resultText)`.
    - In the preflight catch (`:145-154`), before the `emit` calls:
      `await writeResultFile(options.resultFile, '')` (uses `options.resultFile`
      directly — `resolved` may not exist yet).
@@ -218,12 +230,13 @@ run (`createFakeCodex`) and a semantic-error run (`EH_TEST_CODEX_FAIL=1`):
 guarantee AC #3 names.) Run `bun test src/headless-run.test.ts` → passes.
 
 **Docs:**
-- `README.md` `### Headless runs`: add a sentence documenting `--result-file
-  <path>` (final result text: native terminal result where defined, else
-  `assistant.text` joined in stream order; always created, empty for no-result/
-  error runs) near the other `eh run` flags (~README.md:190-206). Add a sentence
-  stating `run.completed` is guaranteed to be the last NDJSON line orchestrators
-  can rely on (near the events list, ~README.md:162-168).
+
+- `README.md` `### Headless runs`: add a sentence documenting
+  `--result-file <path>` (final result text: native terminal result where
+  defined, else `assistant.text` joined in stream order; always created, empty
+  for no-result/ error runs) near the other `eh run` flags (~README.md:190-206).
+  Add a sentence stating `run.completed` is guaranteed to be the last NDJSON
+  line orchestrators can rely on (near the events list, ~README.md:162-168).
 - `DESIGN.md` Headless execution paragraph (`DESIGN.md:85-108`): document
   `--result-file` and state `run.completed` is by construction the final NDJSON
   line (emitted only after stdout EOF and child close, with no code path after

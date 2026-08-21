@@ -14,7 +14,7 @@
     },
     {
       "criterion": "README `### Headless runs` and DESIGN.md document `run.completed` as the guaranteed final NDJSON line, with a regression test asserting no event is ever emitted after it.",
-      "evidence": "README.md ### Headless runs: 'run.completed is emitted exactly once and is always the last NDJSON line ... nothing follows'. DESIGN.md Headless execution: 'run.completed is by construction the final NDJSON line ... no event can follow'. src/headless-run.test.ts 'emits run.completed as the final NDJSON line for a successful run / a semantic-error run' asserts completedIndex === events.length - 1. Passes.",
+      "evidence": "README.md ### Headless runs: 'run.completed is emitted exactly once and is always the last NDJSON line ... nothing follows'. DESIGN.md Headless execution: 'run.completed is by construction the final NDJSON line ... no event can follow'. src/headless-run.test.ts 'emits run.completed as the final NDJSON line for a successful run / a semantic-error run' asserts completedIndex === events.length - 1. Passes. Write-failure edge case covered by review fix: writeResultFile now catches write errors (emits run.error, returns false) so run.completed is still the final line with a non-zero exit code; repro with an unwritable --result-file path yields exit 66 with run.completed as the final line.",
       "id": 3,
       "status": "pass"
     }

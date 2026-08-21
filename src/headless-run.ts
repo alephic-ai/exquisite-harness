@@ -387,9 +387,10 @@ async function executePreparedHeadlessPlan(options: {
       resultIsError && childExitCode === 0
         ? EH_EXIT_HARNESS_ERROR
         : childExitCode
-    await writeResultFile(options.resultFile, resultText)
-    emit({ exitCode, resultIsError, type: 'run.completed' })
-    return exitCode
+    const resultWriteOk = await writeResultFile(options.resultFile, resultText)
+    const finalExitCode = resultWriteOk ? exitCode : EH_EXIT_HARNESS_ERROR
+    emit({ exitCode: finalExitCode, resultIsError, type: 'run.completed' })
+    return finalExitCode
   } finally {
     if (timeoutTimer) clearTimeout(timeoutTimer)
     if (killTimer) clearTimeout(killTimer)
@@ -802,7 +803,19 @@ function timeoutKillGraceMs() {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : TIMEOUT_KILL_GRACE_MS
 }
 
-async function writeResultFile(resultFile: string | undefined, text: string) {
-  if (resultFile === undefined) return
-  await writeFile(resultFile, text)
+async function writeResultFile(
+  resultFile: string | undefined,
+  text: string,
+): Promise<boolean> {
+  if (resultFile === undefined) return true
+  try {
+    await writeFile(resultFile, text)
+    return true
+  } catch (error) {
+    emit({
+      message: `failed to write --result-file "${resultFile}": ${errorMessage(error)}`,
+      type: 'run.error',
+    })
+    return false
+  }
 }
