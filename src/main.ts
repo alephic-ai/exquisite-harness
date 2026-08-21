@@ -142,6 +142,10 @@ program
     '--timeout <seconds>',
     'fail the run if the harness runs longer than <seconds> (SIGTERM, then SIGKILL after a grace period)',
   )
+  .option(
+    '--result-file <path>',
+    "write the run's final result text to <path> (created empty when the run produced no result)",
+  )
   .action(async (harness, provider, model, opts) => {
     process.exitCode = await runHeadless({
       cwd: opts.cwd,
@@ -154,6 +158,7 @@ program
       model,
       nativeArgsJson: opts.nativeArgsJson,
       provider,
+      resultFile: opts.resultFile,
       resumeSessionId: opts.resumeSession,
       timeout: opts.timeout,
     })
