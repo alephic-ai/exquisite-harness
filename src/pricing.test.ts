@@ -366,6 +366,27 @@ test('endpointRates selects the tier bracket containing the token count', () => 
   ).toBe(4)
 })
 
+test('endpointRates keys the prompt tier on the full context including cache', () => {
+  const pricing: EndpointPricing = {
+    completion: '0.000005',
+    prompt_tiers: [
+      { cost: '0.000001', max: 200_001, min: 0 },
+      { cost: '0.000004', min: 200_001 },
+    ],
+  }
+  // 100k input + 150k cache reads cross the 200_001 bracket boundary even
+  // though the input alone stays in the cheaper bracket — the cached long
+  // context must be billed at the matched tier, not under-billed.
+  expect(
+    endpointRates(pricing, {
+      cacheRead: 150_000,
+      cacheWrite: 0,
+      input: 100_000,
+      output: 1_000,
+    })?.inputPerMillion,
+  ).toBe(4)
+})
+
 test('endpointRates falls back to the base rate, then undefined', () => {
   const usage = { cacheRead: 0, cacheWrite: 0, input: 1_000, output: 1_000 }
   expect(

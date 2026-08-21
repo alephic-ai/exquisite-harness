@@ -169,15 +169,15 @@ export async function fetchHeadlessRateCard(props: {
 }): Promise<HeadlessRateCard> {
   const { gatewayProvider, modelId, provider } = props
   if (provider.type === 'ollama') return { kind: 'free' }
-  const key = provider.envKey
-    ? await resolveApiKey(provider.envKey, provider.name)
-    : undefined
-  const apiKey = key && key.source !== 'none' ? key.value : undefined
   try {
     if (
       gatewayProvider != null &&
       (provider.type === 'vercel-gateway' || provider.type === 'openrouter')
     ) {
+      const key = provider.envKey
+        ? await resolveApiKey(provider.envKey, provider.name)
+        : undefined
+      const apiKey = key && key.source !== 'none' ? key.value : undefined
       const pricing = await fetchEndpointPricing({
         apiKey,
         baseURL: provider.baseURL,
@@ -185,6 +185,10 @@ export async function fetchHeadlessRateCard(props: {
         modelId,
       })
       if (pricing) return { kind: 'endpoint', pricing }
+      // A pin that fails to resolve must not fall back to the model-aggregate
+      // rates: that would bill the wrong provider's cost as authoritative
+      // `gateway-rates`. Report unavailable instead.
+      return { kind: 'unavailable' }
     }
     const meta = await fetchModelMeta({ gatewayProvider, modelId, provider })
     if (!meta.rates) return { kind: 'unavailable' }
@@ -334,10 +338,12 @@ export function endpointRates(
   pricing: EndpointPricing,
   usage: NormalizedUsage,
 ): ModelRates | undefined {
+  // The prompt tier is a context bracket: it keys on the full context, cache
+  // tokens included, matching `contextUsedPercentage`'s context definition.
   const inputPerMillion = tierRate(
     pricing.prompt,
     pricing.prompt_tiers,
-    usage.input,
+    usage.input + usage.cacheRead + usage.cacheWrite,
   )
   const outputPerMillion = tierRate(
     pricing.completion,

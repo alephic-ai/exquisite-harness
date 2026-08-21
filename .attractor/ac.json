@@ -2,7 +2,7 @@
   "acs": [
     {
       "criterion": "`eh run` computes cost from its own cumulative normalized usage x the resolved model's gateway rates — honoring `--gateway-provider` pins (per-endpoint pricing, not model-aggregate) and tiered prompt/completion rates — and emits it on the final `cumulative: true` `usage` event and/or `run.completed` as `costUsd` with `costSource: \"gateway-rates\"`.",
-      "evidence": "src/headless-run.ts emitCostSummary() emits a final cumulative:true usage event with costUsd+costSource from headlessCost(rateCard, accumulatedUsage); rateCard resolved by fetchHeadlessRateCard (per-endpoint pricing when pinned, tier brackets via endpointRates). src/pricing.test.ts 'fetchHeadlessRateCard resolves per-endpoint pricing for a gateway pin' proves the nebius pin bills per-endpoint ($5.8) not aggregate ($5.0); src/headless-run.test.ts 'emits a gateway-rate costUsd on the final usage event for a pinned run' asserts an end-to-end run yields costSource:'gateway-rates' with costUsd≈0.000034.",
+      "evidence": "src/headless-run.ts emitCostSummary() emits a final cumulative:true usage event with costUsd+costSource from headlessCost(rateCard, accumulatedUsage); rateCard resolved by fetchHeadlessRateCard (per-endpoint pricing when pinned, tier brackets via endpointRates). src/pricing.test.ts 'fetchHeadlessRateCard resolves per-endpoint pricing for a gateway pin' proves the nebius pin bills per-endpoint ($5.8) not aggregate ($5.0); src/headless-run.test.ts 'emits a gateway-rate costUsd on the final usage event for a pinned run' asserts an end-to-end run yields costSource:'gateway-rates' with costUsd≈0.000034. A pinned run whose endpoint pricing fails to resolve returns 'unavailable' (never the model-aggregate fallback) per the Codex review fix.",
       "id": 1,
       "status": "pass"
     },
@@ -14,13 +14,13 @@
     },
     {
       "criterion": "When rates are unavailable (ollama, unknown model), no fabricated cost is emitted and `costSource` says why.",
-      "evidence": "headlessCost returns costUsd:undefined for kind 'unavailable'; emitCostSummary omits costUsd when undefined. fetchHeadlessRateCard→'free' for ollama and 'unavailable' for unknown models (src/pricing.test.ts). Real CLI run on ollama emits: {\"costSource\":\"free\",\"costUsd\":0,...,\"v\":2}. src/pricing.test.ts 'headlessCost classifies the source and never fabricates cost' covers free/unavailable/gateway-rates.",
+      "evidence": "headlessCost returns costUsd:undefined for kind 'unavailable'; emitCostSummary omits costUsd when undefined. fetchHeadlessRateCard→'free' for ollama and 'unavailable' for unknown models and for a pinned run whose endpoint pricing fails to resolve (src/pricing.test.ts). Real CLI run on ollama emits: {\"costSource\":\"free\",\"costUsd\":0,...,\"v\":2}. src/pricing.test.ts 'headlessCost classifies the source and never fabricates cost' covers free/unavailable/gateway-rates.",
       "id": 3,
       "status": "pass"
     },
     {
       "criterion": "Cache read/write tokens are billed at the endpoint's published cache rates; when an endpoint publishes no cache rates, the chosen behavior (bill as regular input vs zero) is explicit and documented in the code.",
-      "evidence": "endpointRates reads cache fields (cachedInputTokens/input_cache_read, cacheCreationInputTokens/input_cache_write); gatewayCostUsd falls back to the input rate for missing cache rates with a documented comment in src/pricing.ts (a no-discount provider bills cache as ordinary input; zero would understate). src/pricing.test.ts 'gatewayCostUsd bills cache tokens at the input rate when unpublished' asserts $0.14 (input-rate fallback) vs $0.014 (published cache rate).",
+      "evidence": "endpointRates reads cache fields (cachedInputTokens/input_cache_read, cacheCreationInputTokens/input_cache_write); gatewayCostUsd falls back to the input rate for missing cache rates with a documented comment in src/pricing.ts (a no-discount provider bills cache as ordinary input; zero would understate). src/pricing.test.ts 'gatewayCostUsd bills cache tokens at the input rate when unpublished' asserts $0.14 (input-rate fallback) vs $0.014 (published cache rate). The prompt-tier bracket keys on the full context (input + cache read/write) so cached long-context runs bill at the matched tier, covered by src/pricing.test.ts 'endpointRates keys the prompt tier on the full context including cache'.",
       "id": 4,
       "status": "pass"
     },
