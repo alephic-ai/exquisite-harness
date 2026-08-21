@@ -159,12 +159,22 @@ printf 'fix the parser' |
   eh run codex ollama qwen3-coder --reasoning-effort high
 ```
 
-Every output object carries `v: 1`. The normalized events are `run.started`,
+Every output object carries `v: 2`. The normalized events are `run.started`,
 `session.started`, `assistant.text`, `usage`, `run.error`, and `run.completed`.
 Native machine events are preserved as `harness.event`; non-JSON output is
 preserved as `harness.output`. Harness stderr remains stderr. A semantically
 failed native result makes both `run.completed.exitCode` and the `eh` process
 exit code non-zero, even when the child process exits zero.
+
+Per-event `usage` objects carry the harness's own cost estimate (when it reports
+one) as `harnessCostUsd`. Before `run.completed`, `eh` emits one final
+`cumulative: true` summary `usage` event that adds `costUsd` — the cost `eh`
+computes itself from its own accumulated normalized usage times the resolved
+model's gateway rates (per-endpoint and tiered when `--gateway-provider` is
+pinned) — and `costSource`: `gateway-rates` when computed, `free` for zero-rate
+providers such as ollama, or `unavailable` when no rates could be resolved (in
+which case `costUsd` is omitted rather than fabricated). Any `harnessCostUsd` is
+preserved on the summary too, never promoted to `costUsd`.
 
 #### Exit codes
 

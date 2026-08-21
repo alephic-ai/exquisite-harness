@@ -107,6 +107,23 @@ is the raw child exit code passed through unchanged (including `128 + signal`),
 so a harness's own code can collide with the reserved block only in that
 passthrough case.
 
+**Headless computed cost:** `eh run` does not trust the inner harness's
+self-reported cost as authoritative. It accumulates its own normalized usage
+across the run (a `cumulative: true` total from the harness wins outright;
+otherwise per-event deltas are summed, so a harness like grok that emits both is
+not double-counted) and, before `run.completed`, emits one final summary `usage`
+event carrying `costUsd` that it computes from that usage times the resolved
+model's gateway rates. Rates come from the model's per-endpoint pricing when
+`--gateway-provider` is pinned (honoring prompt/completion tiers as context
+brackets), else the model-aggregate rates. `costSource` records provenance:
+`gateway-rates`, `free` (zero-rate providers like ollama), or `unavailable` —
+and when unavailable no `costUsd` is emitted, never a fabricated `$0`. Cache
+read/write tokens bill at the endpoint's published cache rates; when an endpoint
+publishes none they bill at the regular input rate (a provider that gives no
+cache discount charges cache tokens as ordinary input). Any harness-reported
+cost is preserved separately as `harnessCostUsd`, never promoted to `costUsd`.
+Because the event shape changed, the NDJSON stream version `v` is now `2`.
+
 **Phase 2 (later): local router.** An opt-in localhost proxy that receives
 Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
 (`createProviderRegistry` + `customProvider` aliases). Unlocks the ⚠️ cell
@@ -492,7 +509,7 @@ src/headless-run.ts  non-interactive harness execution + NDJSON normalization
 src/approval-mode.ts  approval labels + per-harness native argument mapping
 src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
-src/pricing.ts    provider rates/ranges ($/1M) and fallback cost estimates
+src/pricing.ts    provider rates/ranges ($/1M), headless rate cards + computed cost
 src/gateway-costs.ts transparent Vercel stream proxy + exact session ledger
 src/gateway-routing.ts process-scoped request rewriter for Gateway provider pins / ZDR-only routing
 src/statusline.ts Claude statusline render + session settings writer
