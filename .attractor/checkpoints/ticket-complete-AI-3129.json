@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:47:30.420Z",
-  "currentNodeId": "tactical_fix",
+  "currentNodeId": "lint",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -3275,6 +3275,331 @@
       },
       "retryCount": 0,
       "startedAt": "2026-08-21T16:52:39.100Z"
+    },
+    "tactical_fix": {
+      "completedAt": "2026-08-21T16:54:05.116Z",
+      "nodeId": "tactical_fix",
+      "artifacts": [
+        {
+          "agentRunId": "7f2ebee4-3433-4b5f-8732-782045b0a22e",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "4efb19d05ef0e5ba5fc7293c23f4ee43601de8f6ad8c0290539d3863324d58ae",
+              "sizeBytes": 663775
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0db8027e-3949-4bf2-905e-d7959ee17c6c.request.json",
+              "sha256": "302e086da20601246f785ab973ef8daeb2ca5d5c355805a49aebc2ca65b052fe",
+              "sizeBytes": 146840
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0e1a9146-e363-475f-adba-f5116b06f0d5.request.json",
+              "sha256": "7454235e359a6ad0acc70b1d3bea5d38dedc71cd9ea66f0382281361f98d7cca",
+              "sizeBytes": 168148
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/0f96200c-a257-45db-8575-97f30c8be4d5.response.json",
+              "sha256": "9a5be8a2182ea201fc2df9440f3d46f3be94a949377e167a124a53684a566157",
+              "sizeBytes": 658
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/1573766d-3e6b-452a-8406-e1d85cdab818.request.json",
+              "sha256": "fd25372a09239598c28ee3fb020ae793d11f5ee32944f0cf4046d882d1f94b8b",
+              "sizeBytes": 143920
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/15d4053c-48ea-4b2f-ae04-421308965533.response.json",
+              "sha256": "b710c50c5f4fd8ff3ead64d384379e693bd169db96e64eacbb938e5185dda41e",
+              "sizeBytes": 1155
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/1f9064bd-db85-4a42-90de-0fc5baf8b40e.request.json",
+              "sha256": "5b4f2711f6d8cd0068f4e2dcc664e2a689cf8e73bbc5879da56eeb2b06fe1732",
+              "sizeBytes": 135647
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/21cc317d-0386-4a26-bad7-807ff393957f.response.json",
+              "sha256": "2a7cc03ca9efb7f5e5834d614cc4cbaa190385c7c632fbea5d2139a00fec26e1",
+              "sizeBytes": 1089
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/225b0948-8da1-418a-96b2-13cfebfcaea6.request.json",
+              "sha256": "f47ab6d4124dab2519e66536c46bb8e06f683f46ce1141dbd373031aff2c687c",
+              "sizeBytes": 166528
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/27dc4628-2c06-40d8-b494-072e5b1b8953.response.json",
+              "sha256": "5afbea43000287d347b179269c1df41322fe1b8d5c29a4bb3ea9e36532004dfd",
+              "sizeBytes": 931
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/28a50463-169e-4aa5-a99c-1803660fe0d9.response.json",
+              "sha256": "303b3b6af2387af1af585018c34b9cf43fbec81ea5df136a09b5d1a8773d0c35",
+              "sizeBytes": 1313
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2fe0c028-160f-42ef-a9c0-d6c95865015f.request.json",
+              "sha256": "21f0077d47ec337922ec3001516d821331d7cfdbb08ea24b58f1f0c7ef72499d",
+              "sizeBytes": 157545
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/35e7b352-9ada-4e0a-899c-83f0de68d353.response.json",
+              "sha256": "3fd712227184090ebf324e9f530ad2bb70705d58106d695b9d625707678f8428",
+              "sizeBytes": 982
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3807fb8f-56f8-4ecf-9a8c-7eda131a2e89.request.json",
+              "sha256": "066a54c2f884af0f386b7ab136d0745bad0a4142738ae1edfc18b048f02daf12",
+              "sizeBytes": 157671
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3ae4934c-7e89-4b13-b724-ce13a1366fdd.response.json",
+              "sha256": "9d76a096028fd14b74db1c1b816be3ec9dc862b13556f0b0696989a885ea9e32",
+              "sizeBytes": 1030
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/43ea22ee-74a6-47e9-a51d-1dbd9aa0c020.response.json",
+              "sha256": "495cb16e17f997b65c2dc2358dd577980c1e967e44e76d4bb024eb362db242ec",
+              "sizeBytes": 800
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4d1fa999-914b-4eee-8a87-7fc64b29f304.response.json",
+              "sha256": "c8baedf02d91e882fdc49d4f3aa5db2f7eac298b666e2a03add2a6b1f2bfcb58",
+              "sizeBytes": 799
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/4dfd3906-54d6-4dda-90a0-1ad8d76c37a5.request.json",
+              "sha256": "870db6e6ee680ffffc569490f3428e7d299996d3e835b2be9baa62d6b4b9821c",
+              "sizeBytes": 106332
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/58e810ec-60ef-4a8e-96ab-28ecb90abd94.response.json",
+              "sha256": "d3455f70e9b214dce24a37db4fd99210438b85fa3c2d7dd6df55a1e242eac588",
+              "sizeBytes": 946
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6aba2b48-cc8f-47f5-a7e8-fa5b456b8129.response.json",
+              "sha256": "b85268fa2224decdb29825a0bcb4495ef301e27fddddba059d2f724dce1f4fff",
+              "sizeBytes": 1984
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6f1592e5-99ae-4004-9efe-37894a0d75bf.response.json",
+              "sha256": "29ad41ceb2b0f93e19f6a031e10ff775d1f1a8f1848770c632f75043b994fd19",
+              "sizeBytes": 1799
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/6f6bf592-ded6-4166-ab8c-f239a98d41a5.request.json",
+              "sha256": "2ba272fcf31a6471b19d4238f6f199bae60668f68add1f424f3f558b08dbe9e9",
+              "sizeBytes": 160954
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/70b18562-4919-40e8-9567-2942215fc53d.response.json",
+              "sha256": "3492bb8b13bd51595c0895451784f78abbebf23d8b959858b67c463332be9fb4",
+              "sizeBytes": 588
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7f84b0a1-278a-48a0-a737-cac15b9b1344.response.json",
+              "sha256": "20d35ea7495974924f78ee70cd050f470da579f793395172e081267ec146215a",
+              "sizeBytes": 1946
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/83c4c51d-803c-421e-a533-ebc5710259be.response.json",
+              "sha256": "305ac4aa6179383dfc20b77d1556f4fcac9631712b1273f17cd593e26f04cdd6",
+              "sizeBytes": 2462
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/85819653-9715-4582-97c7-7a094ed528b9.request.json",
+              "sha256": "d548b4ec25a4d95657baaa38b784b6d5561490deb924f84db18604c8ff122802",
+              "sizeBytes": 164131
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/893823e8-308f-4777-819c-7a2c8ed91c2a.response.json",
+              "sha256": "6a4a44e7ad5bcac4044eae23f2c6a1812ac5e6b42f43e044d6736d5c4856d344",
+              "sizeBytes": 1098
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/89cbb7c3-6394-4b16-88fc-fa25fe3c0431.response.json",
+              "sha256": "1a71e922b21d032a02e26d242352df62b6bec1fb3d1c99c33a889fc689c1b365",
+              "sizeBytes": 907
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/9528e904-e058-4bd4-92bc-04d14fc9498f.request.json",
+              "sha256": "126e22c40fefe3171b7074abe48f66d4dbb291730d96cd2cd31ab15636c2dc6b",
+              "sizeBytes": 171978
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/96e596fd-02cc-4c0d-961d-136e13468acb.response.json",
+              "sha256": "da0b6b21ec9b9d447bfa969d41a80c468282454b4a1a61bcd053a68e399a0d51",
+              "sizeBytes": 2822
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a3d24625-4081-4c08-8042-f774841d542a.request.json",
+              "sha256": "24767ac43219524ec82db1d1668ff86ab79baf5619c5f02821b740730d686930",
+              "sizeBytes": 13420
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a4957f67-1e45-475e-a27c-572649ace639.request.json",
+              "sha256": "529dbdee3f65b424e2db9fffc85acffe0e59e03d4510f68c929b86872f91a160",
+              "sizeBytes": 154851
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/afd3084e-2433-4025-8375-35a9d8450ea9.response.json",
+              "sha256": "a3d71171bd69cf6767b3a83e4bbdc870de3e1064efe1e39fe2ec76c54134b531",
+              "sizeBytes": 1030
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/b9e7f12a-86ca-4e6f-a5a4-3eb6229ee314.request.json",
+              "sha256": "ab5ae36ece3ab081b5d69ce6d3e1d011a2b2c70214344af9a5baff28b26d1a4e",
+              "sizeBytes": 181570
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/bf094abf-0000-49c3-9dc4-7e63d9690db4.response.json",
+              "sha256": "3b5bb939150425c7a9cbbcd683b9025b4c34980554765d33f42364d4ed10c7a7",
+              "sizeBytes": 749
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c5d3a4e1-d47d-4eb9-8835-81959cc18c27.request.json",
+              "sha256": "67e6ff4f9072c00e89af53b462b11e339598d0a30dacb4ed813776a76dc2ded5",
+              "sizeBytes": 133168
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c9d1c205-c7a4-40c1-b651-afcf02d0a7fa.response.json",
+              "sha256": "8fabbb2ec940fdf70aada232e22c0a475d15f6251c6a7ce943f780cf1f16fb80",
+              "sizeBytes": 1320
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/cf6e692f-d47d-42c1-90ea-3275c1396d7b.request.json",
+              "sha256": "1ab7621dc6a5fdb9d91aebab29996fae211c5dbfd71082c77534413916f175ce",
+              "sizeBytes": 149791
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d84d54d7-3f3a-4eaf-af1e-86c148826e3f.request.json",
+              "sha256": "bb24e16ae2b28f75c5eed74b3b28964df5a13ae89dd1276c4fe94fbea53cd3c5",
+              "sizeBytes": 170785
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e08353a5-0eda-4d3c-b89e-5a4f5a7f639e.request.json",
+              "sha256": "403add6d0ccb315226aa556100c74571e375b5fd9603a76ab47a27f7e1187334",
+              "sizeBytes": 146966
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e384e56d-90d3-4f20-a490-e4fda8b1baab.request.json",
+              "sha256": "ca83049a3ace83edc7a0ce55597ca21b52d94a86240d2d56e098473f5d07d285",
+              "sizeBytes": 159220
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ef71932b-22f2-45e2-bef3-bab4db238f00.response.json",
+              "sha256": "fee84cff44987db2f2b35396c6360ca90d1384355ada5dec9521f6e2f2f40ae6",
+              "sizeBytes": 2692
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f07c58b9-25c7-41ca-ad7a-b0284ac10472.request.json",
+              "sha256": "a5b38ef6cc9b99b2ed92d0668d5a5a79e05fb4e0ee0c0aefb207bda5d82ee59f",
+              "sizeBytes": 108727
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/f968717d-e941-4a59-b5a4-427a45dbb4c0.request.json",
+              "sha256": "8fce0c45b56fd3191cd9e57a71a9f708268e302e99ef2965b3c7d38f7c015d08",
+              "sizeBytes": 180633
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/fe8d25fe-f9d4-4ed8-b14d-7725ad70f575.request.json",
+              "sha256": "3ed04c7a37fe50483691dad6d29b0b6a914a24774063c0e1749e4e364c7e5b5b",
+              "sizeBytes": 148063
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ff1135a6-03c7-44cf-b61e-425b620d367e.request.json",
+              "sha256": "c2c6386cb1867024c42306fb448ad645bfdf7e270b3c2afd6def1c3619b7e0aa",
+              "sizeBytes": 150548
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ffc19909-b0de-4578-920d-57909df26726.response.json",
+              "sha256": "781426a4a463dd058980a88c75381ba38cd542a55d5c06b2d2fa45ef72caa2d4",
+              "sizeBytes": 588
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "7c0a6d5d06989d0e245bcc70a56933aede9c188ba012ce1932468b1a34d61b50",
+              "sizeBytes": 37230
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/tactical_fix/attempt-0-7f2ebee4-3433-4b5f-8732-782045b0a22e",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/tactical_fix/attempt-0-7f2ebee4-3433-4b5f-8732-782045b0a22e/manifest.json",
+          "nodeId": "tactical_fix",
+          "pipelineId": "ticket-complete-AI-3129",
+          "runtime": "claude",
+          "sessionId": "380c91b3-c99d-4349-bf63-07d253bdc6cd",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "Let me read the relevant regions of `src/pricing.ts` and check the review-fixes meta file.\n\n\nNow let me look at the existing tests to understand what needs updating for these fixes.\n\n\nNow I understand all three fixes. Let me apply them. First, fixes 1 and 3 both touch `fetchHeadlessRateCard` — I'll apply them together:\n\n\nNow let me apply Fix 2 — the prompt-tier bracket including cache tokens in `endpointRates`:\n\n\nNow let me add the prescribed tier test with non-zero cache tokens crossing a bracket boundary:\n\n\nLet me verify the changes compile and pass the focused tests for the changed files:\n\n\nAll 45 tests pass (44 prior + the new tier test). Now let me check whether any AC in `.attractor/ac.json` is affected by these fixes:\n\n\nAll fixes are consistent with the ACs — Fix 1 reinforces AC-1/AC-3 (pinned-unresolved → `unavailable`, never aggregate), and Fix 2 aligns with AC-4 (cache tokens billed correctly). Let me update the evidence for the affected ACs:\n\n\nLet me verify no existing test asserts the old pinned-fallthrough behavior, and confirm the final state of the changed function:\n\n\nThe `not-available` pin at line 1093 is exactly the pinned-unresolved case Fix 1 changes. Let me check what that test expects:\n\n\nLet me check how the `run.error` with 'unavailable' is produced and whether my change affects it:\n\n\nThe `not-available` test produces its `run.error` from the preflight catch path (line 177), not from rate-card resolution, and the focused test run (45 tests including headless-run.test.ts) already passed with my changes. Let me check git status and commit:\n\n\nThe `.plans/` file was already modified before my session (shown in the initial git status) — I'll leave it untouched and include it in the commit per \"commit everything\". Let me review my diff:\n\n\nThe diff is clean and minimal — all three fixes applied exactly as prescribed. Let me commit:\n\n\nAll three review fixes applied, verified, and committed. Summary:\n\n## Fixes applied\n\n**1. Pinned fallthrough (Codex)** — `src/pricing.ts:188-191`\n`fetchHeadlessRateCard` now returns `{ kind: 'unavailable' }` when a `--gateway-provider` pin is given but `fetchEndpointPricing` fails to resolve, instead of falling through to `fetchModelMeta`. A pinned run can never emit the wrong (aggregate) provider's cost as authoritative `gateway-rates`.\n\n**2. Prompt-tier bracket excludes cache tokens (guillaumeify)** — `src/pricing.ts:341-346`\n`endpointRates` now keys the prompt-tier lookup on `usage.input + usage.cacheRead + usage.cacheWrite` (completion stays on `usage.output`), matching `contextUsedPercentage`'s context definition. Added the prescribed test `endpointRates keys the prompt tier on the full context including cache` — 100k input + 150k cache reads cross the 200_001 bracket boundary and bill at the matched tier ($4/1M), not the cheaper bracket.\n\n**3. Duplicate API-key resolution (guillaumeify)** — `src/pricing.ts:177-180`\n`resolveApiKey`/`apiKey` resolution moved inside the pinned `fetchEndpointPricing` branch; the unpinned path lets `fetchModelMeta` own its resolution, dropping a redundant keychain subprocess + secrets-file read on every unpinned run.\n\n## Verification\n- Focused run `pnpm test src/pricing.test.ts src/headless-run.test.ts` → **45 pass, 0 fail** (44 prior + the new tier test).\n- Confirmed the `not-available` pin test in headless-run.test.ts still passes — its `run.error` comes from the preflight catch path, not rate-card resolution.\n- No prescription mismatches — all three matched the code exactly.\n\n## AC evidence\nUpdated `.attractor/ac.json` evidence for **AC-1** (pinned-unresolved → `unavailable`, never aggregate), **AC-3** (pinned-unresolved added to the unavailable path), and **AC-4** (tier bracket keys on full context incl. cache). All remain `pass`; no AC blocked, so no `blockedKind` set. No `DATABASE_URL`-dependent check was implicated by any fix.\n\nCommitted as `366131f fix: apply review fixes` (4 files: `src/pricing.ts`, `src/pricing.test.ts`, `.attractor/ac.json`, plus the pre-existing `.plans/` modification).\n",
+      "retryCount": 0,
+      "sessionId": "380c91b3-c99d-4349-bf63-07d253bdc6cd",
+      "startedAt": "2026-08-21T16:52:40.701Z",
+      "usage": {
+        "cacheReadTokens": 817536,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.041926258,
+        "inputTokens": 121669,
+        "outputTokens": 12378
+      }
     }
   },
   "parallelBranches": {
@@ -3285,7 +3610,7 @@
   },
   "pipelineId": "ticket-complete-AI-3129",
   "status": "running",
-  "updatedAt": "2026-08-21T16:52:39.389Z",
+  "updatedAt": "2026-08-21T16:54:05.117Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -3585,6 +3910,19 @@
         "costUsd": 0,
         "inputTokens": 0,
         "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "tactical_fix": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 84415,
+      "usage": {
+        "cacheReadTokens": 817536,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.041926258,
+        "inputTokens": 121669,
+        "outputTokens": 12378
       },
       "visits": 1
     }
