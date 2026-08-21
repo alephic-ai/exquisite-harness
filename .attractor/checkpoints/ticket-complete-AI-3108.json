@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:48:36.411Z",
-  "currentNodeId": "verify",
+  "currentNodeId": "ac_verify",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -1132,7 +1132,7 @@
       "startedAt": "2026-08-21T16:12:09.113Z"
     },
     "verify": {
-      "completedAt": "2026-08-21T16:12:24.602Z",
+      "completedAt": "2026-08-21T16:22:57.842Z",
       "nodeId": "verify",
       "outcome": "success",
       "output": "Verification skipped: no verification command configured for this repository",
@@ -1142,7 +1142,7 @@
         "originalLength": 76,
         "truncated": false
       },
-      "retryCount": 0,
+      "retryCount": 1,
       "startedAt": "2026-08-21T16:12:24.581Z"
     },
     "ac_verify": {
@@ -2122,7 +2122,7 @@
   },
   "pipelineId": "ticket-complete-AI-3108",
   "status": "running",
-  "updatedAt": "2026-08-21T16:22:56.500Z",
+  "updatedAt": "2026-08-21T16:22:57.842Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -2272,7 +2272,7 @@
     "verify": {
       "handler": "tool",
       "outcome": "success",
-      "totalDurationMs": 21,
+      "totalDurationMs": 40,
       "usage": {
         "cacheReadTokens": 0,
         "cacheWriteTokens": 0,
@@ -2280,7 +2280,7 @@
         "inputTokens": 0,
         "outputTokens": 0
       },
-      "visits": 1
+      "visits": 2
     },
     "ac_verify": {
       "handler": "tool",
