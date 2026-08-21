@@ -1,6 +1,7 @@
 # Review Context Packet
 
-Changed files in review scope (vs `origin/main`, pipeline artifacts filtered out):
+Changed files in review scope (vs `origin/main`, pipeline artifacts filtered
+out):
 
 - DESIGN.md
 - README.md
@@ -31,7 +32,7 @@ index 642009f..a972c28 100644
 +`assistant.text` value joined in stream order — and always creates the file,
 +empty for no-result or error runs. The write completes before `run.completed` is
 +emitted, so the file is ready once that line appears.
- 
+
  **Phase 2 (later): local router.** An opt-in localhost proxy that receives
  Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
 diff --git a/README.md b/README.md
@@ -41,14 +42,14 @@ index 23a84d3..2dd519e 100644
 @@ -166,6 +166,11 @@ preserved as `harness.output`. Harness stderr remains stderr. A semantically
  failed native result makes both `run.completed.exitCode` and the `eh` process
  exit code non-zero, even when the child process exits zero.
- 
+
 +`run.completed` is emitted exactly once and is always the last NDJSON line —
 +every completion path (success, spawn failure, preflight/usage error, timeout)
 +ends by emitting it, and nothing follows. Orchestrators can rely on it as the
 +end-of-run signal.
 +
  #### Exit codes
- 
+
  `eh` owns a small reserved block of exit codes for failures it detects itself;
 @@ -200,7 +205,12 @@ runs through Claude, Codex, Grok, opencode, or pi may also use
  loudly: on expiry `eh` emits a `run.error` naming the limit, sends `SIGTERM`,
@@ -61,9 +62,9 @@ index 23a84d3..2dd519e 100644
 +joined in stream order. The file is always created — empty when the run produced
 +no result text, including error and preflight runs — and is written before
 +`run.completed`, so a `run.completed` on stdout means the file is ready to read.
- 
+
  ### Keys
- 
+
 diff --git a/docs/qa/eh-cli.md b/docs/qa/eh-cli.md
 index ebe1e4b..f290b11 100644
 --- a/docs/qa/eh-cli.md
@@ -71,7 +72,7 @@ index ebe1e4b..f290b11 100644
 @@ -361,6 +361,17 @@ Drive each with the PTY; assert on screen text.
     → the harness runs in `/tmp`; a nonexistent `--cwd` exits `64` with a
     `run.error` before any `harness.event`.
- 
+
 +6. Step 1's automated suite also covers `--result-file`: a per-harness byte
 +   comparison of the written file (Claude's native `result` string wins over its
 +   assistant text; codex/grok/opencode/pi fall back to `assistant.text` joined
@@ -84,7 +85,7 @@ index ebe1e4b..f290b11 100644
 +   file holds exactly the reply text.
 +
  ## Known limitations
- 
+
  - Interactive steps are driven by a PTY harness, not a human; rendering quirks
 diff --git a/package.json b/package.json
 index 9c008c3..be92b6c 100644
@@ -289,7 +290,7 @@ index 95e87c7..a296a34 100644
 +    },
 +  )
  })
- 
+
  function asRecord(value: unknown) {
 @@ -1720,6 +1895,7 @@ emit({
  })
@@ -327,7 +328,7 @@ index fda6af3..e29b015 100644
    resumeSessionId?: string
    timeout?: string
  }
- 
+
  interface NormalizerState {
 +  assistantText: string
 +  nativeResult: string | undefined
@@ -369,7 +370,7 @@ index fda6af3..e29b015 100644
 @@ -175,6 +182,15 @@ function emit(event: Record<string, unknown>) {
    process.stdout.write(`${JSON.stringify({ ...event, v: PROTOCOL_VERSION })}\n`)
  }
- 
+
 +function emitAssistantText(text: string, state: NormalizerState) {
 +  emit({ text, type: 'assistant.text' })
 +  return {
@@ -400,7 +401,7 @@ index fda6af3..e29b015 100644
  }) {
 @@ -319,6 +337,8 @@ async function executePreparedHeadlessPlan(options: {
      }
- 
+
      let state: NormalizerState = {
 +      assistantText: '',
 +      nativeResult: undefined,
@@ -412,7 +413,7 @@ index fda6af3..e29b015 100644
      }
      if (options.harness === 'grok') state = flushGrokText(state)
 +    const resultText = state.nativeResult ?? state.assistantText
- 
+
      const completed = await completion
      if ('error' in completed) {
 @@ -339,6 +360,7 @@ async function executePreparedHeadlessPlan(options: {
@@ -432,7 +433,7 @@ index fda6af3..e29b015 100644
      return exitCode
    } finally {
 @@ -378,8 +401,10 @@ async function executePreparedHeadlessPlan(options: {
- 
+
  function flushGrokText(state: NormalizerState) {
    if (!state.pendingGrokText) return state
 -  emit({ text: state.pendingGrokText, type: 'assistant.text' })
@@ -442,7 +443,7 @@ index fda6af3..e29b015 100644
 +    pendingGrokText: '',
 +  })
  }
- 
+
  function isGrokTextDelta(
 @@ -392,9 +417,9 @@ function normalizeClaudeEvent(
    event: Record<string, unknown>,
@@ -454,7 +455,7 @@ index fda6af3..e29b015 100644
 -    sessionId = emitSession(event.session_id, sessionId)
 +    next = { ...next, sessionId: emitSession(event.session_id, next.sessionId) }
    }
- 
+
    if (event.type === 'assistant') {
 @@ -403,14 +428,14 @@ function normalizeClaudeEvent(
        for (const rawBlock of message.content) {
@@ -466,7 +467,7 @@ index fda6af3..e29b015 100644
        }
      }
    }
- 
+
 -  if (event.type !== 'result') return { ...state, sessionId }
 -  sessionId = emitSession(event.session_id, sessionId)
 +  if (event.type !== 'result') return next
@@ -487,7 +488,7 @@ index fda6af3..e29b015 100644
 +    resultIsError: next.resultIsError || resultIsError,
    }
  }
- 
+
 @@ -437,15 +463,15 @@ function normalizeCodexEvent(
    event: Record<string, unknown>,
    state: NormalizerState,
@@ -499,7 +500,7 @@ index fda6af3..e29b015 100644
 -      : state.sessionId
 +      ? { ...state, sessionId: emitSession(event.thread_id, state.sessionId) }
 +      : state
- 
+
    if (event.type === 'item.completed') {
      const item = asRecord(event.item)
      if (item?.type === 'agent_message' && typeof item.text === 'string') {
@@ -507,19 +508,19 @@ index fda6af3..e29b015 100644
 +      next = emitAssistantText(item.text, next)
      }
    }
- 
+
 @@ -467,10 +493,10 @@ function normalizeCodexEvent(
- 
+
    if (event.type === 'turn.failed' || event.type === 'error') {
      emitRunError(event, 'Codex reported a failed turn')
 -    return { ...state, resultIsError: true, sessionId }
 +    return { ...next, resultIsError: true }
    }
- 
+
 -  return { ...state, sessionId }
 +  return next
  }
- 
+
  function normalizeGrokEvent(
 @@ -546,7 +572,7 @@ function normalizeOpencodeEvent(
    event: Record<string, unknown>,
@@ -528,7 +529,7 @@ index fda6af3..e29b015 100644
 -  const nextState = emitNewSession(event.sessionID, state)
 +  let next = emitNewSession(event.sessionID, state)
    const part = asRecord(event.part)
- 
+
    if (
 @@ -554,7 +580,7 @@ function normalizeOpencodeEvent(
      part?.type === 'text' &&
@@ -537,10 +538,10 @@ index fda6af3..e29b015 100644
 -    emit({ text: part.text, type: 'assistant.text' })
 +    next = emitAssistantText(part.text, next)
    }
- 
+
    if (event.type === 'step_finish' && part?.type === 'step-finish') {
 @@ -574,25 +600,25 @@ function normalizeOpencodeEvent(
- 
+
    if (event.type === 'error') {
      emitRunError(event, 'OpenCode reported an error')
 -    return { ...nextState, resultIsError: true }
@@ -549,7 +550,7 @@ index fda6af3..e29b015 100644
 -  return nextState
 +  return next
  }
- 
+
  function normalizePiEvent(
    event: Record<string, unknown>,
    state: NormalizerState,
@@ -558,7 +559,7 @@ index fda6af3..e29b015 100644
 -  if (event.type !== 'message_end') return nextState
 +  let next = emitNewSession(event.id, state)
 +  if (event.type !== 'message_end') return next
- 
+
    const message = asRecord(event.message)
 -  if (message?.role !== 'assistant') return nextState
 +  if (message?.role !== 'assistant') return next
@@ -581,7 +582,7 @@ index fda6af3..e29b015 100644
 +    resultIsError: next.resultIsError || resultIsError,
    }
  }
- 
+
 @@ -775,3 +801,8 @@ function timeoutKillGraceMs() {
    const parsed = Number(raw)
    return Number.isFinite(parsed) && parsed >= 0 ? parsed : TIMEOUT_KILL_GRACE_MS
