@@ -1,0 +1,159 @@
+{
+  "createdAt": "2026-08-21T15:48:30.863Z",
+  "currentNodeId": "plan",
+  "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
+  "nodeStates": {
+    "start": {
+      "completedAt": "2026-08-21T15:48:31.356Z",
+      "nodeId": "start",
+      "outcome": "success",
+      "output": "Pipeline started",
+      "retryCount": 0,
+      "startedAt": "2026-08-21T15:48:31.355Z"
+    },
+    "scope_gate": {
+      "completedAt": "2026-08-21T15:48:57.977Z",
+      "nodeId": "scope_gate",
+      "artifacts": [
+        {
+          "agentRunId": "6aaf0cb6-bd61-43b9-b2b2-27f5d87b885c",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "6217cdd4d9bee0f595bc471665736d3ab9f911d2a7de8868dda456691f718bb4",
+              "sizeBytes": 45296
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/2c3834ff-9bb6-4a65-b207-8e0e569e9de1.request.json",
+              "sha256": "35cf74c39f7ea14f37a353f844f55eb28a4950c563464bd634f0cdd288a3a49e",
+              "sizeBytes": 87986
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/3b6cefd5-0953-47e4-89bd-cb37d69fe093.request.json",
+              "sha256": "1b4821b1dfda3e976a3a5302443acea241d876e8f1c0b85132f142cac51fe6a8",
+              "sizeBytes": 10251
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7627dcfb-7741-4831-866b-22a96027c481.request.json",
+              "sha256": "bae258cea988c71d1fabeadcc5330331c42b5bec549f7498a1f5779e5f1ca592",
+              "sizeBytes": 99459
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/ee4ce1af-d357-43a3-ae9e-e7099a43dfa7.request.json",
+              "sha256": "761fb45b57b1c481b593a58afbdca302fb37fbc3d59be2467bef3b3fd2effae6",
+              "sizeBytes": 83672
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA3sZN8QWey3H28fnP2.response.json",
+              "sha256": "3b92648bed39a0f7bd396ff1615a2383b36b8df8cf402307323198b8b1673edf",
+              "sizeBytes": 824
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA3sqEWeTjuPA62vjBE.response.json",
+              "sha256": "ba60e4d35fec8178b16f01c422a2938b5da8bbc56f17f59e251aa0dba571be73",
+              "sizeBytes": 2328
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA4Nom5VSK9sj5GdNtG.response.json",
+              "sha256": "8ed78509d8191659c71a74c815ca4f641f8a891aec65c8699dc5ab1facc9fff6",
+              "sizeBytes": 1921
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGA4juX9MfMkf5SReyo5.response.json",
+              "sha256": "832d5b9a9eda91441d5e1e59b1b43867f78ec800db83c902cb5b38a0083bd06b",
+              "sizeBytes": 3660
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "555e09bfc57539ccd1bef0f512b3a2b3432e77acc7a1012e82bbf44e417b99c2",
+              "sizeBytes": 13599
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/scope_gate/attempt-0-6aaf0cb6-bd61-43b9-b2b2-27f5d87b885c",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3111/b3eb78e84ea1-946acc59-96b8-40ea-9586-26516002df0b/agent-artifacts/scope_gate/attempt-0-6aaf0cb6-bd61-43b9-b2b2-27f5d87b885c/manifest.json",
+          "nodeId": "scope_gate",
+          "pipelineId": "ticket-complete-AI-3111",
+          "runtime": "claude",
+          "sessionId": "984fccde-9a33-4320-b508-21a0029bffcb",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "The spike (AI-3110) is merged and produced `docs/read-only.md`. Let me verify it contains the mapping table and shape decision this ticket depends on.\nThis ticket is exceptionally well-specified and correctly targeted at this repo.\n\n**Verification:**\n- The blocking spike **AI-3110 is merged** (commit `fd4a8ed`) and produced `docs/read-only.md` — a complete per-harness mapping table with exact args for all five harnesses (claude/codex/grok/opencode/pi) and a signed-off shape decision.\n- All files the ticket names exist: `src/approval-mode.ts` (the module to mirror), `src/harnesses.ts`, `src/headless-run.ts`, `src/main.ts`, plus the `createFakeHarness` test pattern in `src/harnesses.test.ts`/`src/headless-run.test.ts`.\n- The spike resolves the two open design questions the implementation would otherwise have to guess: the flag shape (orthogonal boolean, single permission-posture resolution function that suppresses colliding approval args) and the no-mechanism behavior (refuse-to-launch; opencode explicitly reclassified with a mechanism).\n\n**Scope:** Single deliverable — implement `--read-only` for `eh run`. Three behavior-changing ACs (per-harness mapping, never-silently-unrestricted invariant, composition with `defaultApprovalMode: auto`), all facets of one coherent feature that ships as one focused PR mirroring the prior approval-defaults change (#42). Not too broad.\n\n**Specification:** The spike is the spec — exact args, collision behavior, and interaction decisions are all documented. No author-level decisions are left ambiguous.\n\n**Repository:** Correct target — this is the `eh` CLI, the files and the spike all live here.\n\nThis is a clean proceed.\n\nSTATUS:proceed\n",
+      "retryCount": 0,
+      "sessionId": "984fccde-9a33-4320-b508-21a0029bffcb",
+      "startedAt": "2026-08-21T15:48:31.358Z",
+      "usage": {
+        "cacheReadTokens": 64703,
+        "cacheWriteTokens": 20673,
+        "costUsd": 0.25099275,
+        "inputTokens": 9768,
+        "outputTokens": 1524
+      }
+    }
+  },
+  "parallelBranches": {},
+  "pipelineId": "ticket-complete-AI-3111",
+  "status": "running",
+  "updatedAt": "2026-08-21T15:48:57.983Z",
+  "variables": {
+    "repo.defaultBranch": "main",
+    "repo.fullName": "alephic-ai/exquisite-harness",
+    "repo.lintCommand": "pnpm lint",
+    "repo.packageManager": "pnpm",
+    "repo.testCommand": "pnpm test",
+    "repo.verificationCommand": "echo \"Verification skipped: no verification command configured for this repository\"",
+    "branch": "intelligencev2/ai-3111-eh-run-implement-read-only-across-all-five-harness-adapters",
+    "ticket.comments": "",
+    "ticket.description": "# eh run: implement `--read-only` across all five harness adapters\n\n## Problem\n\nReviewer/auditor lanes driven by `eh run` should provably not mutate the checkout they examine. The read-only spike ([AI-3110](https://linear.app/alephic/issue/AI-3110)) produced a verified per-harness mapping table and a decided flag shape; this ticket implements it. Until then, orchestrators isolate lanes with disposable git worktrees — workable, but per-orchestrator machinery eh should subsume.\n\nBlocked by [AI-3110](https://linear.app/alephic/issue/AI-3110) — do not start until its mapping table and shape decision are signed off.\n\n## Context\n\n* Work against `origin/main`. Mirror the structure of the approval-defaults change (#42, `d4baf2d`): a pure mapping module analogous to `src/approval-mode.ts`, wired through `buildLaunchPlan` in `src/harnesses.ts`, read in `src/headless-run.ts`, with the flag added to the `run` command in `src/main.ts`.\n* The spike's committed mapping table and shape decision are the specification for per-harness args and for no-mechanism behavior. Do not re-litigate them here; if implementation reveals the table is wrong for a harness, go back through the spike doc.\n* In-repo subprocess tests can only assert the *args passed* to a fake harness — they cannot prove the real harness actually blocks writes. That proof lives in the spike's live verification; this ticket's tests pin the mapping so it can't drift silently.\n\n## Acceptance Criteria\n\n- [ ] `eh run --read-only` maps each of the five harnesses to its verified mechanism exactly per the spike's table, via a new mapping module analogous to `src/approval-mode.ts` (not an extension of `APPROVAL_MODES` — approval and write-restriction are independent axes). Proof: per-harness subprocess tests asserting the exact args, per the `createFakeHarness` pattern.\n- [ ] Invariant: a lane started with `--read-only` is never silently unrestricted — a harness the spike marked \"no mechanism\" behaves exactly as the spike decided (refuse to launch or loud warning, per the decision), with a test for that path.\n- [ ] `--read-only` composes with `defaultApprovalMode: auto` per the spike's decided interaction (both active in one run), with a test covering the combined args.\n\n## Out of Scope\n\n* Interactive-mode read-only or a config-level default; `eh run` flag only.\n* OS-level sandboxing beyond the harnesses' own flags.\n* Re-verifying harness CLI behavior (spike owns that evidence).\n\n## Verification\n\n* `pnpm lint:ci`; `bun test src/headless-run.test.ts`; full `pnpm test`.\n* Version bump required; update README `### Headless runs`, DESIGN.md (including the File map for the new module), `docs/qa/eh-cli.md`.\n* Manual: one live probe per available harness — ask it to write a file under `--read-only` and observe refusal.\n\n## Delegability\n\n```yaml\ndesign_freedom: low\nverification_strength: low\nsilent_failure_cost: high\ncontext_volatility: low\nrecommended_tier: high\nrecommended_effort: high\n```",
+    "ticket.id": "AI-3111",
+    "ticket.state": "Triage",
+    "ticket.title": "eh run: implement --read-only across all five harness adapters",
+    "ticket.url": "https://linear.app/alephic/issue/AI-3111/eh-run-implement-read-only-across-all-five-harness-adapters"
+  },
+  "nodeVisitTotals": {
+    "start": {
+      "handler": "start",
+      "outcome": "success",
+      "totalDurationMs": 1,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "scope_gate": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 26619,
+      "usage": {
+        "cacheReadTokens": 64703,
+        "cacheWriteTokens": 20673,
+        "costUsd": 0.25099275,
+        "inputTokens": 9768,
+        "outputTokens": 1524
+      },
+      "visits": 1
+    }
+  }
+}
