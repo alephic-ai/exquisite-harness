@@ -1,6 +1,6 @@
 {
   "createdAt": "2026-08-21T15:47:30.420Z",
-  "currentNodeId": "evaluate_review",
+  "currentNodeId": "fix_count_gate",
   "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
   "nodeStates": {
     "start": {
@@ -3091,6 +3091,175 @@
         "inputTokens": 9781,
         "outputTokens": 3671
       }
+    },
+    "evaluate_review": {
+      "completedAt": "2026-08-21T16:52:37.831Z",
+      "nodeId": "evaluate_review",
+      "artifacts": [
+        {
+          "agentRunId": "b05cc162-c8ac-45b5-9407-cff061d4c869",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "8c5e0748fae200b2054e29f3c61f16c010c8ba0c371e2fef6c5ca61d0729a6df",
+              "sizeBytes": 278755
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/24ed3342-1c32-418b-9837-49c0a31a1b47.request.json",
+              "sha256": "92c4a040fd641b4347b0dcc54bc015e697585e10a5212a65d59572511b724d47",
+              "sizeBytes": 109459
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/5d57d08c-92fb-4af5-8a19-5016e0f9f92e.request.json",
+              "sha256": "6720646d20c34a573653153e3063e4da053c414806ec27756fe9dac79773bc20",
+              "sizeBytes": 202670
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/627e5521-3ba6-4b0c-9aca-2d5d186aaf97.request.json",
+              "sha256": "33206ccc9a0d6809ad55db8af623ac6a85368fe3f584e2bf111579fb97ed5813",
+              "sizeBytes": 207552
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/7191b8a2-7b35-4135-bc57-133a6f4c8803.request.json",
+              "sha256": "bca11ed0339f42eef7a65d9f8a2d8616fd425a4f4d2426c78bc05b9fcbdd9294",
+              "sizeBytes": 151351
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/88a4501f-40f0-4733-80d9-2405752fdbaa.request.json",
+              "sha256": "9ad01434c39b07dd4e54860f01ae96419cfb1c61281903982323a4b502363698",
+              "sizeBytes": 102154
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a6cb6ef2-6991-4226-9331-e500d3035e71.request.json",
+              "sha256": "c867a3ec06ab11d68fc99a8b9da29320b904bed4b92bc0139a23182aae0a9bd3",
+              "sizeBytes": 247490
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/a785505e-a5fd-4eb8-a3fb-b799edbdd233.request.json",
+              "sha256": "48c077f4d90115cb0d78d3f29912f0590cc1e06b988c91795fb02965c151c57f",
+              "sizeBytes": 243740
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d3fc7ca0-5383-4c53-b64c-41b5486e1977.request.json",
+              "sha256": "e0f9c7d1de5017026ad2fea199c8b142389849d3c4f0a1a2ae3cfafc0d4eb08f",
+              "sizeBytes": 22919
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/d6464817-f208-4a75-a9c0-53f783555176.request.json",
+              "sha256": "e61ad12a9eea688fd4bd5a81f30e2763dfe6711f74bb3b1938b80aa15aaac10d",
+              "sizeBytes": 246001
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e0eb1635-ac89-4072-a507-89688f95253b.request.json",
+              "sha256": "d6a0bbf804189c38fcc92f6024f818cced2e2a142417a0436324c9faa51864c1",
+              "sizeBytes": 96645
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEVKqaXy1ZdabE7aF1m.response.json",
+              "sha256": "4a862a83875b1e4e20e5d4806b269468d803506c34520eb3c17d7aacb72156d4",
+              "sizeBytes": 824
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEVLRJnW1oBw1sgg9p2.response.json",
+              "sha256": "59a43d1f109ef07715d276862808b1cd4900cd90267191c27b87a313a0021305",
+              "sizeBytes": 2913
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEW4k1JHtyXiGDj1y73.response.json",
+              "sha256": "3db153dcd59240709e3088f47a38d4d57b2d1b53ef0882ec8325944c5c950e02",
+              "sizeBytes": 4602
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEX7UzRNYmurLFUZ5cu.response.json",
+              "sha256": "6544e13295e8a6039b2f8860e620dee95d7bbe2146cd40e9a5b38ae58965f969",
+              "sizeBytes": 1964
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEXSTkR73RCV4VjNKGd.response.json",
+              "sha256": "9d3b9caec2cd732a57ab5308ba1a88025f96fddd5068c3a75932c0af7c55b8f8",
+              "sizeBytes": 40070
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEhTeDZthTUTJvqsUS6.response.json",
+              "sha256": "e5f28b4dab868bf5652b30b5fd486fe9866067f5769dc915124b258901737f9f",
+              "sizeBytes": 2451
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEioGwssdduiUwdAyjR.response.json",
+              "sha256": "757dc4dce701aab4323c60abf10a43f700387727a535d30606770ce71d96e922",
+              "sizeBytes": 36649
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEtKKxtTENmmQ77geop.response.json",
+              "sha256": "a30542f68e2034f65880b11920683b864b1833647fa8de90a5c4f1526ab36d8d",
+              "sizeBytes": 2021
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEtpY8L2qLL9fCZr8jv.response.json",
+              "sha256": "a15ebe8a334a0b144b5e72778a4a4367befcc3a551cebf248369c7a3575ab146",
+              "sizeBytes": 1680
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeGEujP6N9mQbsL4vne4R.response.json",
+              "sha256": "c725d28b1bafa6a85cb3b16b12878477918d6b5c301b7929cca4d0deaff58f72",
+              "sizeBytes": 4436
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "bb4732af1631ed9d1f3f0a1a05b6e5ece647b8848d70ab96e2870f278e827006",
+              "sizeBytes": 32630
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/evaluate_review/attempt-0-b05cc162-c8ac-45b5-9407-cff061d4c869",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/evaluate_review/attempt-0-b05cc162-c8ac-45b5-9407-cff061d4c869/manifest.json",
+          "nodeId": "evaluate_review",
+          "pipelineId": "ticket-complete-AI-3129",
+          "runtime": "claude",
+          "sessionId": "5e9bfa20-a7b1-48f4-a910-65bccaf3eb5c",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "fail",
+      "output": "I'll start by reading all the relevant artifacts in parallel.\nNow let me read the project standards, the plan, and the relevant source code to classify the findings properly.\nBoth review files exist and are non-empty — the path is not degraded. Let me read the plan (for load-bearing assumptions) and the relevant source code.\nBoth review files are present and non-empty. Now let me examine `resolveApiKey` (to gauge the duplicate-resolution finding) and the tier-selection tests (to assess the cache-token finding).\nLet me read the tier-selection test to confirm what behavior is locked in.\nNow I have full context. Let me confirm my analysis of the key finding before classifying:\n\n**`contextUsedPercentage` (src/pricing.ts:379-389)** defines context as `input + cacheWrite + cacheRead`, and both the plan and the code comment (src/pricing.ts:330-332) call tiers \"context brackets\" — yet `endpointRates` keys the prompt tier on `usage.input` alone (src/pricing.ts:337-341). The tier tests (pricing.test.ts:343-367) all use `cacheRead:0/cacheWrite:0`, so the cache-token interaction is uncovered. This is a verifiable internal inconsistency, independent of the unverifiable external tier semantics.\n\nAnd **`resolveApiKey` (keys.ts:244)** shells out to `security`/`secret-tool` subprocesses + reads a file — so the duplicate resolution in `fetchHeadlessRateCard` (local + `fetchModelMeta`'s internal one) is real redundant I/O, not a cosmetic nit.\n\nLet me classify. First, the immutable Codex correctness fix must be copied verbatim. I'll write `.attractor/review-fixes.md` with all three Cat-1 fixes.\nNow the meta file and the follow-up-candidates artifact (zero Category-2 candidates — all findings classified as Category-1).\nNow the required producer self-validation — both checks must pass before I emit a terminal STATUS.\nBoth self-validation checks pass (artifact non-empty; validator exit 0). Fix count (3) matches meta (`\"fixCount\":3,\"band\":\"tactical\"`).\n\n**Classification result** — 3 Category-1 blockers → `review-fixes.md`; 0 Category-2 → empty `candidates`; both reviews present (path not degraded).\n\n- **Codex (correctness, verbatim/immutable)** — src/pricing.ts:177-192: pinned run falls through to `fetchModelMeta` aggregate rates when `fetchEndpointPricing` returns undefined, reporting the wrong provider's cost as authoritative `gateway-rates`. Copied byte-for-byte from `codex-correctness-fixes.md`.\n- **guillaumeify → Cat-1** — src/pricing.ts:337-341: prompt \"context bracket\" keyed on `usage.input` alone contradicts eh's own `contextUsedPercentage` (input+cacheRead+cacheWrite) and the \"context bracket\" wording; under-bills cached long-context runs — the precise accuracy failure this ticket targets. PR-introduced, no covering test (all tier tests use zero cache). Overruling the plan's input-only choice on internal-consistency grounds.\n- **guillaumeify → Cat-1** — src/pricing.ts:172-189: duplicate `resolveApiKey` (local + `fetchModelMeta`'s own), where `resolveApiKey` shells out to `security`/`secret-tool` + reads secrets.json; redundant subprocess I/O per unpinned run, and dead work once the Codex fix returns early. In-scope (same function the Codex fix restructures).\n\n**Load-bearing assumption check** (plan §Load-Bearing Assumptions, independent of reviewers):\n- Assumptions 1–4: marked VERIFIED with in-repo evidence; spot-confirmed against the code (aggregate rates, endpoint pin filter, grok double-emit accumulator, `statusline:false`). No action.\n- Assumption 5(a) — cache-rate publication: guarded by the `?? inputPerMillion` / `?? input_cache_read` fallback and covered by pricing.test.ts:323-341 (both published and unpublished cases); an AC-4-delegated documented decision. Trigger not met (has guard + test). No action.\n- Assumption 5(b) — tier semantics: probe cannot be run here (no live gateway key). The one internally-verifiable defect it harbors — the context bracket excluding cache tokens — is captured as the Cat-1 fix above with a covering test prescribed. The irreducible context-bracket-vs-marginal question is a documented, tested, fallback-guarded choice per the plan; no speculative blocker warranted.\n\nSTATUS:fail\n",
+      "retryCount": 0,
+      "sessionId": "5e9bfa20-a7b1-48f4-a910-65bccaf3eb5c",
+      "startedAt": "2026-08-21T16:46:44.890Z",
+      "usage": {
+        "cacheReadTokens": 482156,
+        "cacheWriteTokens": 70875,
+        "costUsd": 1.3813137499999997,
+        "inputTokens": 10045,
+        "outputTokens": 25643
+      }
     }
   },
   "parallelBranches": {
@@ -3101,7 +3270,7 @@
   },
   "pipelineId": "ticket-complete-AI-3129",
   "status": "running",
-  "updatedAt": "2026-08-21T16:46:43.482Z",
+  "updatedAt": "2026-08-21T16:52:37.834Z",
   "variables": {
     "repo.defaultBranch": "main",
     "repo.fullName": "alephic-ai/exquisite-harness",
@@ -3375,6 +3544,19 @@
         "costUsd": 0.423024,
         "inputTokens": 9781,
         "outputTokens": 3671
+      },
+      "visits": 1
+    },
+    "evaluate_review": {
+      "handler": "codergen",
+      "outcome": "fail",
+      "totalDurationMs": 352941,
+      "usage": {
+        "cacheReadTokens": 482156,
+        "cacheWriteTokens": 70875,
+        "costUsd": 1.3813137499999997,
+        "inputTokens": 10045,
+        "outputTokens": 25643
       },
       "visits": 1
     }
