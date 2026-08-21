@@ -1,0 +1,159 @@
+{
+  "createdAt": "2026-08-21T15:47:30.420Z",
+  "currentNodeId": "plan",
+  "graphFile": "/vercel/sandbox/alephic-envoy/scripts/attractor/pipelines/ticket-complete.ir.json",
+  "nodeStates": {
+    "start": {
+      "completedAt": "2026-08-21T15:47:30.720Z",
+      "nodeId": "start",
+      "outcome": "success",
+      "output": "Pipeline started",
+      "retryCount": 0,
+      "startedAt": "2026-08-21T15:47:30.719Z"
+    },
+    "scope_gate": {
+      "completedAt": "2026-08-21T15:47:55.409Z",
+      "nodeId": "scope_gate",
+      "artifacts": [
+        {
+          "agentRunId": "3c38f8db-2512-4522-82c0-a6f1e99e7c5d",
+          "attemptNumber": 0,
+          "files": [
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stdout.raw",
+              "sha256": "8d7b469d5aa6f9bdf47d4ffa05cdd45c281800d8b38c08088a8cfc8992069ff0",
+              "sizeBytes": 32386
+            },
+            {
+              "contentType": "application/octet-stream",
+              "relativePath": "stderr.raw",
+              "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sizeBytes": 0
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/c70fbce6-8db0-4608-8f2a-966c6d4202e5.request.json",
+              "sha256": "ead2310e249e55f8039a4b3576b4d51b03e7882ad90f979468a5ea391e47d352",
+              "sizeBytes": 85498
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/e0c3fe62-d2ab-45a4-bfaf-ce94dee13769.request.json",
+              "sha256": "517140df6eabc6dae45bf38341ed3f2ef6a4b83d9621b99e8f327437cb522f1e",
+              "sizeBytes": 9358
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/efcab876-d5af-44f8-a4e0-018069469cba.request.json",
+              "sha256": "a0f01c17e4d2f1593f6aa97efffc98ac1717bbb009925c56c9a1f12e5862f738",
+              "sizeBytes": 92535
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/fe4b0d17-4f0e-401a-84e5-94905b472ce5.request.json",
+              "sha256": "35229892f87779ab7969beacf33567e7f731a243cf266c2af7a852e0431f47ee",
+              "sizeBytes": 82777
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeG9yPbVcgwqCvjp7dGNd.response.json",
+              "sha256": "c869afa394bc8a5f434aff7fd24c6e212e0ef8a6436d478eaf60c678ceda397c",
+              "sizeBytes": 2127
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeG9yPhhWYivvmCAYGmrc.response.json",
+              "sha256": "066f7311a222253222d645fc4ac8504cc79f251e79969b07ebfa6ad6b51a8cb2",
+              "sizeBytes": 824
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeG9ysBgEXzLTjJZYXAxH.response.json",
+              "sha256": "c4b45d952fb9806a8579af16bf4df137bac5caaa49fa71049e9e64b4ff329fb7",
+              "sizeBytes": 2007
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "claude-raw-bodies/req_011CeG9zFkVX9BHPJH5WaG3r.response.json",
+              "sha256": "0b5afda9f3df8764d4ad81859e757344e0a9fb720a510287217a8e970bb18aae",
+              "sizeBytes": 3486
+            },
+            {
+              "contentType": "application/json",
+              "relativePath": "manifest.json",
+              "sha256": "91846ec34e306d870faf5deec556ba04b035fdb2e4138f8f314f16b4bfa76e08",
+              "sizeBytes": 12704
+            }
+          ],
+          "localArchivePath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/scope_gate/attempt-0-3c38f8db-2512-4522-82c0-a6f1e99e7c5d",
+          "manifestPath": "/tmp/envoy/ticket-complete-AI-3129/b3eb78e84ea1-8bd50f47-5092-4dfa-8893-b6d1f3b139d8/agent-artifacts/scope_gate/attempt-0-3c38f8db-2512-4522-82c0-a6f1e99e7c5d/manifest.json",
+          "nodeId": "scope_gate",
+          "pipelineId": "ticket-complete-AI-3129",
+          "runtime": "claude",
+          "sessionId": "7c3a86ec-d673-4343-ae3b-7ee062fde1b1",
+          "uploadStatus": "disabled"
+        }
+      ],
+      "outcome": "success",
+      "output": "All referenced code exists in this checkout and the ticket is well-scoped:\n\n- `src/pricing.ts` — `fetchModelMeta` with gateway provider pins, per-endpoint pricing, prompt/completion tiers, and cache rate fields (`input_cache_read`, `input_cache_write`) all present.\n- `src/headless-run.ts` — the `usage` and `run.completed` emit path, `cumulative` flag, `costUsd` field, `PROTOCOL_VERSION` (`v`) stamping all present.\n- `src/gateway-costs.ts` — existing gateway cost machinery.\n\nThe five acceptance criteria all orbit a single, coherent deliverable: compute cost in headless `eh run` from eh's own normalized usage × resolved gateway rates, emit it as `costUsd` + `costSource: \"gateway-rates\"`, preserve any harness-reported cost separately, avoid fabricating cost when rates are unavailable, handle cache rates, and bump the stream `v` if the shape changes. That's one focused PR, not multiple independent subsystems.\n\nThe one genuinely open decision (cache-rate fallback: bill as regular input vs zero) is explicitly delegated by AC-4 to the implementer as a documented judgment call — exactly the kind of thing resolved during planning by reading `src/pricing.ts`, not a blocker. Right repository, clear scope, sufficient acceptance signal.\n\nSTATUS:proceed\n",
+      "retryCount": 0,
+      "sessionId": "7c3a86ec-d673-4343-ae3b-7ee062fde1b1",
+      "startedAt": "2026-08-21T15:47:30.721Z",
+      "usage": {
+        "cacheReadTokens": 63525,
+        "cacheWriteTokens": 18734,
+        "costUsd": 0.237419,
+        "inputTokens": 9768,
+        "outputTokens": 1497
+      }
+    }
+  },
+  "parallelBranches": {},
+  "pipelineId": "ticket-complete-AI-3129",
+  "status": "running",
+  "updatedAt": "2026-08-21T15:47:55.413Z",
+  "variables": {
+    "repo.defaultBranch": "main",
+    "repo.fullName": "alephic-ai/exquisite-harness",
+    "repo.lintCommand": "pnpm lint",
+    "repo.packageManager": "pnpm",
+    "repo.testCommand": "pnpm test",
+    "repo.verificationCommand": "echo \"Verification skipped: no verification command configured for this repository\"",
+    "branch": "intelligencev2/ai-3129-eh-run-emit-gateway-rate-costusd-on-headless-usage-events",
+    "ticket.comments": "",
+    "ticket.description": "## Problem\n\nHeadless `eh run` NDJSON `usage` events only carry `costUsd` when the inner harness self-reports one, and that number is the harness's own estimate from its internal pricing table. Measured on a real 4-lane run (2026-08-21): the grok harness reports no cost at all; Claude Code running `zai/glm-5.2` reported $1.61 where actual nebius gateway rates ($1.4/M in, $4.4/M out) put the run at $0.43 — 3.7x overstated. Anthropic-model runs happen to match only because Claude Code's table agrees with gateway pricing. eh already owns the authoritative rate source — `src/pricing.ts` (`fetchModelMeta`, gateway models + per-endpoint pricing incl. prompt/completion tiers) — but uses it only for interactive launch metadata and the statusline, never for headless run cost.\n\n## Acceptance criteria\n\n1. `eh run` computes cost from its own cumulative normalized usage x the resolved model's gateway rates — honoring `--gateway-provider` pins (per-endpoint pricing, not model-aggregate) and tiered prompt/completion rates — and emits it on the final `cumulative: true` `usage` event and/or `run.completed` as `costUsd` with `costSource: \"gateway-rates\"`.\n2. A harness-reported cost, when present, is preserved in a separate field (e.g. `harnessCostUsd`), never silently preferred over the computed one.\n3. When rates are unavailable (ollama, unknown model), no fabricated cost is emitted and `costSource` says why.\n4. Cache read/write tokens are billed at the endpoint's published cache rates; when an endpoint publishes no cache rates, the chosen behavior (bill as regular input vs zero) is explicit and documented in the code.\n5. If the event shape changes, the NDJSON event `v` field is bumped per eh's versioned-stream convention.\n\n## Out of scope\n\n* Interactive-mode cost display changes.\n* Reconciliation against the Vercel AI Gateway billing dashboard.\n\nEvidence: run xcr.Syn0G9hNV6 (experimental-code-review skill, 2026-08-21) — opus lane $12.06 computed vs $12.08 harness-reported (agree), fable $12.45 vs $12.63 (agree), glm@nebius $0.43 vs $1.61 (harness wrong), grok $0.65 vs nothing (harness silent).",
+    "ticket.id": "AI-3129",
+    "ticket.state": "Triage",
+    "ticket.title": "eh run: emit gateway-rate costUsd on headless usage events",
+    "ticket.url": "https://linear.app/alephic/issue/AI-3129/eh-run-emit-gateway-rate-costusd-on-headless-usage-events"
+  },
+  "nodeVisitTotals": {
+    "start": {
+      "handler": "start",
+      "outcome": "success",
+      "totalDurationMs": 1,
+      "usage": {
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "costUsd": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      "visits": 1
+    },
+    "scope_gate": {
+      "handler": "codergen",
+      "outcome": "success",
+      "totalDurationMs": 24688,
+      "usage": {
+        "cacheReadTokens": 63525,
+        "cacheWriteTokens": 18734,
+        "costUsd": 0.237419,
+        "inputTokens": 9768,
+        "outputTokens": 1497
+      },
+      "visits": 1
+    }
+  }
+}
