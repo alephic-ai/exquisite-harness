@@ -16,20 +16,9 @@ export function delegationSkill() {
 
 export function installSkill(directory: string, force = false) {
   const destination = path.join(directory, 'SKILL.md')
-  let destinationExists: boolean
-  try {
-    if (lstatSync(destination).isSymbolicLink()) {
-      throw new Error(`refusing to install through symlink at ${destination}`)
-    }
-    destinationExists = true
-  } catch (error: unknown) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-      destinationExists = false
-    } else {
-      throw error
-    }
-  }
-  if (destinationExists) {
+  assertNoSymlinkPath(destination)
+  const stat = lstatSync(destination, { throwIfNoEntry: false })
+  if (stat) {
     const existing = readFileSync(destination, 'utf8')
     if (existing === delegationSkill()) return
     if (!force) {
@@ -39,14 +28,14 @@ export function installSkill(directory: string, force = false) {
     }
   }
   mkdirSync(directory, { recursive: true })
-  writeFileSync(destination, delegationSkill(), { encoding: 'utf8', flag: 'w' })
+  writeFileSync(destination, delegationSkill(), 'utf8')
 }
 
 export function printSkill() {
   process.stdout.write(delegationSkill())
 }
 
-export const EMBEDDED_SKILL = `---
+const EMBEDDED_SKILL = `---
 name: eh-delegate
 description: Delegate a focused task to another configured agent through eh.
 ---
@@ -77,3 +66,18 @@ verification.
 Useful options include \`--reasoning-effort\`, \`--gateway-provider\`,
 \`--native-args-json\`, and \`--resume-session\`.
 `
+
+function assertNoSymlinkPath(target: string) {
+  const absolute = path.resolve(target)
+  const { root } = path.parse(absolute)
+  let current = root
+  for (const part of absolute.slice(root.length).split(path.sep)) {
+    if (!part) continue
+    current = path.join(current, part)
+    const stat = lstatSync(current, { throwIfNoEntry: false })
+    if (stat?.isSymbolicLink()) {
+      throw new Error(`refusing to install through symlink at ${current}`)
+    }
+    if (!stat) break
+  }
+}

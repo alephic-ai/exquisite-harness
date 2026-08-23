@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { spawn } from 'node:child_process'
 import {
+  existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -10,7 +12,7 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 
-import { delegationSkill, EMBEDDED_SKILL, installSkill } from './skill.js'
+import { delegationSkill, installSkill } from './skill.js'
 
 describe('delegation skill', () => {
   test('documents ask and skill in root help', async () => {
@@ -24,11 +26,11 @@ describe('delegation skill', () => {
       child.on('close', () => resolve(output))
     })
     expect(stdout).toContain('ask [options] <harness> <provider> <model>')
-    expect(stdout).toContain('skill')
+    expect(stdout).toMatch(/^\s+skill\s+print or install/m)
   })
 
-  test('keeps the embedded fallback byte-identical to the source skill', () => {
-    expect(EMBEDDED_SKILL).toBe(
+  test('prints the checked-in skill byte-identically', () => {
+    expect(delegationSkill()).toBe(
       readFileSync(
         path.resolve(import.meta.dir, '../skills/eh-delegate/SKILL.md'),
         'utf8',
@@ -45,6 +47,20 @@ describe('delegation skill', () => {
     try {
       expect(() => installSkill(directory)).toThrow('symlink')
       expect(readFileSync(target, 'utf8')).toBe('target')
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
+  test('refuses to install through an intermediate symlink', () => {
+    const directory = mkdtempSync(path.join(os.tmpdir(), 'eh-skill-'))
+    const target = path.join(directory, 'target')
+    const link = path.join(directory, 'link')
+    mkdirSync(target)
+    symlinkSync(target, link)
+    try {
+      expect(() => installSkill(path.join(link, 'nested'))).toThrow('symlink')
+      expect(existsSync(path.join(target, 'nested', 'SKILL.md'))).toBe(false)
     } finally {
       rmSync(directory, { force: true, recursive: true })
     }

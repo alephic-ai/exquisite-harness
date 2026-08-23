@@ -276,15 +276,6 @@ program
     saveConfig(await wizard(loadConfig()))
   })
 
-interface HeadlessCommandOptions extends Record<string, unknown> {
-  cwd?: string
-  gatewayProvider?: string
-  nativeArgsJson?: string
-  reasoningEffort: string
-  resumeSession?: string
-  timeout?: string
-}
-
 function configureHeadlessCommand(
   command: Command<[string, string, string]>,
   description: string,
@@ -310,11 +301,13 @@ function configureHeadlessCommand(
       '--timeout <seconds>',
       'fail the run if the harness runs longer than <seconds> (SIGTERM, then SIGKILL after a grace period)',
     )
-    .action(async (harness, provider, model, rawOptions) => {
-      const opts = readHeadlessOptions(rawOptions)
+    .action(async (harness, provider, model, opts) => {
       process.exitCode = await runHeadless({
         cwd: opts.cwd,
         effort: opts.reasoningEffort,
+        // The root command exposes the same option for interactive launches.
+        // Commander assigns an option after a subcommand to the root when both
+        // define it, so read both scopes instead of silently dropping the pin.
         gatewayProvider: opts.gatewayProvider ?? rootGatewayProvider(),
         harness,
         model,
@@ -333,20 +326,6 @@ async function main() {
 function rootGatewayProvider() {
   const value: unknown = program.getOptionValue('gatewayProvider')
   return typeof value === 'string' ? value : undefined
-}
-
-function readHeadlessOptions(options: object): HeadlessCommandOptions {
-  const values = Object.fromEntries(Object.entries(options))
-  const stringOption = (name: string) =>
-    typeof values[name] === 'string' ? values[name] : undefined
-  return {
-    cwd: stringOption('cwd'),
-    gatewayProvider: stringOption('gatewayProvider'),
-    nativeArgsJson: stringOption('nativeArgsJson'),
-    reasoningEffort: stringOption('reasoningEffort') ?? 'auto',
-    resumeSession: stringOption('resumeSession'),
-    timeout: stringOption('timeout'),
-  }
 }
 
 main().catch((error: unknown) => {
