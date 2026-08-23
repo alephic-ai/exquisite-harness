@@ -25,6 +25,46 @@ afterAll(() => {
 })
 
 describe('eh run', () => {
+  test('eh ask delegates over stdin without UI or config mutation', async () => {
+    const fixture = createFakeCodex()
+    const child = spawn(
+      process.execPath,
+      ['run', 'src/main.ts', 'ask', 'codex', 'ollama', 'qwen3-coder'],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('delegate this task')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    const events = parseEvents(stdout)
+    expect(events).toContainEqual({
+      text: 'saw: delegate this task',
+      type: 'assistant.text',
+      v: 2,
+    })
+    expect(events).toContainEqual({
+      exitCode: 0,
+      resultIsError: false,
+      type: 'run.completed',
+      v: 2,
+    })
+    expect(existsSync(path.join(fixture.configDir, 'eh', 'config.json'))).toBe(
+      false,
+    )
+  })
+
   test('passes the prompt over stdin and emits the normalized NDJSON contract', async () => {
     const fixture = createFakeCodex()
     const child = spawn(
