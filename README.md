@@ -150,6 +150,20 @@ to launch through eh; this includes Grok's isolated home and Pi Gateway routes.
 
 ### Headless runs
 
+`eh ask` is a single-agent delegation wrapper around `eh run`:
+
+```bash
+printf 'review this parser for bugs' | eh ask codex ollama qwen3-coder
+eh skill print
+eh skill install --dir ~/.claude/skills/eh-delegate
+```
+
+It reads one prompt from stdin, emits the same versioned NDJSON contract, and
+never opens UI, updates recents, or mutates configuration. It supports the
+headless options below, including `--reasoning-effort`, `--native-args-json`,
+`--gateway-provider`, and `--resume-session`. Installation is idempotent and
+refuses to overwrite a differing file unless `--force` is supplied.
+
 `eh run` is the non-interactive execution contract for orchestrators. It reads
 one prompt from stdin, runs the selected harness in its native JSON streaming
 mode, and writes versioned NDJSON to stdout:

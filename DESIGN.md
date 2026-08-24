@@ -105,7 +105,11 @@ spawned), `65` (spawn failure — binary missing/unspawnable), and `66` (semanti
 harness failure — `resultIsError` while the child exited `0`). Every other code
 is the raw child exit code passed through unchanged (including `128 + signal`),
 so a harness's own code can collide with the reserved block only in that
-passthrough case.
+passthrough case. `eh ask` is the single-agent delegation entry point for the
+same contract — identical stdin, options, and NDJSON output, with no UI,
+recents, statusline, or config mutation. The bundled delegation skill that
+teaches an agent to use it is exposed by `eh skill print` and
+`eh skill install --dir <dir>`.
 
 **Headless computed cost:** `eh run` does not trust the inner harness's
 self-reported cost as authoritative. It accumulates its own normalized usage
@@ -506,6 +510,8 @@ which keeps non-TTY use clean and a future Ink/miller-column UI swappable.
 src/main.ts       entry: commander wiring
 src/flow.ts       positional/profile resolution → pickers → launch
 src/headless-run.ts  non-interactive harness execution + NDJSON normalization
+src/skill.ts       embedded delegation skill printing and installation
+skills/eh-delegate/SKILL.md  installable delegation instructions
 src/approval-mode.ts  approval labels + per-harness native argument mapping
 src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
