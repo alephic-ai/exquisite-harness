@@ -191,6 +191,11 @@ providers such as ollama, or `unavailable` when no rates could be resolved (in
 which case `costUsd` is omitted rather than fabricated). Any `harnessCostUsd` is
 preserved on the summary too, never promoted to `costUsd`.
 
+`run.completed` is emitted exactly once and is always the last NDJSON line —
+every completion path (success, spawn failure, preflight/usage error, timeout)
+ends by emitting it, and nothing follows. Orchestrators can rely on it as the
+end-of-run signal.
+
 #### Exit codes
 
 `eh` owns a small reserved block of exit codes for failures it detects itself;
@@ -225,7 +230,12 @@ runs through Claude, Codex, Grok, opencode, or pi may also use
 loudly: on expiry `eh` emits a `run.error` naming the limit, sends `SIGTERM`,
 then escalates to `SIGKILL` after a 10s grace period; `run.completed` is still
 the final event and a timed-out child exits `143`. Omitting the flag keeps
-today's no-deadline behavior.
+today's no-deadline behavior. Pass `--result-file <path>` to capture the run's
+final result text: the harness-native terminal result string where the harness
+defines one (only Claude does today), otherwise every `assistant.text` value
+joined in stream order. The file is always created — empty when the run produced
+no result text, including error and preflight runs — and is written before
+`run.completed`, so a `run.completed` on stdout means the file is ready to read.
 
 ### Keys
 

@@ -47,11 +47,14 @@ export interface HeadlessRunOptions {
   model: string
   nativeArgsJson?: string
   provider: string
+  resultFile?: string
   resumeSessionId?: string
   timeout?: string
 }
 
 interface NormalizerState {
+  assistantTexts: string[]
+  nativeResult: string | undefined
   pendingGrokText: string
   resultIsError: boolean
   sessionId: string | undefined
@@ -66,6 +69,7 @@ interface ResolvedHeadlessRunOptions {
   model: string
   nativeArgs: string[]
   provider: string
+  resultFile: string | undefined
   resumeSessionId: string | undefined
   timeoutSeconds: number | undefined
 }
@@ -113,6 +117,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
           ? []
           : parseNativeArgsJson(options.nativeArgsJson),
       provider: options.provider,
+      resultFile: options.resultFile,
       resumeSessionId: options.resumeSessionId,
       timeoutSeconds: parseTimeoutSeconds(options.timeout),
     }
@@ -172,6 +177,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
           },
           plan: prepared.plan,
           rateCard,
+          resultFile: resolved.resultFile,
           stdin: prepared.stdin,
           timeoutSeconds: resolved.timeoutSeconds,
         })
@@ -179,6 +185,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
     })
   } catch (error) {
     if (state.executionStarted) throw error
+    await writeResultFile(options.resultFile, '')
     emit({ message: errorMessage(error), type: 'run.error' })
     emit({
       exitCode: EH_EXIT_PREFLIGHT,
@@ -213,6 +220,14 @@ function assertRunnableCwd(cwd: string) {
 
 function emit(event: Record<string, unknown>) {
   process.stdout.write(`${JSON.stringify({ ...event, v: PROTOCOL_VERSION })}\n`)
+}
+
+function emitAssistantText(text: string, state: NormalizerState) {
+  emit({ text, type: 'assistant.text' })
+  return {
+    ...state,
+    assistantTexts: [...state.assistantTexts, text],
+  }
 }
 
 function emitGrokUsage(
@@ -298,6 +313,7 @@ async function executeHeadlessPlan(options: {
   markSpawned: () => void
   plan: LaunchPlan
   rateCard: HeadlessRateCard
+  resultFile?: string
   stdin?: string
   timeoutSeconds?: number
 }) {
@@ -312,6 +328,7 @@ async function executePreparedHeadlessPlan(options: {
   markSpawned: () => void
   plan: LaunchPlan
   rateCard: HeadlessRateCard
+  resultFile?: string
   stdin?: string
   timeoutSeconds?: number
 }) {
@@ -397,6 +414,8 @@ async function executePreparedHeadlessPlan(options: {
     }
 
     let state: NormalizerState = {
+      assistantTexts: [],
+      nativeResult: undefined,
       pendingGrokText: '',
       resultIsError: false,
       sessionId: undefined,
@@ -415,6 +434,7 @@ async function executePreparedHeadlessPlan(options: {
       })
     }
     if (options.harness === 'grok') state = flushGrokText(state)
+    const resultText = state.nativeResult ?? state.assistantTexts.join('\n')
 
     const completed = await completion
     if ('error' in completed) {
@@ -423,6 +443,7 @@ async function executePreparedHeadlessPlan(options: {
           completed.error.message || `Failed to spawn "${options.plan.bin}"`,
         type: 'run.error',
       })
+      await writeResultFile(options.resultFile, resultText)
       emit({
         exitCode: EH_EXIT_SPAWN,
         resultIsError: true,
@@ -449,9 +470,15 @@ async function executePreparedHeadlessPlan(options: {
       resultIsError && childExitCode === 0
         ? EH_EXIT_HARNESS_ERROR
         : childExitCode
+    const resultWriteOk = await writeResultFile(options.resultFile, resultText)
     emitCostSummary(state.usage, options.rateCard)
-    emit({ exitCode, resultIsError, type: 'run.completed' })
-    return exitCode
+    const finalExitCode = resultWriteOk ? exitCode : EH_EXIT_HARNESS_ERROR
+    emit({
+      exitCode: finalExitCode,
+      resultIsError: resultIsError || !resultWriteOk,
+      type: 'run.completed',
+    })
+    return finalExitCode
   } finally {
     if (timeoutTimer) clearTimeout(timeoutTimer)
     if (killTimer) clearTimeout(killTimer)
@@ -551,8 +578,10 @@ function emitCostSummary(acc: UsageAccumulator, rateCard: HeadlessRateCard) {
 
 function flushGrokText(state: NormalizerState) {
   if (!state.pendingGrokText) return state
-  emit({ text: state.pendingGrokText, type: 'assistant.text' })
-  return { ...state, pendingGrokText: '' }
+  return emitAssistantText(state.pendingGrokText, {
+    ...state,
+    pendingGrokText: '',
+  })
 }
 
 function isGrokTextDelta(
@@ -565,9 +594,9 @@ function normalizeClaudeEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  let sessionId = state.sessionId
+  let next = state
   if (event.type === 'system') {
-    sessionId = emitSession(event.session_id, sessionId)
+    next = { ...next, sessionId: emitSession(event.session_id, next.sessionId) }
   }
 
   if (event.type === 'assistant') {
@@ -576,16 +605,16 @@ function normalizeClaudeEvent(
       for (const rawBlock of message.content) {
         const block = asRecord(rawBlock)
         if (block?.type === 'text' && typeof block.text === 'string') {
-          emit({ text: block.text, type: 'assistant.text' })
+          next = emitAssistantText(block.text, next)
         }
       }
     }
   }
 
-  if (event.type !== 'result') return { ...state, sessionId }
-  sessionId = emitSession(event.session_id, sessionId)
+  if (event.type !== 'result') return next
+  next = { ...next, sessionId: emitSession(event.session_id, next.sessionId) }
   const usage = asRecord(event.usage)
-  let nextState = state
+  let nextState = next
   if (usage) {
     nextState = recordUsage(nextState, {
       cacheReadTokens: numberField(usage, 'cache_read_input_tokens'),
@@ -602,8 +631,9 @@ function normalizeClaudeEvent(
   if (resultIsError) emitRunError(event, 'Claude reported a failed result')
   return {
     ...nextState,
+    nativeResult:
+      typeof event.result === 'string' ? event.result : nextState.nativeResult,
     resultIsError: nextState.resultIsError || resultIsError,
-    sessionId,
   }
 }
 
@@ -611,19 +641,19 @@ function normalizeCodexEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  const sessionId =
+  let next =
     event.type === 'thread.started'
-      ? emitSession(event.thread_id, state.sessionId)
-      : state.sessionId
+      ? { ...state, sessionId: emitSession(event.thread_id, state.sessionId) }
+      : state
 
   if (event.type === 'item.completed') {
     const item = asRecord(event.item)
     if (item?.type === 'agent_message' && typeof item.text === 'string') {
-      emit({ text: item.text, type: 'assistant.text' })
+      next = emitAssistantText(item.text, next)
     }
   }
 
-  let nextState = state
+  let nextState = next
   if (event.type === 'turn.completed') {
     const usage = asRecord(event.usage)
     if (usage) {
@@ -652,7 +682,7 @@ function normalizeCodexEvent(
 
   if (event.type === 'turn.failed') {
     emitRunError(event, 'Codex reported a failed turn')
-    return { ...nextState, resultIsError: true, sessionId }
+    return { ...nextState, resultIsError: true }
   }
   if (event.type === 'error') {
     // Bare error events can be transient (stream reconnects, e.g.
@@ -662,10 +692,10 @@ function normalizeCodexEvent(
     process.stderr.write(
       `codex: ${eventMessage(event) ?? JSON.stringify(event)}\n`,
     )
-    return { ...nextState, sessionId }
+    return nextState
   }
 
-  return { ...nextState, sessionId }
+  return nextState
 }
 
 function normalizeGrokEvent(
@@ -749,7 +779,7 @@ function normalizeOpencodeEvent(
     part?.type === 'text' &&
     typeof part.text === 'string'
   ) {
-    emit({ text: part.text, type: 'assistant.text' })
+    nextState = emitAssistantText(part.text, nextState)
   }
 
   if (event.type === 'step_finish' && part?.type === 'step-finish') {
@@ -787,7 +817,7 @@ function normalizePiEvent(
     for (const rawBlock of message.content) {
       const block = asRecord(rawBlock)
       if (block?.type === 'text' && typeof block.text === 'string') {
-        emit({ text: block.text, type: 'assistant.text' })
+        nextState = emitAssistantText(block.text, nextState)
       }
     }
   }
@@ -976,4 +1006,18 @@ function timeoutKillGraceMs() {
   if (raw === undefined) return TIMEOUT_KILL_GRACE_MS
   const parsed = Number(raw)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : TIMEOUT_KILL_GRACE_MS
+}
+
+async function writeResultFile(resultFile: string | undefined, text: string) {
+  if (resultFile === undefined) return true
+  try {
+    await writeFile(resultFile, text)
+    return true
+  } catch (error) {
+    emit({
+      message: `failed to write --result-file "${resultFile}": ${errorMessage(error)}`,
+      type: 'run.error',
+    })
+    return false
+  }
 }
