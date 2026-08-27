@@ -1009,10 +1009,7 @@ function timeoutKillGraceMs() {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : TIMEOUT_KILL_GRACE_MS
 }
 
-async function writeResultFile(
-  resultFile: string | undefined,
-  text: string,
-) {
+async function writeResultFile(resultFile: string | undefined, text: string) {
   if (resultFile === undefined) return true
   try {
     await writeFile(resultFile, text)
