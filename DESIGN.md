@@ -169,9 +169,9 @@ eh setup                            # re-run first-run wizard
 eh update                           # self-update to the latest GitHub release
 ```
 
-Picker flow (via `@clack/prompts`, skipped per already-specified args; the
-short menus also answer to letter hotkeys — press `a`–`e` to pick a row
-directly, ↑/↓ + enter as before):
+Picker flow (via `@clack/prompts`, skipped per already-specified args; the short
+menus also answer to letter hotkeys — press `a`–`e` to pick a row directly,
+↑/↓ + enter as before):
 
 1. **Home** — recent combos (Enter relaunches last), new session, providers,
    defaults, or doctor. Home → defaults → approvals sets a global launch-time
@@ -500,13 +500,13 @@ resume args (harness picker / most recent), which is the scripting escape hatch.
 
 ## Stack
 
-TypeScript (strict, tools/main shared configs), `@clack/prompts` +
-`@clack/core` (UI; core is the prompt-class layer prompts builds on, pinned
-at the same version prompts requires), `commander` (args), `zod` (config +
-API response validation). Dev via `tsx`;
-release build via `bun build --compile` → single `dist/eh` binary. All clack
-imports are isolated in `src/ui/`; flag-driven paths never touch that module,
-which keeps non-TTY use clean and a future Ink/miller-column UI swappable.
+TypeScript (strict, tools/main shared configs), `@clack/prompts` + `@clack/core`
+(UI; core is the prompt-class layer prompts builds on, pinned at the same
+version prompts requires), `commander` (args), `zod` (config + API response
+validation). Dev via `tsx`; release build via `bun build --compile` → single
+`dist/eh` binary. All clack imports are isolated in `src/ui/`; flag-driven paths
+never touch that module, which keeps non-TTY use clean and a future
+Ink/miller-column UI swappable.
 
 ## File map
 

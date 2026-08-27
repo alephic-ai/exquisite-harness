@@ -15,9 +15,9 @@ Repo rules that aren't in the skills:
 
 - **No new runtime deps without discussion** — everything is bundled into a
   single binary; keep it to commander, zod, @clack/prompts + @clack/core (the
-  prompt-class layer `src/ui/letter-select.ts` builds on; same package
-  family, zero extra bytes). (`src/update.ts`
-  uses raw fetch + the clack spinner instead of octokit + ora for this reason.)
+  prompt-class layer `src/ui/letter-select.ts` builds on; same package family,
+  zero extra bytes). (`src/update.ts` uses raw fetch + the clack spinner instead
+  of octokit + ora for this reason.)
 - **All clack imports go through `src/ui/`** — flag-driven paths import from
   `src/ui/output.ts` only, never prompt widgets (DESIGN.md "Stack").
 - **`src/ui/output.ts` is a deliberate barrel** — the single re-export site that
