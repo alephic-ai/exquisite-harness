@@ -322,6 +322,10 @@ function configureHeadlessCommand(
       '--result-file <path>',
       "write the run's final result text to <path> (created empty when the run produced no result)",
     )
+    .option(
+      '--read-only',
+      "restrict the harness to its strongest read-only / no-write mode (see docs/read-only.md); composes with an 'auto' approval default",
+    )
     .action(async (harness, provider, model, opts) => {
       process.exitCode = await runHeadless({
         cwd: opts.cwd,
@@ -334,6 +338,7 @@ function configureHeadlessCommand(
         model,
         nativeArgsJson: opts.nativeArgsJson,
         provider,
+        readOnly: opts.readOnly,
         resultFile: opts.resultFile,
         resumeSessionId: opts.resumeSession,
         timeout: opts.timeout,

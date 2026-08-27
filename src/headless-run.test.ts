@@ -440,6 +440,180 @@ describe('eh run', () => {
     expect(argsEvent?.data.event.args).toContain('--approve-for-me')
   })
 
+  // Each --read-only lane must carry that harness's own write restriction all
+  // the way to the spawned argv (docs/read-only.md). Harness-specific env vars
+  // (GROK_*, PI_CODING_AGENT_DIR) are inert for the other harnesses, so one env
+  // block covers every case.
+  const READ_ONLY_CASES = [
+    ['claude', createFakeClaude, ['--permission-mode', 'plan'], []],
+    ['grok', createFakeGrok, ['--permission-mode', 'plan'], []],
+    ['codex', createFakeCodex, ['--sandbox', 'read-only'], []],
+    ['opencode', createFakeOpencode, ['--agent', 'plan'], ['--auto']],
+    ['pi', createFakePi, ['--tools', 'read,grep,find,ls'], []],
+  ] as const
+
+  test.each(READ_ONLY_CASES)(
+    'engages %s read-only args under platform approval',
+    async (harness, createFixture, expected, absent) => {
+      const fixture = createFixture()
+      const child = spawn(
+        process.execPath,
+        [
+          'run',
+          'src/main.ts',
+          'run',
+          harness,
+          'ollama',
+          'qwen3-coder',
+          '--read-only',
+        ],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            GROK_API_KEY: 'parent-grok-api-key',
+            GROK_BASE_URL: 'parent-grok-base-url',
+            GROK_MODELS_BASE_URL: 'parent-grok-models-base-url',
+            PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+            PI_CODING_AGENT_DIR: fixture.configDir,
+            XAI_API_KEY: 'parent-xai-api-key',
+            XDG_CONFIG_HOME: fixture.configDir,
+          },
+        },
+      )
+      child.stdin.end('inspect only')
+
+      const [exitCode, stdout] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stdout),
+        readStream(child.stderr),
+      ])
+      const args = fakeArgs(stdout)
+
+      expect(exitCode).toBe(0)
+      for (const token of expected) expect(args).toContain(token)
+      // Never silently unrestricted, and never a blanket bypass.
+      expect(args).not.toContain('--dangerously-bypass-approvals-and-sandbox')
+      expect(args).not.toContain('--dangerously-skip-permissions')
+      for (const token of absent) expect(args).not.toContain(token)
+    },
+  )
+
+  test('read-only suppresses codex approval args under an auto default', async () => {
+    const fixture = createFakeCodex()
+    writeAutoApprovalConfig(fixture.configDir)
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'codex',
+        'ollama',
+        'qwen3-coder',
+        '--read-only',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('inspect only')
+
+    const [exitCode, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stdout),
+      readStream(child.stderr),
+    ])
+    const args = fakeArgs(stdout)
+
+    expect(exitCode).toBe(0)
+    expect(args).toContain('--sandbox')
+    expect(args).toContain('read-only')
+    expect(args).not.toContain('--approve-for-me')
+  })
+
+  test('read-only composes with the opencode auto default', async () => {
+    const fixture = createFakeOpencode()
+    writeAutoApprovalConfig(fixture.configDir)
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'opencode',
+        'ollama',
+        'qwen3-coder',
+        '--read-only',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('inspect only')
+
+    const [exitCode, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stdout),
+      readStream(child.stderr),
+    ])
+    const args = fakeArgs(stdout)
+
+    expect(exitCode).toBe(0)
+    expect(args).toContain('--agent')
+    expect(args).toContain('plan')
+    expect(args).toContain('--auto')
+  })
+
+  test('read-only suppresses claude approval args under an auto default', async () => {
+    const fixture = createFakeClaude()
+    writeAutoApprovalConfig(fixture.configDir)
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'claude',
+        'ollama',
+        'qwen3-coder',
+        '--read-only',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('inspect only')
+
+    const [exitCode, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stdout),
+      readStream(child.stderr),
+    ])
+    const args = fakeArgs(stdout)
+
+    expect(exitCode).toBe(0)
+    expect(args).toContain('--permission-mode')
+    expect(args).toContain('plan')
+    // The auto default would add `--permission-mode auto`; read-only suppresses it.
+    expect(args).not.toContain('auto')
+  })
+
   test('normalizes a missing harness binary as a failed run', async () => {
     const root = mkdtempSync(path.join(tmpdir(), 'eh-headless-test-'))
     tempDirs.push(root)
@@ -2797,6 +2971,25 @@ function parseEvents(stdout: string) {
     .map((line) => z.record(z.string(), z.unknown()).parse(JSON.parse(line)))
 }
 
+// The fake harnesses echo their own argv as a `fake.args` event; pull it back
+// out so a test can assert what `eh` actually passed to the spawned process.
+function fakeArgs(stdout: string) {
+  const argsEvent = parseEvents(stdout)
+    .map((event) =>
+      z
+        .object({
+          event: z.object({
+            args: z.array(z.string()),
+            type: z.literal('fake.args'),
+          }),
+          type: z.literal('harness.event'),
+        })
+        .safeParse(event),
+    )
+    .find((result) => result.success)
+  return argsEvent?.data.event.args ?? []
+}
+
 async function readStream(stream: Readable) {
   const chunks: Buffer[] = []
   for await (const chunk of stream) {
@@ -2854,4 +3047,13 @@ function timeoutFakePid(events: Record<string, unknown>[]) {
     }
   }
   return undefined
+}
+
+function writeAutoApprovalConfig(configDir: string) {
+  const ehConfigDir = path.join(configDir, 'eh')
+  mkdirSync(ehConfigDir, { recursive: true })
+  writeFileSync(
+    path.join(ehConfigDir, 'config.json'),
+    JSON.stringify({ defaultApprovalMode: 'auto', version: 1 }),
+  )
 }

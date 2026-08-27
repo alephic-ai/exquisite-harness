@@ -47,6 +47,7 @@ export interface HeadlessRunOptions {
   model: string
   nativeArgsJson?: string
   provider: string
+  readOnly?: boolean
   resultFile?: string
   resumeSessionId?: string
   timeout?: string
@@ -69,6 +70,7 @@ interface ResolvedHeadlessRunOptions {
   model: string
   nativeArgs: string[]
   provider: string
+  readOnly: boolean
   resultFile: string | undefined
   resumeSessionId: string | undefined
   timeoutSeconds: number | undefined
@@ -117,6 +119,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
           ? []
           : parseNativeArgsJson(options.nativeArgsJson),
       provider: options.provider,
+      readOnly: options.readOnly ?? false,
       resultFile: options.resultFile,
       resumeSessionId: options.resumeSessionId,
       timeoutSeconds: parseTimeoutSeconds(options.timeout),
@@ -148,6 +151,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
         approvalMode: config.defaultApprovalMode,
         effort: resolved.effort,
         gatewayProvider: resolved.gatewayProvider,
+        readOnly: resolved.readOnly,
         statusline: false,
       },
     )
