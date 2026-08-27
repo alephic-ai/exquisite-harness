@@ -29,9 +29,15 @@ describe('permissionArgsForHarness', () => {
     },
   )
 
-  test('read-only suppresses colliding approval args (claude, codex)', () => {
+  test('read-only suppresses colliding approval args (claude, grok, codex)', () => {
     expect(
       permissionArgsForHarness('claude', {
+        approvalMode: 'auto',
+        readOnly: true,
+      }),
+    ).toEqual(['--permission-mode', 'plan'])
+    expect(
+      permissionArgsForHarness('grok', {
         approvalMode: 'auto',
         readOnly: true,
       }),

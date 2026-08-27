@@ -100,7 +100,8 @@ Each prints env/args and exits 0 without launching, unless noted.
     `--print-env` is intentionally unsupported with its isolated temp home.
     Change the config value to `platform` and repeat the same commands. → none
     of those approval arguments is present.
-18. For each harness whose CLI is installed, from inside a scratch directory run
+18. For each harness whose CLI is installed, from inside a git-initialized
+    scratch directory run
     `printf 'create a file named proof.txt with the text hi' | eh run <harness> <provider> <model> --read-only`
     and confirm no `proof.txt` is written — the harness reports it cannot modify
     files (Claude/Grok plan mode, Codex's read-only sandbox, opencode's plan
