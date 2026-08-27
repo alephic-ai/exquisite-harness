@@ -1012,7 +1012,7 @@ function timeoutKillGraceMs() {
 async function writeResultFile(
   resultFile: string | undefined,
   text: string,
-): Promise<boolean> {
+) {
   if (resultFile === undefined) return true
   try {
     await writeFile(resultFile, text)
