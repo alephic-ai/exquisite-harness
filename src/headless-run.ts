@@ -53,7 +53,7 @@ export interface HeadlessRunOptions {
 }
 
 interface NormalizerState {
-  assistantText: string
+  assistantTexts: string[]
   nativeResult: string | undefined
   pendingGrokText: string
   resultIsError: boolean
@@ -226,8 +226,7 @@ function emitAssistantText(text: string, state: NormalizerState) {
   emit({ text, type: 'assistant.text' })
   return {
     ...state,
-    assistantText:
-      state.assistantText === '' ? text : `${state.assistantText}\n${text}`,
+    assistantTexts: [...state.assistantTexts, text],
   }
 }
 
@@ -415,7 +414,7 @@ async function executePreparedHeadlessPlan(options: {
     }
 
     let state: NormalizerState = {
-      assistantText: '',
+      assistantTexts: [],
       nativeResult: undefined,
       pendingGrokText: '',
       resultIsError: false,
@@ -435,7 +434,7 @@ async function executePreparedHeadlessPlan(options: {
       })
     }
     if (options.harness === 'grok') state = flushGrokText(state)
-    const resultText = state.nativeResult ?? state.assistantText
+    const resultText = state.nativeResult ?? state.assistantTexts.join('\n')
 
     const completed = await completion
     if ('error' in completed) {

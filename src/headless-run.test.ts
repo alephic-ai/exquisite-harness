@@ -2291,6 +2291,18 @@ describe('eh run', () => {
       expect(readFileSync(resultPath, 'utf8')).toBe('part one\npart two')
     })
 
+    test('preserves empty assistant text values when joining results', async () => {
+      const { exitCode, resultPath } = await runWithResultFile({
+        env: { EH_TEST_CODEX_EMPTY_TEXT: '1' },
+        fixture: createFakeCodex(),
+        harness: 'codex',
+        prompt: 'do the task',
+      })
+
+      expect(exitCode).toBe(0)
+      expect(readFileSync(resultPath, 'utf8')).toBe('\nsecond')
+    })
+
     test('creates an empty result file for a no-result error run', async () => {
       const { exitCode, resultPath } = await runWithResultFile({
         env: { EH_TEST_CODEX_FAIL: '1' },
@@ -2347,6 +2359,51 @@ describe('eh run', () => {
       expect(withFlag.events).toEqual(without.events)
       expect(withFlag.exitCode).toBe(without.exitCode)
       expect(withFlag.stderr).toBe(without.stderr)
+    })
+
+    test('reports a write failure and still emits a terminal completion', async () => {
+      const fixture = createFakeCodex()
+      const resultPath = mkdtempSync(path.join(tmpdir(), 'eh-result-file-'))
+      tempDirs.push(resultPath)
+      const child = spawn(
+        process.execPath,
+        [
+          'run',
+          'src/main.ts',
+          'run',
+          'codex',
+          'ollama',
+          'qwen3-coder',
+          '--result-file',
+          resultPath,
+        ],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+            XDG_CONFIG_HOME: fixture.configDir,
+          },
+        },
+      )
+      child.stdin.end('do the task')
+
+      const [exitCode, stdout] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stdout),
+        readStream(child.stderr),
+      ])
+      const events = parseEvents(stdout)
+      const errors = events.filter((event) => event.type === 'run.error')
+
+      expect(exitCode).toBe(66)
+      expect(errors).toHaveLength(1)
+      expect(errors[0]?.message).toContain('failed to write --result-file')
+      expect(events.at(-1)).toMatchObject({
+        exitCode: 66,
+        resultIsError: true,
+        type: 'run.completed',
+      })
     })
   })
 
@@ -2463,6 +2520,15 @@ if (process.env.EH_TEST_CODEX_FAIL === '1') {
 if (process.env.EH_TEST_CODEX_MULTITURN === '1') {
   emit({ type: 'item.completed', item: { type: 'agent_message', text: 'part one' } })
   emit({ type: 'item.completed', item: { type: 'agent_message', text: 'part two' } })
+  emit({
+    type: 'turn.completed',
+    usage: { input_tokens: 10, cached_input_tokens: 4, output_tokens: 2 },
+  })
+  process.exit(0)
+}
+if (process.env.EH_TEST_CODEX_EMPTY_TEXT === '1') {
+  emit({ type: 'item.completed', item: { type: 'agent_message', text: '' } })
+  emit({ type: 'item.completed', item: { type: 'agent_message', text: 'second' } })
   emit({
     type: 'turn.completed',
     usage: { input_tokens: 10, cached_input_tokens: 4, output_tokens: 2 },
