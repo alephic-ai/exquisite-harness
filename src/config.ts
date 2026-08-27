@@ -245,6 +245,7 @@ export function providerKeyAccounts(name: string) {
 // Commander subcommands shadow a same-named profile: `eh doctor` always runs
 // the subcommand, so a profile called "doctor" could never be launched.
 const RESERVED_PROFILE_NAMES = [
+  'ask',
   'doctor',
   'models',
   'profile',
@@ -253,6 +254,7 @@ const RESERVED_PROFILE_NAMES = [
   'run',
   'search',
   'setup',
+  'skill',
   'statusline',
   'update',
   'web-fetch-hook',

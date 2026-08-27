@@ -26,6 +26,46 @@ afterAll(() => {
 })
 
 describe('eh run', () => {
+  test('eh ask delegates over stdin without UI or config mutation', async () => {
+    const fixture = createFakeCodex()
+    const child = spawn(
+      process.execPath,
+      ['run', 'src/main.ts', 'ask', 'codex', 'ollama', 'qwen3-coder'],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('delegate this task')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    const events = parseEvents(stdout)
+    expect(events).toContainEqual({
+      text: 'saw: delegate this task',
+      type: 'assistant.text',
+      v: 2,
+    })
+    expect(events).toContainEqual({
+      exitCode: 0,
+      resultIsError: false,
+      type: 'run.completed',
+      v: 2,
+    })
+    expect(existsSync(path.join(fixture.configDir, 'eh', 'config.json'))).toBe(
+      false,
+    )
+  })
+
   test('passes the prompt over stdin and emits the normalized NDJSON contract', async () => {
     const fixture = createFakeCodex()
     const child = spawn(
@@ -74,32 +114,48 @@ describe('eh run', () => {
       model: 'qwen3-coder',
       provider: 'ollama',
       type: 'run.started',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       sessionId: 'thread-123',
       type: 'session.started',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       text: 'saw: fix the parser',
       type: 'assistant.text',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       cacheReadTokens: 4,
       cacheWriteTokens: 0,
       cumulative: true,
-      inputTokens: 10,
+      inputTokens: 6,
       outputTokens: 2,
       type: 'usage',
-      v: 1,
+      v: 2,
+    })
+    // Final summary usage event: eh computes cost from its own usage. On the
+    // free ollama provider that is $0 from `gateway-rates`-free, and codex
+    // reports no cost of its own, so no harnessCostUsd is present. Codex
+    // cached_input_tokens (4) is nested in input_tokens (10), so exclusive
+    // input is 6.
+    expect(events).toContainEqual({
+      cacheReadTokens: 4,
+      cacheWriteTokens: 0,
+      costSource: 'free',
+      costUsd: 0,
+      cumulative: true,
+      inputTokens: 6,
+      outputTokens: 2,
+      type: 'usage',
+      v: 2,
     })
     expect(events).toContainEqual({
       exitCode: 0,
       resultIsError: false,
       type: 'run.completed',
-      v: 1,
+      v: 2,
     })
 
     const argsEvent = events
@@ -224,13 +280,13 @@ describe('eh run', () => {
       {
         message: expect.stringContaining(missing),
         type: 'run.error',
-        v: 1,
+        v: 2,
       },
       {
         exitCode: 64,
         resultIsError: true,
         type: 'run.completed',
-        v: 1,
+        v: 2,
       },
     ])
   })
@@ -276,13 +332,13 @@ describe('eh run', () => {
       {
         message: expect.stringContaining(file),
         type: 'run.error',
-        v: 1,
+        v: 2,
       },
       {
         exitCode: 64,
         resultIsError: true,
         type: 'run.completed',
-        v: 1,
+        v: 2,
       },
     ])
   })
@@ -370,18 +426,18 @@ describe('eh run', () => {
       model: 'qwen3-coder',
       provider: 'ollama',
       type: 'run.started',
-      v: 1,
+      v: 2,
     })
     expect(events[1]).toEqual({
       message: expect.stringContaining('codex'),
       type: 'run.error',
-      v: 1,
+      v: 2,
     })
     expect(events[2]).toEqual({
       exitCode: 65,
       resultIsError: true,
       type: 'run.completed',
-      v: 1,
+      v: 2,
     })
   })
 
@@ -536,13 +592,13 @@ describe('eh run', () => {
               : expectedMessage,
           ),
           type: 'run.error',
-          v: 1,
+          v: 2,
         },
         {
           exitCode: 64,
           resultIsError: true,
           type: 'run.completed',
-          v: 1,
+          v: 2,
         },
       ])
     },
@@ -585,23 +641,38 @@ describe('eh run', () => {
       {
         sessionId: 'claude-session',
         type: 'session.started',
-        v: 1,
+        v: 2,
       },
     ])
     expect(events).toContainEqual({
       text: 'saw: review the change',
       type: 'assistant.text',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       cacheReadTokens: 3,
       cacheWriteTokens: 2,
-      costUsd: 0.25,
       cumulative: false,
+      harnessCostUsd: 0.25,
       inputTokens: 9,
       outputTokens: 4,
       type: 'usage',
-      v: 1,
+      v: 2,
+    })
+    // AC-2: the harness's own $0.25 is preserved as harnessCostUsd on the
+    // summary event, never promoted to costUsd — eh's computed cost wins and,
+    // on free ollama, is $0.
+    expect(events).toContainEqual({
+      cacheReadTokens: 3,
+      cacheWriteTokens: 2,
+      costSource: 'free',
+      costUsd: 0,
+      cumulative: true,
+      harnessCostUsd: 0.25,
+      inputTokens: 9,
+      outputTokens: 4,
+      type: 'usage',
+      v: 2,
     })
 
     const argsEvent = events
@@ -684,7 +755,7 @@ describe('eh run', () => {
       model: 'test-model',
       provider: 'test-gateway',
       type: 'run.started',
-      v: 1,
+      v: 2,
     })
     const fakeEvent = z
       .object({
@@ -698,6 +769,237 @@ describe('eh run', () => {
     expect(fakeEvent.event.anthropicBaseUrl).toMatch(
       /^http:\/\/127\.0\.0\.1:\d+$/,
     )
+  })
+
+  test('emits a gateway-rate costUsd on the final usage event for a pinned run', async () => {
+    const fixture = createFakeClaude()
+    // A gateway stub that publishes per-endpoint pricing for the pinned
+    // provider: input $1/1M, output $5/1M, and no cache rate.
+    const server = createServer((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [
+                {
+                  pricing: { completion: '0.000005', prompt: '0.000001' },
+                  provider_name: 'bedrock',
+                  status: 0,
+                },
+              ],
+            },
+          }),
+        )
+        return
+      }
+      response.statusCode = 500
+      response.end('unexpected request')
+    })
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject)
+      server.listen(0, '127.0.0.1', () => {
+        server.off('error', reject)
+        resolve()
+      })
+    })
+    const address = server.address()
+    if (!address || typeof address === 'string') {
+      server.close()
+      throw new Error('gateway stub did not bind a TCP port')
+    }
+    const ehConfigDir = path.join(fixture.configDir, 'eh')
+    mkdirSync(ehConfigDir, { recursive: true })
+    writeFileSync(
+      path.join(ehConfigDir, 'config.json'),
+      JSON.stringify({
+        profiles: {},
+        providers: {
+          'test-gateway': {
+            baseURL: `http://127.0.0.1:${String(address.port)}`,
+            envKey: 'EH_TEST_GATEWAY_KEY',
+            type: 'vercel-gateway',
+          },
+        },
+        recent: [],
+        version: 1,
+      }),
+    )
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'claude',
+        'test-gateway',
+        'test-model',
+        '--gateway-provider',
+        'bedrock',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TEST_GATEWAY_KEY: 'qa-key',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('estimate the cost')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+    const events = parseEvents(stdout)
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    // The summary usage event is the only usage event carrying costSource.
+    const summary = z
+      .object({
+        costSource: z.string(),
+        costUsd: z.number(),
+        harnessCostUsd: z.number(),
+      })
+      .parse(
+        events.find(
+          (event) =>
+            event.type === 'usage' && typeof event.costSource === 'string',
+        ),
+      )
+    // Per-endpoint rates × claude's usage (9 in / 4 out / 3 cache-read /
+    // 2 cache-write); cache bills at the $1/1M input rate (AC-4), so
+    // (9 + 3 + 2) * $1 + 4 * $5 = 34 units = $0.000034.
+    expect(summary.costSource).toBe('gateway-rates')
+    expect(summary.costUsd).toBeCloseTo(0.000034, 10)
+    // AC-2: the harness's own $0.25 estimate is preserved, never preferred.
+    expect(summary.harnessCostUsd).toBe(0.25)
+  })
+
+  test('bills Codex cache as a subset of input_tokens on a pinned run', async () => {
+    const fixture = createFakeCodex()
+    const server = createServer((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [
+                {
+                  pricing: { completion: '0.000005', prompt: '0.000001' },
+                  provider_name: 'bedrock',
+                  status: 0,
+                },
+              ],
+            },
+          }),
+        )
+        return
+      }
+      response.statusCode = 500
+      response.end('unexpected request')
+    })
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject)
+      server.listen(0, '127.0.0.1', () => {
+        server.off('error', reject)
+        resolve()
+      })
+    })
+    const address = server.address()
+    if (!address || typeof address === 'string') {
+      server.close()
+      throw new Error('gateway stub did not bind a TCP port')
+    }
+    const ehConfigDir = path.join(fixture.configDir, 'eh')
+    mkdirSync(ehConfigDir, { recursive: true })
+    writeFileSync(
+      path.join(ehConfigDir, 'config.json'),
+      JSON.stringify({
+        profiles: {},
+        providers: {
+          'test-gateway': {
+            baseURL: `http://127.0.0.1:${String(address.port)}`,
+            envKey: 'EH_TEST_GATEWAY_KEY',
+            type: 'vercel-gateway',
+          },
+        },
+        recent: [],
+        version: 1,
+      }),
+    )
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'codex',
+        'test-gateway',
+        'test-model',
+        '--gateway-provider',
+        'bedrock',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TEST_GATEWAY_KEY: 'qa-key',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('estimate the cost')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+    const events = parseEvents(stdout)
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    const summary = z
+      .object({
+        cacheReadTokens: z.number(),
+        costSource: z.string(),
+        costUsd: z.number(),
+        inputTokens: z.number(),
+        outputTokens: z.number(),
+      })
+      .parse(
+        events.find(
+          (event) =>
+            event.type === 'usage' && typeof event.costSource === 'string',
+        ),
+      )
+    // Fixture is input_tokens 10 with cached_input_tokens 4 nested inside.
+    // Exclusive buckets: 6 input + 4 cache-read, billed at the $1/1M input
+    // rate (no published cache rate) + 2 output at $5/1M = $0.000020.
+    // Inclusive billing would be $0.000024.
+    expect(summary.costSource).toBe('gateway-rates')
+    expect(summary.inputTokens).toBe(6)
+    expect(summary.cacheReadTokens).toBe(4)
+    expect(summary.outputTokens).toBe(2)
+    expect(summary.costUsd).toBeCloseTo(0.00002, 10)
   })
 
   test('routes an opencode Gateway provider pin through the proxy', async () => {
@@ -761,7 +1063,7 @@ describe('eh run', () => {
       model: 'test-model',
       provider: 'test-gateway',
       type: 'run.started',
-      v: 1,
+      v: 2,
     })
     const fakeEvent = z
       .object({
@@ -862,7 +1164,7 @@ describe('eh run', () => {
       model: 'test-model',
       provider: 'test-gateway',
       type: 'run.started',
-      v: 1,
+      v: 2,
     })
     const fakeEvent = z
       .object({
@@ -952,18 +1254,18 @@ describe('eh run', () => {
         model: 'test-model',
         provider: 'test-gateway',
         type: 'run.started',
-        v: 1,
+        v: 2,
       },
       {
         message: expect.stringContaining('unavailable'),
         type: 'run.error',
-        v: 1,
+        v: 2,
       },
       {
         exitCode: 64,
         resultIsError: true,
         type: 'run.completed',
-        v: 1,
+        v: 2,
       },
     ])
   })
@@ -1041,18 +1343,18 @@ describe('eh run', () => {
     expect(events).toContainEqual({
       sessionId: 'grok-session',
       type: 'session.started',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       text: 'saw: inspect the diff',
       type: 'assistant.text',
-      v: 1,
+      v: 2,
     })
     expect(events.filter((event) => event.type === 'assistant.text')).toEqual([
       {
         text: 'saw: inspect the diff',
         type: 'assistant.text',
-        v: 1,
+        v: 2,
       },
     ])
     const assistantTextIndex = events.findIndex(
@@ -1076,17 +1378,33 @@ describe('eh run', () => {
       inputTokens: 5,
       outputTokens: 2,
       type: 'usage',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       cacheReadTokens: 4,
       cacheWriteTokens: 6,
-      costUsd: 0.12,
       cumulative: true,
+      harnessCostUsd: 0.12,
       inputTokens: 20,
       outputTokens: 8,
       type: 'usage',
-      v: 1,
+      v: 2,
+    })
+    // Summary uses grok's `end` cumulative totals (20/8/4/6), NOT the summed
+    // per-step deltas (which would be 25/10/5/9) — the accumulator lets a
+    // cumulative:true total win. harnessCostUsd is carried through; cost is $0
+    // (free ollama).
+    expect(events).toContainEqual({
+      cacheReadTokens: 4,
+      cacheWriteTokens: 6,
+      costSource: 'free',
+      costUsd: 0,
+      cumulative: true,
+      harnessCostUsd: 0.12,
+      inputTokens: 20,
+      outputTokens: 8,
+      type: 'usage',
+      v: 2,
     })
   })
 
@@ -1132,22 +1450,22 @@ describe('eh run', () => {
     expect(events).toContainEqual({
       sessionId: 'pi-session',
       type: 'session.started',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       text: 'saw: inspect the parser',
       type: 'assistant.text',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       cacheReadTokens: 2,
       cacheWriteTokens: 1,
-      costUsd: 0.02,
       cumulative: false,
+      harnessCostUsd: 0.02,
       inputTokens: 11,
       outputTokens: 3,
       type: 'usage',
-      v: 1,
+      v: 2,
     })
 
     const argsEvent = events
@@ -1218,22 +1536,22 @@ describe('eh run', () => {
     expect(events).toContainEqual({
       sessionId: 'opencode-session',
       type: 'session.started',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       text: 'saw: review the adapter',
       type: 'assistant.text',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       cacheReadTokens: 4,
       cacheWriteTokens: 2,
-      costUsd: 0.03,
       cumulative: false,
+      harnessCostUsd: 0.03,
       inputTokens: 12,
       outputTokens: 5,
       type: 'usage',
-      v: 1,
+      v: 2,
     })
 
     const argsEvent = events
@@ -1296,13 +1614,13 @@ describe('eh run', () => {
       expect(events).toContainEqual({
         message: `expected ${harness} failure`,
         type: 'run.error',
-        v: 1,
+        v: 2,
       })
       expect(events).toContainEqual({
         exitCode: 66,
         resultIsError: true,
         type: 'run.completed',
-        v: 1,
+        v: 2,
       })
     },
   )
@@ -1338,7 +1656,7 @@ describe('eh run', () => {
 
     expect(exitCode).toBe(0)
     expect(events.filter((event) => event.type === 'assistant.text')).toEqual([
-      { text: 'saw: text only', type: 'assistant.text', v: 1 },
+      { text: 'saw: text only', type: 'assistant.text', v: 2 },
     ])
     expect(assistantTextIndex).toBeGreaterThan(-1)
     expect(completedIndex).toBeGreaterThan(assistantTextIndex)
@@ -1375,13 +1693,13 @@ describe('eh run', () => {
     expect(events).toContainEqual({
       message: 'expected failure',
       type: 'run.error',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       exitCode: 66,
       resultIsError: true,
       type: 'run.completed',
-      v: 1,
+      v: 2,
     })
   })
 
@@ -1414,13 +1732,13 @@ describe('eh run', () => {
     expect(events).toContainEqual({
       message: 'codex exited with code 7',
       type: 'run.error',
-      v: 1,
+      v: 2,
     })
     expect(events).toContainEqual({
       exitCode: 7,
       resultIsError: true,
       type: 'run.completed',
-      v: 1,
+      v: 2,
     })
   })
 
@@ -1481,13 +1799,13 @@ describe('eh run', () => {
       expect(events).toContainEqual({
         message: 'grok exited with signal SIGTERM',
         type: 'run.error',
-        v: 1,
+        v: 2,
       })
       expect(events).toContainEqual({
         exitCode: 128 + os.constants.signals.SIGTERM,
         resultIsError: true,
         type: 'run.completed',
-        v: 1,
+        v: 2,
       })
     } finally {
       if (fakeArgs) {
@@ -1546,9 +1864,9 @@ describe('eh run', () => {
             '--timeout must be a positive integer',
           ),
           type: 'run.error',
-          v: 1,
+          v: 2,
         },
-        { exitCode: 64, resultIsError: true, type: 'run.completed', v: 1 },
+        { exitCode: 64, resultIsError: true, type: 'run.completed', v: 2 },
       ])
       expect(
         events.some((event) => asRecord(event.event)?.type === 'fake.args'),
@@ -1628,7 +1946,7 @@ describe('eh run', () => {
           exitCode: 128 + expectedSignal,
           resultIsError: true,
           type: 'run.completed',
-          v: 1,
+          v: 2,
         })
       } finally {
         if (fakePid !== undefined) {

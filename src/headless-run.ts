@@ -6,6 +6,7 @@ import path from 'node:path'
 import { createInterface } from 'node:readline'
 import { z } from 'zod'
 
+import type { HeadlessRateCard, NormalizedUsage } from './pricing.js'
 import type { EffortLevel, LaunchPlan } from './types.js'
 
 import { withCleanup } from './cleanup.js'
@@ -17,9 +18,10 @@ import {
   getHarness,
   resolveAvailableEfforts,
 } from './harnesses.js'
+import { fetchHeadlessRateCard, headlessCost } from './pricing.js'
 import { EFFORT_LEVELS } from './types.js'
 
-const PROTOCOL_VERSION = 1
+const PROTOCOL_VERSION = 2
 // Reserved eh exit codes for eh-detected failure categories — a contiguous
 // block at >=64 (sysexits.h's EX_ range). Raw child codes pass through
 // unchanged when eh has no category, so a harness's own code may only collide
@@ -51,6 +53,7 @@ interface NormalizerState {
   pendingGrokText: string
   resultIsError: boolean
   sessionId: string | undefined
+  usage: UsageAccumulator
 }
 
 interface ResolvedHeadlessRunOptions {
@@ -64,6 +67,25 @@ interface ResolvedHeadlessRunOptions {
   resultFile: string | undefined
   resumeSessionId: string | undefined
   timeoutSeconds: number | undefined
+}
+
+// eh's per-run usage accumulator: a cumulative total (when the harness reports
+// one) or the sum of per-event deltas, each with the harness's own cost.
+interface UsageAccumulator {
+  cumulative: NormalizedUsage | undefined
+  cumulativeHarnessCostUsd: number | undefined
+  delta: NormalizedUsage
+  deltaHarnessCostUsd: number | undefined
+}
+
+// A single normalized usage event before it is emitted and folded.
+interface UsageEvent {
+  cacheReadTokens: number
+  cacheWriteTokens: number
+  cumulative: boolean
+  harnessCostUsd: number | undefined
+  inputTokens: number
+  outputTokens: number
 }
 
 export async function runHeadless(options: HeadlessRunOptions) {
@@ -106,6 +128,13 @@ export async function runHeadless(options: HeadlessRunOptions) {
         await resolveAvailableEfforts(def, provider, resolved.model),
       )
     }
+    // Resolve rates here (headless never installs the statusline that would
+    // otherwise fetch them) so the final usage event can carry a computed cost.
+    const rateCard = await fetchHeadlessRateCard({
+      gatewayProvider: resolved.gatewayProvider,
+      modelId: resolved.model,
+      provider,
+    })
     const plan = await buildLaunchPlan(
       resolved.harness,
       provider,
@@ -142,6 +171,7 @@ export async function runHeadless(options: HeadlessRunOptions) {
             state.executionStarted = true
           },
           plan: prepared.plan,
+          rateCard,
           resultFile: resolved.resultFile,
           stdin: prepared.stdin,
           timeoutSeconds: resolved.timeoutSeconds,
@@ -159,6 +189,11 @@ export async function runHeadless(options: HeadlessRunOptions) {
     })
     return EH_EXIT_PREFLIGHT
   }
+}
+
+function addOptional(a: number | undefined, b: number | undefined) {
+  if (a === undefined && b === undefined) return undefined
+  return (a ?? 0) + (b ?? 0)
 }
 
 function asRecord(value: unknown) {
@@ -191,16 +226,20 @@ function emitAssistantText(text: string, state: NormalizerState) {
   }
 }
 
-function emitGrokUsage(event: Record<string, unknown>, cumulative: boolean) {
+function emitGrokUsage(
+  state: NormalizerState,
+  event: Record<string, unknown>,
+  cumulative: boolean,
+) {
   const usage = asRecord(event.usage)
-  if (!usage) return
-  emitUsage({
+  if (!usage) return state
+  return recordUsage(state, {
     cacheReadTokens: numberField(usage, 'cache_read_input_tokens'),
     cacheWriteTokens: numberField(usage, 'cache_creation_input_tokens'),
-    costUsd:
+    cumulative,
+    harnessCostUsd:
       optionalNumberField(event, 'total_cost_usd') ??
       optionalNumberField(event, 'cost_usd'),
-    cumulative,
     inputTokens: numberField(usage, 'input_tokens'),
     outputTokens: numberField(usage, 'output_tokens'),
   })
@@ -232,19 +271,17 @@ function emitSession(value: unknown, current: string | undefined) {
   return current
 }
 
-function emitUsage(usage: {
-  cacheReadTokens: number
-  cacheWriteTokens: number
-  costUsd: number | undefined
-  cumulative: boolean
-  inputTokens: number
-  outputTokens: number
-}) {
+// Per-event usage carries the harness's own cost estimate as harnessCostUsd —
+// never as costUsd. eh's authoritative computed cost is emitted once, on the
+// final summary usage event, so the two are never conflated.
+function emitUsage(usage: UsageEvent) {
   emit({
     cacheReadTokens: usage.cacheReadTokens,
     cacheWriteTokens: usage.cacheWriteTokens,
-    ...(usage.costUsd === undefined ? {} : { costUsd: usage.costUsd }),
     cumulative: usage.cumulative,
+    ...(usage.harnessCostUsd === undefined
+      ? {}
+      : { harnessCostUsd: usage.harnessCostUsd }),
     inputTokens: usage.inputTokens,
     outputTokens: usage.outputTokens,
     type: 'usage',
@@ -260,6 +297,7 @@ async function executeHeadlessPlan(options: {
   harness: string
   markSpawned: () => void
   plan: LaunchPlan
+  rateCard: HeadlessRateCard
   resultFile?: string
   stdin?: string
   timeoutSeconds?: number
@@ -274,6 +312,7 @@ async function executePreparedHeadlessPlan(options: {
   harness: string
   markSpawned: () => void
   plan: LaunchPlan
+  rateCard: HeadlessRateCard
   resultFile?: string
   stdin?: string
   timeoutSeconds?: number
@@ -342,6 +381,12 @@ async function executePreparedHeadlessPlan(options: {
       pendingGrokText: '',
       resultIsError: false,
       sessionId: undefined,
+      usage: {
+        cumulative: undefined,
+        cumulativeHarnessCostUsd: undefined,
+        delta: { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 },
+        deltaHarnessCostUsd: undefined,
+      },
     }
     for await (const line of lines) {
       state = normalizeHarnessLine({
@@ -388,8 +433,13 @@ async function executePreparedHeadlessPlan(options: {
         ? EH_EXIT_HARNESS_ERROR
         : childExitCode
     const resultWriteOk = await writeResultFile(options.resultFile, resultText)
+    emitCostSummary(state.usage, options.rateCard)
     const finalExitCode = resultWriteOk ? exitCode : EH_EXIT_HARNESS_ERROR
-    emit({ exitCode: finalExitCode, resultIsError, type: 'run.completed' })
+    emit({
+      exitCode: finalExitCode,
+      resultIsError: resultIsError || !resultWriteOk,
+      type: 'run.completed',
+    })
     return finalExitCode
   } finally {
     if (timeoutTimer) clearTimeout(timeoutTimer)
@@ -398,6 +448,88 @@ async function executePreparedHeadlessPlan(options: {
       process.off(signal, handler)
     }
   }
+}
+
+// Emit the per-event usage and fold it into the run accumulator.
+function recordUsage(state: NormalizerState, usage: UsageEvent) {
+  emitUsage(usage)
+  return { ...state, usage: foldUsage(state.usage, usage) }
+}
+
+// Total usage for the summary event, or undefined when the run reported none
+// (e.g. a spawn/timeout kill before any usage) — so no phantom $0 is emitted.
+function finalUsage(acc: UsageAccumulator) {
+  if (acc.cumulative) {
+    return {
+      harnessCostUsd: acc.cumulativeHarnessCostUsd,
+      usage: acc.cumulative,
+    }
+  }
+  const { cacheRead, cacheWrite, input, output } = acc.delta
+  if (
+    cacheRead === 0 &&
+    cacheWrite === 0 &&
+    input === 0 &&
+    output === 0 &&
+    acc.deltaHarnessCostUsd === undefined
+  ) {
+    return undefined
+  }
+  return { harnessCostUsd: acc.deltaHarnessCostUsd, usage: acc.delta }
+}
+
+// Accumulate eh's own normalized usage. A cumulative:true total wins outright;
+// otherwise per-event deltas are summed. This avoids double-counting harnesses
+// (grok) that emit both per-step deltas and a final cumulative total.
+function foldUsage(acc: UsageAccumulator, usage: UsageEvent): UsageAccumulator {
+  const tokens: NormalizedUsage = {
+    cacheRead: usage.cacheReadTokens,
+    cacheWrite: usage.cacheWriteTokens,
+    input: usage.inputTokens,
+    output: usage.outputTokens,
+  }
+  if (usage.cumulative) {
+    return {
+      ...acc,
+      cumulative: tokens,
+      cumulativeHarnessCostUsd: usage.harnessCostUsd,
+    }
+  }
+  return {
+    ...acc,
+    delta: {
+      cacheRead: acc.delta.cacheRead + tokens.cacheRead,
+      cacheWrite: acc.delta.cacheWrite + tokens.cacheWrite,
+      input: acc.delta.input + tokens.input,
+      output: acc.delta.output + tokens.output,
+    },
+    deltaHarnessCostUsd: addOptional(
+      acc.deltaHarnessCostUsd,
+      usage.harnessCostUsd,
+    ),
+  }
+}
+
+// Emit the final summary usage event: eh's own cumulative normalized usage with
+// the cost it computed from the resolved gateway rates (costUsd + costSource),
+// plus the harness's own estimate preserved separately as harnessCostUsd.
+function emitCostSummary(acc: UsageAccumulator, rateCard: HeadlessRateCard) {
+  const final = finalUsage(acc)
+  if (!final) return
+  const { costSource, costUsd } = headlessCost(rateCard, final.usage)
+  emit({
+    cacheReadTokens: final.usage.cacheRead,
+    cacheWriteTokens: final.usage.cacheWrite,
+    costSource,
+    ...(costUsd === undefined ? {} : { costUsd }),
+    cumulative: true,
+    ...(final.harnessCostUsd === undefined
+      ? {}
+      : { harnessCostUsd: final.harnessCostUsd }),
+    inputTokens: final.usage.input,
+    outputTokens: final.usage.output,
+    type: 'usage',
+  })
 }
 
 function flushGrokText(state: NormalizerState) {
@@ -438,12 +570,13 @@ function normalizeClaudeEvent(
   if (event.type !== 'result') return next
   next = { ...next, sessionId: emitSession(event.session_id, next.sessionId) }
   const usage = asRecord(event.usage)
+  let nextState = next
   if (usage) {
-    emitUsage({
+    nextState = recordUsage(nextState, {
       cacheReadTokens: numberField(usage, 'cache_read_input_tokens'),
       cacheWriteTokens: numberField(usage, 'cache_creation_input_tokens'),
-      costUsd: optionalNumberField(event, 'total_cost_usd'),
       cumulative: false,
+      harnessCostUsd: optionalNumberField(event, 'total_cost_usd'),
       inputTokens: numberField(usage, 'input_tokens'),
       outputTokens: numberField(usage, 'output_tokens'),
     })
@@ -453,10 +586,10 @@ function normalizeClaudeEvent(
     (typeof event.subtype === 'string' && event.subtype !== 'success')
   if (resultIsError) emitRunError(event, 'Claude reported a failed result')
   return {
-    ...next,
+    ...nextState,
     nativeResult:
-      typeof event.result === 'string' ? event.result : next.nativeResult,
-    resultIsError: next.resultIsError || resultIsError,
+      typeof event.result === 'string' ? event.result : nextState.nativeResult,
+    resultIsError: nextState.resultIsError || resultIsError,
   }
 }
 
@@ -476,17 +609,22 @@ function normalizeCodexEvent(
     }
   }
 
+  let nextState = next
   if (event.type === 'turn.completed') {
     const usage = asRecord(event.usage)
     if (usage) {
-      emitUsage({
-        cacheReadTokens: numberField(usage, 'cached_input_tokens'),
+      // Codex cached_input_tokens is a subset of input_tokens (OpenAI-style),
+      // not a disjoint bucket. Subtract so the four usage fields stay exclusive.
+      const cacheReadTokens = numberField(usage, 'cached_input_tokens')
+      const inputTokens = numberField(usage, 'input_tokens')
+      nextState = recordUsage(nextState, {
+        cacheReadTokens,
         cacheWriteTokens: 0,
-        costUsd:
+        cumulative: true,
+        harnessCostUsd:
           optionalNumberField(event, 'total_cost_usd') ??
           optionalNumberField(event, 'cost_usd'),
-        cumulative: true,
-        inputTokens: numberField(usage, 'input_tokens'),
+        inputTokens: Math.max(0, inputTokens - cacheReadTokens),
         outputTokens: numberField(usage, 'output_tokens'),
       })
     }
@@ -494,10 +632,10 @@ function normalizeCodexEvent(
 
   if (event.type === 'turn.failed' || event.type === 'error') {
     emitRunError(event, 'Codex reported a failed turn')
-    return { ...next, resultIsError: true }
+    return { ...nextState, resultIsError: true }
   }
 
-  return next
+  return nextState
 }
 
 function normalizeGrokEvent(
@@ -508,13 +646,13 @@ function normalizeGrokEvent(
     return { ...state, pendingGrokText: state.pendingGrokText + event.data }
   }
   let nextState = state
-  if (event.type === 'usage') emitGrokUsage(event, false)
+  if (event.type === 'usage') nextState = emitGrokUsage(nextState, event, false)
   if (event.type === 'end') {
     nextState = {
       ...nextState,
       sessionId: emitSession(event.sessionId, nextState.sessionId),
     }
-    emitGrokUsage(event, true)
+    nextState = emitGrokUsage(nextState, event, true)
   }
   if (event.type === 'error') {
     emitRunError(event, 'Grok reported an error')
@@ -573,7 +711,7 @@ function normalizeOpencodeEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  let next = emitNewSession(event.sessionID, state)
+  let nextState = emitNewSession(event.sessionID, state)
   const part = asRecord(event.part)
 
   if (
@@ -581,18 +719,18 @@ function normalizeOpencodeEvent(
     part?.type === 'text' &&
     typeof part.text === 'string'
   ) {
-    next = emitAssistantText(part.text, next)
+    nextState = emitAssistantText(part.text, nextState)
   }
 
   if (event.type === 'step_finish' && part?.type === 'step-finish') {
     const tokens = asRecord(part.tokens)
     const cache = tokens ? asRecord(tokens.cache) : undefined
     if (tokens) {
-      emitUsage({
+      nextState = recordUsage(nextState, {
         cacheReadTokens: cache ? numberField(cache, 'read') : 0,
         cacheWriteTokens: cache ? numberField(cache, 'write') : 0,
-        costUsd: optionalNumberField(part, 'cost'),
         cumulative: false,
+        harnessCostUsd: optionalNumberField(part, 'cost'),
         inputTokens: numberField(tokens, 'input'),
         outputTokens: numberField(tokens, 'output'),
       })
@@ -601,25 +739,25 @@ function normalizeOpencodeEvent(
 
   if (event.type === 'error') {
     emitRunError(event, 'OpenCode reported an error')
-    return { ...next, resultIsError: true }
+    return { ...nextState, resultIsError: true }
   }
-  return next
+  return nextState
 }
 
 function normalizePiEvent(
   event: Record<string, unknown>,
   state: NormalizerState,
 ) {
-  let next = emitNewSession(event.id, state)
-  if (event.type !== 'message_end') return next
+  let nextState = emitNewSession(event.id, state)
+  if (event.type !== 'message_end') return nextState
 
   const message = asRecord(event.message)
-  if (message?.role !== 'assistant') return next
+  if (message?.role !== 'assistant') return nextState
   if (Array.isArray(message.content)) {
     for (const rawBlock of message.content) {
       const block = asRecord(rawBlock)
       if (block?.type === 'text' && typeof block.text === 'string') {
-        next = emitAssistantText(block.text, next)
+        nextState = emitAssistantText(block.text, nextState)
       }
     }
   }
@@ -627,11 +765,11 @@ function normalizePiEvent(
   const usage = asRecord(message.usage)
   if (usage) {
     const cost = asRecord(usage.cost)
-    emitUsage({
+    nextState = recordUsage(nextState, {
       cacheReadTokens: numberField(usage, 'cacheRead'),
       cacheWriteTokens: numberField(usage, 'cacheWrite'),
-      costUsd: cost ? optionalNumberField(cost, 'total') : undefined,
       cumulative: false,
+      harnessCostUsd: cost ? optionalNumberField(cost, 'total') : undefined,
       inputTokens: numberField(usage, 'input'),
       outputTokens: numberField(usage, 'output'),
     })
@@ -641,8 +779,8 @@ function normalizePiEvent(
     message.stopReason === 'error' || message.stopReason === 'aborted'
   if (resultIsError) emitRunError(message, 'Pi reported a failed result')
   return {
-    ...next,
-    resultIsError: next.resultIsError || resultIsError,
+    ...nextState,
+    resultIsError: nextState.resultIsError || resultIsError,
   }
 }
 

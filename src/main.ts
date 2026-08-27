@@ -22,6 +22,7 @@ import {
   searchProviderKeySet,
 } from './manage.js'
 import { listModelsCached } from './providers.js'
+import { installSkill, printSkill } from './skill.js'
 import { runStatusline } from './statusline.js'
 import { EFFORT_LEVELS } from './types.js'
 import { intro } from './ui/output.js'
@@ -120,49 +121,28 @@ Common workflows:
 `,
   )
 
-program
-  .command('run <harness> <provider> <model>')
-  .description('run one harness headlessly (prompt on stdin, NDJSON on stdout)')
-  .option(
-    '--reasoning-effort <level>',
-    `reasoning effort: ${EFFORT_LEVELS.join(', ')}`,
-    'auto',
-  )
-  .option(
-    '--native-args-json <json>',
-    'JSON string array of native harness args to prepend before machine-mode args',
-  )
-  .option(
-    '--gateway-provider <slug>',
-    'pin OpenRouter or Vercel AI Gateway to one upstream provider',
-  )
-  .option('--resume-session <id>', 'resume an existing native session')
-  .option('--cwd <dir>', 'run the spawned harness in this working directory')
-  .option(
-    '--timeout <seconds>',
-    'fail the run if the harness runs longer than <seconds> (SIGTERM, then SIGKILL after a grace period)',
-  )
-  .option(
-    '--result-file <path>',
-    "write the run's final result text to <path> (created empty when the run produced no result)",
-  )
-  .action(async (harness, provider, model, opts) => {
-    process.exitCode = await runHeadless({
-      cwd: opts.cwd,
-      effort: opts.reasoningEffort,
-      // The root command exposes the same option for interactive launches.
-      // Commander assigns an option after a subcommand to the root when both
-      // define it, so read both scopes instead of silently dropping the pin.
-      gatewayProvider: opts.gatewayProvider ?? rootGatewayProvider(),
-      harness,
-      model,
-      nativeArgsJson: opts.nativeArgsJson,
-      provider,
-      resultFile: opts.resultFile,
-      resumeSessionId: opts.resumeSession,
-      timeout: opts.timeout,
-    })
-  })
+configureHeadlessCommand(
+  program.command('run <harness> <provider> <model>'),
+  'run one harness headlessly (prompt on stdin, NDJSON on stdout)',
+)
+configureHeadlessCommand(
+  program.command('ask <harness> <provider> <model>'),
+  'ask one harness headlessly (prompt on stdin, NDJSON on stdout)',
+)
+
+const skillCmd = program
+  .command('skill')
+  .description('print or install the eh delegation skill')
+skillCmd
+  .command('print')
+  .description('print the eh delegation skill')
+  .action(() => printSkill())
+skillCmd
+  .command('install')
+  .description('install the eh delegation skill into a directory')
+  .requiredOption('--dir <dir>', 'destination skill directory')
+  .option('--force', 'overwrite a differing existing skill')
+  .action((opts) => installSkill(opts.dir, opts.force === true))
 
 program
   .command('doctor')
@@ -295,6 +275,54 @@ program
     intro('eh · setup')
     saveConfig(await wizard(loadConfig()))
   })
+
+function configureHeadlessCommand(
+  command: Command<[string, string, string]>,
+  description: string,
+) {
+  command
+    .description(description)
+    .option(
+      '--reasoning-effort <level>',
+      `reasoning effort: ${EFFORT_LEVELS.join(', ')}`,
+      'auto',
+    )
+    .option(
+      '--native-args-json <json>',
+      'JSON string array of native harness args to prepend before machine-mode args',
+    )
+    .option(
+      '--gateway-provider <slug>',
+      'pin OpenRouter or Vercel AI Gateway to one upstream provider',
+    )
+    .option('--resume-session <id>', 'resume an existing native session')
+    .option('--cwd <dir>', 'run the spawned harness in this working directory')
+    .option(
+      '--timeout <seconds>',
+      'fail the run if the harness runs longer than <seconds> (SIGTERM, then SIGKILL after a grace period)',
+    )
+    .option(
+      '--result-file <path>',
+      "write the run's final result text to <path> (created empty when the run produced no result)",
+    )
+    .action(async (harness, provider, model, opts) => {
+      process.exitCode = await runHeadless({
+        cwd: opts.cwd,
+        effort: opts.reasoningEffort,
+        // The root command exposes the same option for interactive launches.
+        // Commander assigns an option after a subcommand to the root when both
+        // define it, so read both scopes instead of silently dropping the pin.
+        gatewayProvider: opts.gatewayProvider ?? rootGatewayProvider(),
+        harness,
+        model,
+        nativeArgsJson: opts.nativeArgsJson,
+        provider,
+        resultFile: opts.resultFile,
+        resumeSessionId: opts.resumeSession,
+        timeout: opts.timeout,
+      })
+    })
+}
 
 async function main() {
   await program.parseAsync(process.argv)
