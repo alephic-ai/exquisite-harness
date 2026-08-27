@@ -693,7 +693,7 @@ function normalizeCodexEvent(
     process.stderr.write(
       `codex: ${eventMessage(event) ?? JSON.stringify(event)}\n`,
     )
-    return { ...nextState, sessionId }
+    return nextState
   }
 
   return nextState
