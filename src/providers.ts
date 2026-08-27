@@ -322,14 +322,16 @@ const BEHAVIORS: Record<ProviderType, ProviderBehavior> = {
     protocols: ['anthropic', 'openai-chat', 'openai-responses'],
   },
   'openai-chat': {
-    codexWireApi: 'chat',
+    // codex 0.149+ rejects wire_api="chat" at config load
+    // (openai/codex#7782) — only "responses" loads.
+    codexWireApi: 'responses',
     listModels: listOpenAiModels,
     openAIBaseURL: withV1,
     protocols: ['openai-chat'],
   },
   'openrouter': {
     anthropicBaseURL: withoutV1,
-    codexWireApi: 'chat',
+    codexWireApi: 'responses',
     listModels: listOpenRouterModels,
     openAIBaseURL: withV1,
     protocols: ['anthropic', 'openai-chat', 'openai-responses'],
@@ -344,7 +346,9 @@ const BEHAVIORS: Record<ProviderType, ProviderBehavior> = {
 }
 
 // A harness can use a provider when their protocol sets intersect — e.g.
-// Codex speaks responses OR chat, so an openai-chat provider is fine for it.
+// Codex accepts both openai protocols here, but it only loads
+// wire_api="responses" (openai/codex#7782), so an openai-chat provider
+// works only if its endpoint also serves /v1/responses.
 export function anthropicBaseURLFor(provider: ResolvedProvider) {
   return BEHAVIORS[provider.type].anthropicBaseURL?.(provider.baseURL)
 }

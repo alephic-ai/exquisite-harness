@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process'
 import {
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -231,6 +232,30 @@ test('legacy config defaults approvals to the platform behavior', () => {
 
     expect(result.status).toBe(0)
     expect(result.stdout.trim()).toBe('platform')
+  } finally {
+    rmSync(directory, { force: true, recursive: true })
+  }
+})
+
+test('saveConfig round-trips and leaves no staged temp files', () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), 'eh-config-test-'))
+  try {
+    const moduleURL = new URL('./config.ts', import.meta.url).href
+    const result = spawnSync(
+      process.execPath,
+      [
+        '-e',
+        `import { loadConfig, saveConfig } from ${JSON.stringify(moduleURL)}; const config = loadConfig(); config.profiles.pinned = { harness: 'claude', model: 'qwen3-coder', provider: 'ollama' }; saveConfig(config); console.log(loadConfig().profiles.pinned?.model)`,
+      ],
+      {
+        encoding: 'utf8',
+        env: { ...process.env, XDG_CONFIG_HOME: directory },
+      },
+    )
+
+    expect(result.status).toBe(0)
+    expect(result.stdout.trim()).toBe('qwen3-coder')
+    expect(readdirSync(path.join(directory, 'eh'))).toEqual(['config.json'])
   } finally {
     rmSync(directory, { force: true, recursive: true })
   }

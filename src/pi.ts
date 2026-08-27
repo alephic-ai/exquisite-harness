@@ -34,16 +34,19 @@ export function matchPiProvider(
     : undefined
   if (native && nativeOverride) {
     const effectiveBaseURL = nativeOverride.baseUrl ?? native.baseURL
-    if (!samePiBaseURL(effectiveBaseURL, provider.baseURL)) return undefined
-    return {
-      keyEnvVar:
-        nativeOverride.apiKey === undefined
-          ? native.envVar
-          : envVarRef(nativeOverride.apiKey),
-      piName: native.piName,
+    if (samePiBaseURL(effectiveBaseURL, provider.baseURL)) {
+      return {
+        keyEnvVar:
+          nativeOverride.apiKey === undefined
+            ? native.envVar
+            : envVarRef(nativeOverride.apiKey),
+        piName: native.piName,
+      }
     }
-  }
-  if (native && samePiBaseURL(native.baseURL, provider.baseURL)) {
+    // A mismatched override repoints pi's native entry at a different
+    // baseURL, so the native id cannot serve this provider — fall through to
+    // by-URL matching below.
+  } else if (native && samePiBaseURL(native.baseURL, provider.baseURL)) {
     return { keyEnvVar: native.envVar, piName: native.piName }
   }
 

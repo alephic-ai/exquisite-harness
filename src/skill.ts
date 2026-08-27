@@ -76,7 +76,13 @@ function assertNoSymlinkPath(target: string) {
     current = path.join(current, part)
     const stat = lstatSync(current, { throwIfNoEntry: false })
     if (stat?.isSymbolicLink()) {
-      throw new Error(`refusing to install through symlink at ${current}`)
+      // macOS system symlinks (/var → /private/var, /tmp → /private/tmp) are
+      // root-owned; a symlink planted to redirect the install is not. Windows
+      // reports uid 0 for every file, so only unix can make this distinction.
+      if (stat.uid !== 0 || process.platform === 'win32') {
+        throw new Error(`refusing to install through symlink at ${current}`)
+      }
+      continue
     }
     if (!stat) break
   }

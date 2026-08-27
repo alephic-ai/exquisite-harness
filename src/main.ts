@@ -66,7 +66,24 @@ program
     "pick from this directory's sessions (all harnesses) and resume",
   )
   .action(async (harnessOrProfile, provider, model, opts) => {
-    // Flags win over positionals; positionals may also name a profile.
+    // The first positional may also name a profile. Commander fills positionals
+    // left-to-right regardless of flags, so mixing a flag with positionals
+    // silently misassigns them — same-slot conflicts error instead.
+    if (opts.harness !== undefined && harnessOrProfile !== undefined) {
+      throw new Error(
+        'harness specified twice — use either --harness <name> or the positional, not both',
+      )
+    }
+    if (opts.provider !== undefined && provider !== undefined) {
+      throw new Error(
+        'provider specified twice — use either -p/--provider <name> or the positional, not both',
+      )
+    }
+    if (opts.model !== undefined && model !== undefined) {
+      throw new Error(
+        'model specified twice — use either -m/--model <id> or the positional, not both',
+      )
+    }
     const effort = EFFORT_LEVELS.find((level) => level === opts.effort)
     if (opts.effort !== undefined && effort === undefined) {
       throw new Error(
@@ -94,7 +111,7 @@ Common workflows:
   eh                                  interactive: recents, or harness → provider → model
   eh claude ollama qwen3-coder        launch with zero prompts (positional)
   eh --harness codex -p ollama -m qwen3-coder
-      same, with flags — flags win over positionals
+      same, with flags
   eh cheap-local                      launch a saved profile
   eh claude -p ollama -s cheap-local
       save the combo as profile "cheap-local", then launch

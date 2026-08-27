@@ -1,9 +1,10 @@
 import { execFile, spawn } from 'node:child_process'
-import { chmodSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { z } from 'zod'
 
+import { atomicWriteFileSync } from './atomic-write.js'
 import { configDir, providerKeyAccounts } from './config.js'
 import { findBin } from './which.js'
 
@@ -215,23 +216,37 @@ function lookupFile(providerName: string) {
 }
 
 function readSecrets() {
+  return readSecretsFile() ?? {}
+}
+
+function readSecretsFile(): Record<string, string> | undefined {
   try {
     const parsed = secretsSchema.safeParse(
       JSON.parse(readFileSync(secretsPath(), 'utf8')),
     )
-    return parsed.success ? parsed.data : {}
+    return parsed.success ? parsed.data : undefined
   } catch {
-    return {}
+    return undefined
   }
 }
 
 function writeSecrets(secrets: Record<string, string>) {
   mkdirSync(configDir(), { recursive: true })
-  writeFileSync(secretsPath(), `${JSON.stringify(secrets, null, 2)}\n`, {
+  // Reads stay best-effort so env-var keys keep working, but the writer
+  // refuses to clobber a secrets file it cannot parse — otherwise one
+  // storeApiKey would silently drop every other stored key.
+  if (existsSync(secretsPath()) && readSecretsFile() === undefined) {
+    throw new Error(
+      `refusing to overwrite unreadable secrets at ${secretsPath()} — fix or remove the file`,
+    )
+  }
+  atomicWriteFileSync(secretsPath(), `${JSON.stringify(secrets, null, 2)}\n`, {
     mode: 0o600,
   })
-  // mode only applies at creation — enforce on every write. Best-effort on
-  // Windows, where the file is protected by the profile-dir ACLs instead.
+  // The staged temp is mode-checked at creation, but umask can still strip
+  // owner bits, so enforce the mode on the destination after every write.
+  // Best-effort on Windows, where the file is protected by the profile-dir
+  // ACLs instead.
   chmodSync(secretsPath(), 0o600)
 }
 

@@ -551,6 +551,7 @@ src/manage.ts     non-interactive commands: models, profiles, provider keys
 src/cache.ts      model-list cache
 src/which.ts      PATH binary lookup (PATHEXT-aware)
 src/time-ago.ts   relative time for recents
+src/atomic-write.ts  crash-safe file writes (staged temp + atomic rename)
 src/types.ts      shared types
 src/ui/defaults-screen.ts  home → defaults: global launch behavior
 src/ui/home.ts    home screen

@@ -46,7 +46,9 @@ export function profileList(config: Config) {
 }
 
 export function profileRemove(config: Config, name: string) {
-  if (!(name in config.profiles)) {
+  // hasOwn, not `in`: `constructor`/`toString` live on the prototype chain and
+  // `in` would report a removal that removes nothing.
+  if (!Object.hasOwn(config.profiles, name)) {
     throw new Error(`no profile named "${name}"`)
   }
   const { [name]: _removed, ...rest } = config.profiles

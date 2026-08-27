@@ -4,6 +4,7 @@ import { expect, test } from 'bun:test'
 import { createServer } from 'node:http'
 
 import {
+  codexWireApiFor,
   fetchGatewayModelThroughput,
   listGatewayProviders,
   listModels,
@@ -476,6 +477,25 @@ test('lets a Gateway /endpoints 500 propagate so the picker can retry', async ()
   } finally {
     await upstream.close()
   }
+})
+
+test('maps openai-chat-compatible providers to the wire API codex accepts', () => {
+  // codex >= 0.149 rejects wire_api="chat" at config load and names
+  // "responses" as the fix (openai/codex#7782).
+  expect(
+    codexWireApiFor({
+      baseURL: 'http://localhost:1234/v1',
+      name: 'lmstudio',
+      type: 'openai-chat',
+    }),
+  ).toBe('responses')
+  expect(
+    codexWireApiFor({
+      baseURL: 'https://openrouter.ai/api/v1',
+      name: 'openrouter',
+      type: 'openrouter',
+    }),
+  ).toBe('responses')
 })
 
 async function startUpstream(listener: RequestListener) {

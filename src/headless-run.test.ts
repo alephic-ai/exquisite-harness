@@ -185,6 +185,57 @@ describe('eh run', () => {
     expect(args).not.toContain('--dangerously-bypass-approvals-and-sandbox')
   })
 
+  test('counts Codex cache-write tokens as a subset of input_tokens', async () => {
+    const fixture = createFakeCodex()
+    const child = spawn(
+      process.execPath,
+      ['run', 'src/main.ts', 'run', 'codex', 'ollama', 'qwen3-coder'],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TEST_CODEX_CACHE_WRITE: '1',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('estimate the cost')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    const events = parseEvents(stdout)
+
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    // Fixture: input_tokens 10 with cached_input_tokens 4 and
+    // cache_write_input_tokens 3 nested inside. Exclusive buckets:
+    // 3 input + 4 cache-read + 3 cache-write + 2 output.
+    expect(events).toContainEqual({
+      cacheReadTokens: 4,
+      cacheWriteTokens: 3,
+      cumulative: true,
+      inputTokens: 3,
+      outputTokens: 2,
+      type: 'usage',
+      v: 2,
+    })
+    expect(events).toContainEqual({
+      cacheReadTokens: 4,
+      cacheWriteTokens: 3,
+      costSource: 'free',
+      costUsd: 0,
+      cumulative: true,
+      inputTokens: 3,
+      outputTokens: 2,
+      type: 'usage',
+      v: 2,
+    })
+  })
+
   test('runs the spawned harness in the --cwd directory', async () => {
     const fixture = createFakeCodex()
     const scratch = mkdtempSync(path.join(tmpdir(), 'eh-cwd-test-'))
@@ -1703,6 +1754,46 @@ describe('eh run', () => {
     })
   })
 
+  test('treats a transient Codex error event as recoverable', async () => {
+    const fixture = createFakeCodex()
+    const child = spawn(
+      process.execPath,
+      ['run', 'src/main.ts', 'run', 'codex', 'ollama', 'qwen3-coder'],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TEST_CODEX_TRANSIENT_ERROR: '1',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('ride out the reconnect')
+
+    const [exitCode, stderr, stdout] = await Promise.all([
+      childExitCode(child),
+      readStream(child.stderr),
+      readStream(child.stdout),
+    ])
+    const events = parseEvents(stdout)
+
+    expect(stderr).toContain('codex: Reconnecting... 1/5 (stream disconnected)')
+    expect(exitCode).toBe(0)
+    expect(events).toContainEqual({
+      text: 'saw: ride out the reconnect',
+      type: 'assistant.text',
+      v: 2,
+    })
+    expect(events.filter((event) => event.type === 'run.error')).toEqual([])
+    expect(events).toContainEqual({
+      exitCode: 0,
+      resultIsError: false,
+      type: 'run.completed',
+      v: 2,
+    })
+  })
+
   test('emits a run error when a harness exits non-zero without a semantic error', async () => {
     const fixture = createFakeCodex()
     const child = spawn(
@@ -1874,6 +1965,56 @@ describe('eh run', () => {
     },
   )
 
+  test.each(['2147484', '99999999999'])(
+    'rejects the --timeout %s that would overflow setTimeout',
+    async (value) => {
+      const fixture = createFakeCodex()
+      const child = spawn(
+        process.execPath,
+        [
+          'run',
+          'src/main.ts',
+          'run',
+          'codex',
+          'ollama',
+          'qwen3-coder',
+          '--timeout',
+          value,
+        ],
+        {
+          cwd: repoRoot,
+          env: {
+            ...process.env,
+            PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+            XDG_CONFIG_HOME: fixture.configDir,
+          },
+        },
+      )
+      child.stdin.end('run the task')
+
+      const [exitCode, stderr, stdout] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stderr),
+        readStream(child.stdout),
+      ])
+      const events = parseEvents(stdout)
+
+      expect(stderr).toBe('')
+      expect(exitCode).toBe(64)
+      expect(events).toEqual([
+        {
+          message: expect.stringContaining('--timeout too large'),
+          type: 'run.error',
+          v: 2,
+        },
+        { exitCode: 64, resultIsError: true, type: 'run.completed', v: 2 },
+      ])
+      expect(
+        events.some((event) => asRecord(event.event)?.type === 'fake.args'),
+      ).toBe(false)
+    },
+  )
+
   test.each([
     {
       env: {},
@@ -1961,6 +2102,77 @@ describe('eh run', () => {
     20_000,
   )
 
+  test('completes a timed-out run when a grandchild holds the harness stdout', async () => {
+    const fixture = createFakeGrandchildHolder()
+    const child = spawn(
+      process.execPath,
+      [
+        'run',
+        'src/main.ts',
+        'run',
+        'codex',
+        'ollama',
+        'qwen3-coder',
+        '--timeout',
+        '3',
+      ],
+      {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          EH_TIMEOUT_KILL_GRACE_MS: '100',
+          PATH: `${fixture.binDir}${path.delimiter}${process.env.PATH ?? ''}`,
+          XDG_CONFIG_HOME: fixture.configDir,
+        },
+      },
+    )
+    child.stdin.end('orphan the pipe')
+
+    let grandchildPid: number | undefined
+    try {
+      const [exitCode, stderr, stdout] = await Promise.all([
+        childExitCode(child),
+        readStream(child.stderr),
+        readStream(child.stdout),
+      ])
+      const events = parseEvents(stdout)
+      for (const event of events) {
+        const inner = asRecord(event.event)
+        if (
+          inner?.type === 'fake.args' &&
+          typeof inner.grandchildPid === 'number'
+        ) {
+          grandchildPid = inner.grandchildPid
+        }
+      }
+
+      expect(stderr).toBe('')
+      // The harness exited 0 within the deadline; the orphaned grandchild
+      // must not turn that into a hang or a timeout error.
+      expect(exitCode).toBe(0)
+      expect(events).toContainEqual({
+        text: 'saw: orphan the pipe',
+        type: 'assistant.text',
+        v: 2,
+      })
+      expect(events.filter((event) => event.type === 'run.error')).toEqual([])
+      expect(events).toContainEqual({
+        exitCode: 0,
+        resultIsError: false,
+        type: 'run.completed',
+        v: 2,
+      })
+    } finally {
+      if (grandchildPid !== undefined) {
+        try {
+          process.kill(grandchildPid, 'SIGKILL')
+        } catch {
+          // The detached sleep already exited on its own.
+        }
+      }
+    }
+  }, 20_000)
+
   test('leaves a run that finishes before the deadline unchanged', async () => {
     const runFast = async (extraArgs: string[]) => {
       const fixture = createFakeCodex()
@@ -1994,10 +2206,15 @@ describe('eh run', () => {
 
     const withTimeout = await runFast(['--timeout', '60'])
     const without = await runFast([])
+    // 2147483s is the largest --timeout that does not overflow setTimeout;
+    // it must behave like any other far-future deadline.
+    const atLimit = await runFast(['--timeout', '2147483'])
 
     expect(withTimeout.exitCode).toBe(0)
     expect(without.exitCode).toBe(0)
+    expect(atLimit.exitCode).toBe(0)
     expect(withTimeout.events).toEqual(without.events)
+    expect(atLimit.events).toEqual(without.events)
   }, 20_000)
 
   describe('--result-file', () => {
@@ -2252,14 +2469,50 @@ if (process.env.EH_TEST_CODEX_MULTITURN === '1') {
   })
   process.exit(0)
 }
+if (process.env.EH_TEST_CODEX_TRANSIENT_ERROR === '1') {
+  emit({ type: 'error', message: 'Reconnecting... 1/5 (stream disconnected)' })
+}
 emit({
   type: 'item.completed',
   item: { type: 'agent_message', text: 'saw: ' + prompt },
 })
+const usage =
+  process.env.EH_TEST_CODEX_CACHE_WRITE === '1'
+    ? {
+        input_tokens: 10,
+        cached_input_tokens: 4,
+        cache_write_input_tokens: 3,
+        output_tokens: 2,
+      }
+    : { input_tokens: 10, cached_input_tokens: 4, output_tokens: 2 }
+emit({ type: 'turn.completed', usage })`,
+  )
+}
+
+function createFakeGrandchildHolder() {
+  // Emits normal output, then spawns a detached sleep that inherits stdout
+  // and outlives the fake — the harness exits 0 but the pipe stays open,
+  // which used to wedge eh's stdout read loop past the --timeout deadline.
+  return createFakeHarness(
+    'codex',
+    `const { spawn } = require('node:child_process')
+const emit = (event) => process.stdout.write(JSON.stringify(event) + '\\n')
+emit({ type: 'thread.started', thread_id: 'thread-grandchild' })
 emit({
-  type: 'turn.completed',
-  usage: { input_tokens: 10, cached_input_tokens: 4, output_tokens: 2 },
-})`,
+  type: 'item.completed',
+  item: { type: 'agent_message', text: 'saw: orphan the pipe' },
+})
+const grandchild = spawn('sleep', ['30'], {
+  detached: true,
+  stdio: ['ignore', 'inherit', 'inherit'],
+})
+emit({
+  type: 'fake.args',
+  args: process.argv.slice(2),
+  pid: process.pid,
+  grandchildPid: grandchild.pid,
+})
+grandchild.unref()`,
   )
 }
 

@@ -72,6 +72,46 @@ describe('matchPiProvider', () => {
     })
   })
 
+  test('falls back to by-URL matching when a same-id override repoints the native entry', () => {
+    const proxied: ResolvedProvider = {
+      ...openrouter,
+      baseURL: 'https://proxy.corp.example/v1',
+    }
+    const modelsJson = {
+      providers: {
+        'corp-proxy': customPiProvider(
+          'https://proxy.corp.example/v1',
+          '$PROXY_KEY',
+        ),
+        // Points pi's openrouter at the real upstream while eh's provider
+        // sits behind a proxy — the native id cannot serve this baseURL.
+        'openrouter': { apiKey: '$OPENROUTER_API_KEY' },
+      },
+    }
+
+    expect(matchPiProvider(modelsJson, proxied)).toEqual({
+      keyEnvVar: 'PROXY_KEY',
+      piName: 'corp-proxy',
+    })
+  })
+
+  test('does not match the native id when a same-id override repoints it elsewhere', () => {
+    // eh's provider still sits on the native default URL, but pi's
+    // openrouter entry is repointed at a proxy — routing through the native
+    // id would send pi's traffic to the proxy while eh believes it selected
+    // the native upstream, so no match is the correct answer.
+    const modelsJson = {
+      providers: {
+        openrouter: customPiProvider(
+          'https://proxy.corp.example/v1',
+          '$PROXY_KEY',
+        ),
+      },
+    }
+
+    expect(matchPiProvider(modelsJson, openrouter)).toBeUndefined()
+  })
+
   test('matches a models.json entry by baseUrl (loopback, /v1 insensitive)', () => {
     const modelsJson = {
       providers: {
