@@ -65,8 +65,15 @@ export async function searchFirecrawl(props: {
   let data: Awaited<ReturnType<Firecrawl['search']>>
   try {
     data = await firecrawlClient(props).search(props.query, {
-      ...(props.excludeDomains ? { excludeDomains: props.excludeDomains } : {}),
-      ...(props.includeDomains ? { includeDomains: props.includeDomains } : {}),
+      // The SDK rejects a search carrying both filters; when the caller sends
+      // an allow list and a block list together, includeDomains wins — a
+      // blocked domain not on the allow list stays excluded anyway, since
+      // the allow list is the stricter filter.
+      ...(props.includeDomains?.length
+        ? { includeDomains: props.includeDomains }
+        : props.excludeDomains?.length
+          ? { excludeDomains: props.excludeDomains }
+          : {}),
       limit: 10,
       sources: ['web'],
     })

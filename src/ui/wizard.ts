@@ -92,6 +92,23 @@ export async function addProvider(config: Config) {
   })
   if (isCancel(name)) bail()
 
+  // A name collision either replaces a custom definition or shadows a
+  // built-in (config.ts folds config entries over BUILTIN_PROVIDERS) —
+  // confirm before writing either way.
+  if (getProvider(config, name)) {
+    const overwrite = await confirm({
+      initialValue: false,
+      message: Object.hasOwn(config.providers, name)
+        ? `provider "${name}" already exists — overwrite it?`
+        : `provider "${name}" is built in — override it?`,
+    })
+    if (isCancel(overwrite)) bail()
+    if (!overwrite) {
+      log.warn(`provider "${name}" left unchanged`)
+      return config
+    }
+  }
+
   const type = await letterSelect<ProviderType>({
     message: 'type',
     options: [

@@ -162,6 +162,60 @@ describe('search proxy', () => {
     }
   })
 
+  test('keeps only allowed domains when Claude sends both constraints', async () => {
+    const firecrawlRequests: unknown[] = []
+    const firecrawlBaseURL = await listen(async (request, response) => {
+      firecrawlRequests.push(JSON.parse((await requestText(request)) || '{}'))
+      response.writeHead(200, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ data: { web: [] }, success: true }))
+    })
+    const upstreamBaseURL = await listen((_request, response) => {
+      response.writeHead(500)
+      response.end()
+    })
+    const proxy = await startSearchProxy({
+      apiKey: 'fc-test',
+      baseURL: firecrawlBaseURL,
+      envKey: 'FIRECRAWL_API_KEY',
+      type: 'firecrawl',
+      upstreamBaseURL,
+    })
+
+    try {
+      const response = await fetch(`${proxy.baseURL}/v1/messages`, {
+        body: JSON.stringify({
+          ...webSearchRequest('both domain filters', false),
+          tools: [
+            {
+              allowed_domains: ['example.com'],
+              blocked_domains: ['blocked.example'],
+              type: 'web_search_20250305',
+            },
+          ],
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      })
+
+      // Firecrawl rejects a request carrying both includeDomains and
+      // excludeDomains, so includeDomains wins and blocked_domains is
+      // dropped — a blocked domain not on the allow list stays excluded
+      // anyway, since the allow list is the stricter filter.
+      expect(response.status).toBe(200)
+      const request = firecrawlRequests[0]
+      expect(request).toEqual(
+        expect.objectContaining({ includeDomains: ['example.com'] }),
+      )
+      expect(
+        typeof request === 'object' &&
+          request !== null &&
+          'excludeDomains' in request,
+      ).toBe(false)
+    } finally {
+      await proxy.close()
+    }
+  })
+
   test('returns normalized Firecrawl results as a non-stream Anthropic message', async () => {
     const firecrawlBaseURL = await listen((_request, response) => {
       response.writeHead(200, { 'Content-Type': 'application/json' })

@@ -30,6 +30,11 @@ const EH_EXIT_PREFLIGHT = 64
 const EH_EXIT_SPAWN = 65
 const EH_EXIT_HARNESS_ERROR = 66
 const TIMEOUT_KILL_GRACE_MS = 10_000
+// After the --timeout machinery force-closes the harness stream, how long the
+// real exit events still have to arrive before eh settles the completion
+// itself: Bun withholds them (and even exitCode) while any other process
+// holds the stdout pipe, e.g. a detached grandchild that inherited it.
+const TIMEOUT_RESCUE_GRACE_MS = 1_000
 const PROMPT_STDIN_HELP =
   "eh run expects a prompt on stdin; pipe one in, for example: printf 'fix the parser' | eh run codex ollama qwen3-coder"
 const recordSchema = z.record(z.string(), z.unknown())
@@ -234,17 +239,15 @@ function emitNewSession(value: unknown, state: NormalizerState) {
   return { ...state, sessionId: emitSession(value, state.sessionId) }
 }
 
+// First human-readable message the harness event carries, or undefined. The
+// trailing `|| undefined` also maps an empty string to undefined so callers
+// can fall back with `??`.
+type ChildCompletion =
+  | { code: null | number; signal: keyof typeof os.constants.signals | null }
+  | { error: Error }
+
 function emitRunError(event: Record<string, unknown>, fallback: string) {
-  const nested = asRecord(event.error)
-  const data = nested ? asRecord(nested.data) : undefined
-  const message =
-    (typeof event.message === 'string' && event.message) ||
-    (typeof event.errorMessage === 'string' && event.errorMessage) ||
-    (typeof nested?.message === 'string' && nested.message) ||
-    (typeof data?.message === 'string' && data.message) ||
-    (typeof event.result === 'string' && event.result) ||
-    fallback
-  emit({ message, type: 'run.error' })
+  emit({ message: eventMessage(event) ?? fallback, type: 'run.error' })
 }
 
 function emitSession(value: unknown, current: string | undefined) {
@@ -253,6 +256,19 @@ function emitSession(value: unknown, current: string | undefined) {
     return value
   }
   return current
+}
+
+function eventMessage(event: Record<string, unknown>) {
+  const nested = asRecord(event.error)
+  const data = nested ? asRecord(nested.data) : undefined
+  return (
+    (typeof event.message === 'string' && event.message) ||
+    (typeof event.errorMessage === 'string' && event.errorMessage) ||
+    (typeof nested?.message === 'string' && nested.message) ||
+    (typeof data?.message === 'string' && data.message) ||
+    (typeof event.result === 'string' && event.result) ||
+    undefined
+  )
 }
 
 // Per-event usage carries the harness's own cost estimate as harnessCostUsd —
@@ -306,10 +322,11 @@ async function executePreparedHeadlessPlan(options: {
   })
   options.markSpawned()
   const lines = createInterface({ input: child.stdout })
-  const completion = new Promise<
-    | { code: null | number; signal: keyof typeof os.constants.signals | null }
-    | { error: Error }
-  >((resolve) => {
+  // Settled either by the child's own exit/close events or, when those are
+  // withheld by a held-open stdout pipe, by the --timeout rescue below.
+  let settleCompletion: ((value: ChildCompletion) => void) | undefined
+  const completion = new Promise<ChildCompletion>((resolve) => {
+    settleCompletion = resolve
     child.on('error', (error) => {
       lines.close()
       resolve({ error })
@@ -331,6 +348,7 @@ async function executePreparedHeadlessPlan(options: {
   const timeout = { fired: false }
   let timeoutTimer: ReturnType<typeof setTimeout> | undefined
   let killTimer: ReturnType<typeof setTimeout> | undefined
+  let rescueTimer: ReturnType<typeof setTimeout> | undefined
 
   try {
     child.stderr.pipe(process.stderr)
@@ -339,21 +357,42 @@ async function executePreparedHeadlessPlan(options: {
 
     if (options.timeoutSeconds !== undefined) {
       timeoutTimer = setTimeout(() => {
-        // Only act while the child is still running; if it already finished, the
-        // timer is a no-op and the normal completion path reports the real exit.
-        if (child.exitCode === null && child.signalCode === null) {
-          timeout.fired = true
-          emit({
-            message: `${options.harness} exceeded the --timeout limit of ${options.timeoutSeconds}s`,
-            type: 'run.error',
+        // A finished harness normally ends the read loop at EOF, clearing
+        // this timer via the finally below. If it fires anyway with the
+        // child already reaped, a detached grandchild is holding the stdout
+        // pipe open (Bun withholds the close event): finish the run with the
+        // real exit status instead of waiting on the orphan.
+        if (child.exitCode !== null || child.signalCode !== null) {
+          lines.close()
+          settleCompletion?.({
+            code: child.exitCode,
+            signal: child.signalCode,
           })
-          child.kill('SIGTERM')
-          killTimer = setTimeout(() => {
-            if (child.exitCode === null && child.signalCode === null) {
-              child.kill('SIGKILL')
-            }
-          }, timeoutKillGraceMs())
+          return
         }
+        timeout.fired = true
+        emit({
+          message: `${options.harness} exceeded the --timeout limit of ${options.timeoutSeconds}s`,
+          type: 'run.error',
+        })
+        child.kill('SIGTERM')
+        killTimer = setTimeout(() => {
+          if (child.exitCode === null && child.signalCode === null) {
+            child.kill('SIGKILL')
+          }
+          // EOF never arrives while a grandchild holds the pipe; close the
+          // read side ourselves so the loop can finish.
+          lines.close()
+          // Give the real close event a final chance after the kill; if the
+          // pipe is still held it will never come, so settle with whatever
+          // exit status was reaped.
+          rescueTimer = setTimeout(() => {
+            settleCompletion?.({
+              code: child.exitCode,
+              signal: child.signalCode,
+            })
+          }, TIMEOUT_RESCUE_GRACE_MS)
+        }, timeoutKillGraceMs())
       }, options.timeoutSeconds * 1000)
     }
 
@@ -416,9 +455,15 @@ async function executePreparedHeadlessPlan(options: {
   } finally {
     if (timeoutTimer) clearTimeout(timeoutTimer)
     if (killTimer) clearTimeout(killTimer)
+    if (rescueTimer) clearTimeout(rescueTimer)
     for (const { handler, signal } of signalHandlers) {
       process.off(signal, handler)
     }
+    // A detached grandchild can inherit the harness's stdout and stderr and
+    // keep both pipes open forever, which would keep this process alive
+    // after the run has already finished. The run is over — release our ends.
+    child.stdout.destroy()
+    child.stderr.destroy()
   }
 }
 
@@ -582,26 +627,42 @@ function normalizeCodexEvent(
   if (event.type === 'turn.completed') {
     const usage = asRecord(event.usage)
     if (usage) {
-      // Codex cached_input_tokens is a subset of input_tokens (OpenAI-style),
-      // not a disjoint bucket. Subtract so the four usage fields stay exclusive.
+      // Codex cached_input_tokens and cache_write_input_tokens both come
+      // from OpenAI's input_tokens_details, so each is a subset of
+      // input_tokens, not a disjoint bucket. Subtract both so the four
+      // usage fields stay exclusive.
       const cacheReadTokens = numberField(usage, 'cached_input_tokens')
+      const cacheWriteTokens = numberField(usage, 'cache_write_input_tokens')
       const inputTokens = numberField(usage, 'input_tokens')
       nextState = recordUsage(nextState, {
         cacheReadTokens,
-        cacheWriteTokens: 0,
+        cacheWriteTokens,
         cumulative: true,
         harnessCostUsd:
           optionalNumberField(event, 'total_cost_usd') ??
           optionalNumberField(event, 'cost_usd'),
-        inputTokens: Math.max(0, inputTokens - cacheReadTokens),
+        inputTokens: Math.max(
+          0,
+          inputTokens - cacheReadTokens - cacheWriteTokens,
+        ),
         outputTokens: numberField(usage, 'output_tokens'),
       })
     }
   }
 
-  if (event.type === 'turn.failed' || event.type === 'error') {
+  if (event.type === 'turn.failed') {
     emitRunError(event, 'Codex reported a failed turn')
     return { ...nextState, resultIsError: true, sessionId }
+  }
+  if (event.type === 'error') {
+    // Bare error events can be transient (stream reconnects, e.g.
+    // "Reconnecting... 1/5") — codex retries and can still exit 0. Surface
+    // them on stderr; real failures arrive as turn.failed or a non-zero
+    // exit, both of which already fail the run.
+    process.stderr.write(
+      `codex: ${eventMessage(event) ?? JSON.stringify(event)}\n`,
+    )
+    return { ...nextState, sessionId }
   }
 
   return { ...nextState, sessionId }
@@ -784,6 +845,13 @@ function parseTimeoutSeconds(value: string | undefined) {
   if (!Number.isInteger(seconds) || seconds <= 0) {
     throw new Error(
       `--timeout must be a positive integer number of seconds (got "${value}")`,
+    )
+  }
+  // setTimeout saturates above 2^31-1 ms (Node and Bun clamp to 1 ms), which
+  // would kill the harness instantly instead of after the requested wait.
+  if (seconds > 2_147_483) {
+    throw new Error(
+      `--timeout too large (max 2147483s ≈ 24.8 days, got "${value}")`,
     )
   }
   return seconds

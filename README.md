@@ -64,7 +64,8 @@ configuration, so OpenCode's own session-spend display stays populated.
 eh                                    # interactive: recents, or harness → provider → model
 eh claude ollama qwen3-coder          # launch, zero prompts
 eh --harness codex -p ollama -m qwen3-coder
-                                      # same, with flags (flags win over positionals)
+                                      # same, with flags (mixing flags and
+                                      # positionals for one slot errors)
 eh cheap-local                        # launch a saved profile
 eh claude -p ollama -s cheap-local    # save combo as a profile, then launch
 eh -r                                 # pick from this dir's sessions (all harnesses)
