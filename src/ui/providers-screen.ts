@@ -1,4 +1,4 @@
-import { isCancel, select } from '@clack/prompts'
+import { isCancel } from '@clack/prompts'
 
 import type {
   Config,
@@ -17,6 +17,7 @@ import {
   withDefaultSearchProvider,
 } from '../config.js'
 import { deleteApiKey, resolveApiKey, storeApiKey } from '../keys.js'
+import { letterSelect } from './letter-select.js'
 import { bail, keyStoredText, log, note } from './output.js'
 import { askApiKeyOptional, confirmSearchProviderDefault } from './prompts.js'
 
@@ -105,7 +106,7 @@ export async function providersScreen(config: Config) {
     const sortedSearchRows = [nativeRow, ...searchRows].sort(
       (a, b) => ROW_ORDER[a.state] - ROW_ORDER[b.state],
     )
-    const value = await select({
+    const value = await letterSelect({
       message: 'providers',
       options: [
         {
@@ -171,7 +172,7 @@ async function modelProviderActions(provider: ResolvedProvider) {
   }
   options.push({ label: '← back', value: BACK })
 
-  const action = await select({ message: provider.name, options })
+  const action = await letterSelect({ message: provider.name, options })
   if (isCancel(action)) bail()
   if (action === BACK) return
   if (action === 'set') {
@@ -202,7 +203,7 @@ async function nativeSearchProviderActions(config: Config) {
     ...(!isDefault ? [{ label: 'make default', value: 'default' }] : []),
     { label: '← back', value: BACK },
   ]
-  const action = await select({ message: 'native', options })
+  const action = await letterSelect({ message: 'native', options })
   if (isCancel(action)) bail()
   if (action === BACK) return config
   return setDefaultSearchProvider(config, 'native')
@@ -234,7 +235,7 @@ async function searchProviderActions(
   }
   options.push({ label: '← back', value: BACK })
 
-  const action = await select({ message: provider.name, options })
+  const action = await letterSelect({ message: provider.name, options })
   if (isCancel(action)) bail()
   if (action === BACK) return config
   if (action === 'default') {

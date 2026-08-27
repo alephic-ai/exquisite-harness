@@ -11,6 +11,9 @@ importers:
 
   .:
     dependencies:
+      '@clack/core':
+        specifier: 1.4.3
+        version: 1.4.3
       '@clack/prompts':
         specifier: 1.7.0
         version: 1.7.0

@@ -1,4 +1,4 @@
-import { isCancel, select } from '@clack/prompts'
+import { isCancel } from '@clack/prompts'
 
 import type { Config, RecentEntry } from '../config.js'
 import type { Selection } from '../types.js'
@@ -10,6 +10,7 @@ import {
   searchProviderLabel,
 } from '../config.js'
 import { timeAgo } from '../time-ago.js'
+import { letterSelect } from './letter-select.js'
 import { bail } from './output.js'
 
 export type HomeChoice =
@@ -26,7 +27,7 @@ const DOCTOR = '__doctor__'
 
 export async function home(config: Config) {
   const recents = config.recent.slice(0, 5)
-  const value = await select({
+  const value = await letterSelect({
     message: 'eh',
     options: [
       ...recents.map((r, i) => ({
