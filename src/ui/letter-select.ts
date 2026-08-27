@@ -179,7 +179,7 @@ function row(option: LetterSelectOption<string> | undefined, state: RowState) {
     case 'inactive':
       return `${styleText('dim', S_RADIO_INACTIVE)} ${styleLines(label, (line) => styleText('dim', line))}${hint}`
     case 'selected':
-      return styleText('dim', label)
+      return styleLines(label, (line) => styleText('dim', line))
   }
 }
 

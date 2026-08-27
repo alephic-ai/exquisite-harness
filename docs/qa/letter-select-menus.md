@@ -15,32 +15,105 @@ the new `letter-select.ts` module itself.
 ## Prerequisites
 
 - `pnpm install` done; `pnpm dev` runs `tsx src/main.ts`.
-- A throwaway XDG config so the first-run wizard doesn't fire:
-  `XDG_CONFIG_HOME=/tmp/qa-letter-select/xdg` with
-  `/tmp/qa-letter-select/xdg/eh/config.json` containing an `ollama` provider
-  (see the runner script in the run record; the exact body doesn't matter as
-  long as `configExists()` is true).
+- A throwaway XDG config so the first-run wizard doesn't fire. The home-menu
+  letter mapping depends on the recents count — use an **empty recents list** so
+  the rows are fixed: a=new session, b=providers, c=defaults, d=doctor. Create
+  `config.json` under `$XDG_CONFIG_HOME/eh/` with an `ollama` provider and no
+  recents:
+
+  ```json
+  {
+    "version": 1,
+    "providers": {
+      "ollama": { "type": "ollama", "baseURL": "http://localhost:11434" }
+    }
+  }
+  ```
+
 - PTY harness: `script(1)` with a pipe feeding delayed keystrokes
   (`(sleep 2; printf 'b') | script -qec "…" /dev/null`), or Python's `pty`
   module. Keystrokes are sent after the prompt has rendered (~2s).
 - A fake harness on PATH is NOT required — steps escape out of the flow before
-  any launch.
+  any launch, except D.4 which stays at the launch confirm.
 
 ## A. Static gates
 
-1. Run `pnpm lint`. → exits 0 (eslint + prettier + tsc all clean).
+1. Run `pnpm lint:ci`. → exits 0 (eslint + prettier --check + tsc all clean —
+   note `pnpm lint` auto-fixes formatting and can mask a lint:ci failure).
 2. Run `pnpm test`. → all tests pass, including the four
    `src/ui/letter-select.test.ts` cases.
 3. Run the compile build
    `bun build ./src/main.ts --compile --outfile /tmp/eh-letter-qa --target=bun --define IS_BUNDLE=true`.
-   → exits 0 with the same module count as `origin/main` (the new direct
-   `@clack/core` dep is already in the bundle transitively).
+   → exits 0 with exactly one more module than `origin/main` (the new
+   `src/ui/letter-select.ts` itself; the new direct `@clack/core` dep is already
+   in the bundle transitively and adds zero modules).
 
 ## B. Unit-level letter behavior (module driver)
 
-A small tsx driver invoking `letterSelect` directly (see run record for the
-source). Each step: send the listed keys after the prompt renders, then grep the
-PTY transcript for the `PICKED=` marker the driver prints.
+Save this driver as a scratch file (outside the repo) and run it with
+`pnpm exec tsx <driver> <mode>` from the repo root under the PTY harness:
+
+```ts
+import { letterSelect } from '<repo>/src/ui/letter-select.js'
+
+const mode = process.argv[2] ?? 'letter'
+const OPTIONS: Record<
+  string,
+  { disabled?: boolean; label: string; value: string }[]
+> = {
+  letter: [
+    { label: 'claude', value: 'claude' },
+    { label: 'codex', value: 'codex' },
+    { label: 'grok', value: 'grok' },
+  ],
+  arrows: [
+    { label: 'claude', value: 'claude' },
+    { label: 'codex', value: 'codex' },
+    { label: 'grok', value: 'grok' },
+  ],
+  long: [
+    { label: 'm1', value: 'v1' },
+    { label: 'm2', value: 'v2' },
+    { label: 'm3', value: 'v3' },
+    { label: 'm4', value: 'v4' },
+    { label: 'm5', value: 'v5' },
+    { label: 'm6', value: 'v6' },
+    { label: 'm7', value: 'v7' },
+    { label: 'm8', value: 'v8' },
+  ],
+  disabled: [
+    { disabled: true, label: 'Model providers', value: 'h1' },
+    { label: 'ollama', value: 'ollama' },
+    { disabled: true, label: 'Search providers', value: 'h2' },
+    { label: 'firecrawl', value: 'firecrawl' },
+  ],
+  cancel: [
+    { label: 'claude', value: 'claude' },
+    { label: 'codex', value: 'codex' },
+  ],
+  case: [
+    { label: 'claude', value: 'claude' },
+    { label: 'codex', value: 'codex' },
+    { label: 'grok', value: 'grok' },
+  ],
+  render: [
+    { label: 'claude', value: 'claude' },
+    { label: 'codex', value: 'codex' },
+    { label: 'grok', value: 'grok' },
+  ],
+}
+async function main() {
+  const v = await letterSelect({ message: 'harness', options: OPTIONS[mode] })
+  console.log('PICKED=' + (typeof v === 'symbol' ? 'CANCEL' : v))
+}
+main().catch((e) => {
+  console.log('ERROR=' + (e as Error).message)
+  process.exit(1)
+})
+```
+
+Each step: send the listed keys after the prompt renders, then grep the PTY
+transcript for the `PICKED=` marker the driver prints.
 
 1. Three options, send `b`. → `PICKED=codex` — a single letter submits the
    second row without any arrow keys.
@@ -61,8 +134,8 @@ PTY transcript for the `PICKED=` marker the driver prints.
 
 ## C. Real flow — pickers in the launch path
 
-Run under the throwaway XDG config. Each step: start `pnpm dev`, send the listed
-keys with ~2s delays, grep the transcript for the named markers.
+Run under the throwaway XDG config (empty recents). Each step: start `pnpm dev`,
+send the listed keys with ~2s delays, grep the transcript for the named markers.
 
 1. Home menu (`eh` bare). Send `a`. → the harness prompt appears in the
    transcript; the home menu rendered letter prefixes (`a) new session →`).
@@ -70,29 +143,32 @@ keys with ~2s delays, grep the transcript for the named markers.
    `c) grok` and then the provider prompt appears.
 3. Provider prompt. Send Escape. → the transcript ends with `bye` (bail); the
    process exits 0 without launching anything.
-4. Home menu again. Send ↓ then Enter. → the harness prompt appears — arrow
-   selection still works in the real flow, not just the unit driver.
-5. Home menu. Send `d`. → the defaults screen appears (its own lettered menu
+4. Home menu again. Send ↓ then Enter. → the providers screen appears (row 1
+   after row 0) — arrow selection still works in the real flow, not just the
+   unit driver.
+5. Home menu. Send `c`. → the defaults screen appears (its own lettered menu
    renders).
 6. Defaults screen. Send `a`. → the approvals prompt appears (lettered).
-7. Defaults screen approvals. Send Escape. → exits cleanly (`bye`) — Esc
-   bails from these screens by design; the defaults menu's `← back` row is
-   reachable with its letter (`b`) whenever not cancelling.
+7. Defaults screen approvals. Send Escape. → exits cleanly (`bye`) — Esc bails
+   from these screens by design; the defaults menu's `← back` row is reachable
+   with its letter (`b`) whenever not cancelling.
 
 ## D. Real flow — screens and wizard
 
 1. Home menu. Send `b`. → the providers screen appears. With the minimal test
    config the list has two disabled heading rows plus rows for built-in
    providers; headings render without letter prefixes, selectable rows with.
-2. Providers screen. Send Escape. → back at the home menu.
+2. Providers screen. Send Escape. → the transcript ends with `bye` — Esc exits
+   the app from these screens (same bail semantics as C.3/C.7); the `← back` row
+   (arrows + Enter) is the way back to the home menu.
 3. `eh provider add`. Answer the provider-name text prompt with `qatest`, then
    at the type select send `b`. → the type prompt's submitted frame shows
    `b) openai-chat` and the base-URL text prompt appears; Escape out of it
    terminates cleanly.
 4. Effort picker (needs ollama up). Run `pnpm dev claude ollama`, type
    `qwen3-coder` into the model autocomplete and Enter, then send `a` at the
-   effort prompt. → the effort prompt renders letter prefixes (`a) auto`);
-   the letter selects that effort level and proceeds (claude also shows the
+   effort prompt. → the effort prompt renders letter prefixes (`a) auto`); the
+   letter selects that effort level and proceeds (claude also shows the
    search-provider picker; Escape at the launch confirm ends the run).
    Fully-specified positionals (`eh claude ollama <model>`) skip every picker
    and launch straight away — don't use them for this step.
@@ -112,4 +188,4 @@ keys with ~2s delays, grep the transcript for the named markers.
 - `pnpm test` — includes `src/ui/letter-select.test.ts`: sequential letter
   assignment, disabled-row skipping, the five-row cap, and the guardrail that
   assigned letters never collide with clack's global alias keys (j/k/h/l/y/n).
-- `pnpm lint` — eslint + prettier + tsc.
+- `pnpm lint:ci` — eslint + prettier --check + tsc.
