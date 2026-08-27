@@ -174,14 +174,47 @@ send the listed keys with ~2s delays, grep the transcript for the named markers.
    Fully-specified positionals (`eh claude ollama <model>`) skip every picker
    and launch straight away — don't use them for this step.
 
+## E. Real flow — letters driving side-effecting paths
+
+These steps need a **fake harness** (`claude` / `grok` shell scripts that print
+their env and args, exit 0) first on PATH, per the eh-cli runbook's F.1
+convention, plus a recents-seeded config (two entries: a claude/ollama and a
+grok/ollama combo).
+
+1. Launch confirm `go` by letter: `eh claude ollama`, pick the model, `a` at the
+   effort prompt, `a` at the search picker, then `a` at the launch confirm. →
+   the fake harness runs (its args/env banner prints) and eh exits with
+   `back in eh`.
+2. Launch confirm `save…` by letter: same chain but `b` at the confirm, type a
+   profile name + Enter. → the profile lands in `config.json` and the launch
+   still proceeds through the fake harness.
+3. Providers-screen action menu: home → providers screen → pick a key-missing
+   provider row (e.g. OpenRouter) by letter. → its action menu renders lettered
+   (`a) set key…`, `b) ← back`); `b` returns to the providers list, and `a`
+   opens the key prompt (Esc returns to the list). Key-less providers (ollama)
+   show no action menu — existing behavior, not a letter regression.
+4. Blocked-provider re-loop: with a custom `openai-chat` provider in the config,
+   `eh claude` → the provider picker shows it with a `needs router` hint (sorted
+   last). Send its letter. → the warn (`needs the phase-2 router`) prints and
+   the picker re-renders lettered; Escape exits cleanly. A key-missing row's
+   letter likewise flows warn → key prompt → re-loop.
+5. Back-row letter: home → defaults screen → `b` (the `← back` row's letter). →
+   the home menu renders again.
+6. Recents lettered on a long home menu: with 2 recents the home menu has 6
+   selectable rows — the recents and three static rows get a–e, `doctor` gets
+   none, footer still `a–e or ↑/↓`. Send a recent's letter, complete any
+   follow-up pickers by letter, `a` at the launch confirm. → the fake harness
+   for that recent's harness runs and eh exits cleanly.
+
 ## Known limitations
 
-- The launch-confirm prompt (`go/save/back`) is covered indirectly: it uses the
-  same `letterSelect` call path as every other picker, but no step drives it to
-  a real launch (that would spawn a real harness). Its letter behavior is
-  identical to B.1–B.5 by construction.
+- The launch-confirm prompt (`go/save/back`) is covered directly by E.1/E.2
+  (real spawns through a fake harness, driven by letters).
 - The search-provider picker requires a configured search provider to have more
-  than the native row; it's exercised only through the same shared code path.
+  than the native row; it's exercised only through the same shared code path
+  (the `native` row's letter is covered in D.4).
+- Real (non-fake) harness spawns are out of scope here — the eh-cli runbook's
+  launch section owns them.
 - Video recording not requested; PTY transcripts are the evidence.
 
 ## Automated coverage
