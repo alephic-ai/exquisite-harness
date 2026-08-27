@@ -42,6 +42,9 @@ export async function pickEffort(efforts: readonly ModelEffortLevel[]) {
           : level === 'none'
             ? 'disable reasoning'
             : undefined,
+      // m is the only useful mnemonic free of the auto letters (a–e): h and l
+      // are clack's cursor aliases, so "high"/"low" can't take theirs.
+      hotkey: level === 'max' ? 'm' : undefined,
       label: level,
       value: level,
     })),

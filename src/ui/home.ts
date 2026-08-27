@@ -35,22 +35,35 @@ export async function home(config: Config) {
         label: recentLabel(config, r),
         value: `recent:${String(i)}`,
       })),
+      // Divider row between the recents and the fixed actions (only when
+      // there are recents — a leading one would be weird).
+      ...(recents.length > 0 ? [{ disabled: true, value: '__spacer__' }] : []),
       {
         hint: 'pick harness → provider → model',
+        hotkey: 'n',
         label: 'new session →',
         value: NEW,
       },
       {
         hint: 'model + search providers',
+        hotkey: 'p',
         label: 'providers',
         value: PROVIDERS,
       },
       {
         hint: 'approval behavior',
+        // f, not d: d would eat a recents letter (a–e auto-assign around
+        // claimed letters, and the 5th recent would get none).
+        hotkey: 'f',
         label: 'defaults',
         value: DEFAULTS,
       },
-      { hint: 'check harnesses & providers', label: 'doctor', value: DOCTOR },
+      {
+        hint: 'check harnesses & providers',
+        hotkey: 'o',
+        label: 'doctor',
+        value: DOCTOR,
+      },
     ],
   })
   if (isCancel(value)) bail()

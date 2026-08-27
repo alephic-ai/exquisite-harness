@@ -170,12 +170,13 @@ eh update                           # self-update to the latest GitHub release
 ```
 
 Picker flow (via `@clack/prompts`, skipped per already-specified args; the short
-menus also answer to letter hotkeys — press `a`–`e` to pick a row directly,
-↑/↓ + enter as before):
+menus also answer to letter hotkeys — press a row's bracketed letter (`[a]`,
+`[n]`, …) to pick it directly, ↑/↓ + enter as before):
 
-1. **Home** — recent combos (Enter relaunches last), new session, providers,
-   defaults, or doctor. Home → defaults → approvals sets a global launch-time
-   choice between each harness's platform behavior and native auto mode.
+1. **Home** — recent combos (`a`–`e`; Enter relaunches last), new session (`n`),
+   providers (`p`), defaults (`f`), or doctor (`o`). Home → defaults → approvals
+   sets a global launch-time choice between each harness's platform behavior and
+   native auto mode.
 2. **Harness** — installed status in the hint.
 3. **Provider** — filtered to protocol-compatible; incompatible rows shown with
    a `needs router` hint or the harness's own providerCompat reason (pi:
@@ -543,7 +544,7 @@ src/time-ago.ts   relative time for recents
 src/types.ts      shared types
 src/ui/defaults-screen.ts  home → defaults: global launch behavior
 src/ui/home.ts    home screen
-src/ui/letter-select.ts  select with a–e letter hotkeys on the first rows (src/ui/prompts.ts and screens)
+src/ui/letter-select.ts  select with letter hotkeys — auto a–e or per-row mnemonic (src/ui/prompts.ts and screens)
 src/ui/output.ts  single re-export site for clack output helpers (+ bail, keyStoredText)
 src/ui/prompts.ts pickers + confirm
 src/ui/sessions.ts  resume session picker (autocomplete)
