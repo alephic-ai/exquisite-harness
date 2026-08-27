@@ -1,6 +1,6 @@
 {
   "name": "exquisite-harness",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "private": true,
   "description": "Choose a harness, choose a provider, go.",
   "type": "module",
@@ -21,6 +21,7 @@
     "shell-quote": "^1.9.0"
   },
   "dependencies": {
+    "@clack/core": "1.4.3",
     "@clack/prompts": "1.7.0",
     "@commander-js/extra-typings": "15.0.0",
     "@mendable/firecrawl-js": "4.32.0",

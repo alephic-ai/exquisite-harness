@@ -169,7 +169,9 @@ eh setup                            # re-run first-run wizard
 eh update                           # self-update to the latest GitHub release
 ```
 
-Picker flow (via `@clack/prompts`, skipped per already-specified args):
+Picker flow (via `@clack/prompts`, skipped per already-specified args; the short
+menus also answer to letter hotkeys — press `a`–`e` to pick a row directly,
+↑/↓ + enter as before):
 
 1. **Home** — recent combos (Enter relaunches last), new session, providers,
    defaults, or doctor. Home → defaults → approvals sets a global launch-time
@@ -498,11 +500,13 @@ resume args (harness picker / most recent), which is the scripting escape hatch.
 
 ## Stack
 
-TypeScript (strict, tools/main shared configs), `@clack/prompts` (UI),
-`commander` (args), `zod` (config + API response validation). Dev via `tsx`;
-release build via `bun build --compile` → single `dist/eh` binary. All clack
-imports are isolated in `src/ui/`; flag-driven paths never touch that module,
-which keeps non-TTY use clean and a future Ink/miller-column UI swappable.
+TypeScript (strict, tools/main shared configs), `@clack/prompts` + `@clack/core`
+(UI; core is the prompt-class layer prompts builds on, pinned at the same
+version prompts requires), `commander` (args), `zod` (config + API response
+validation). Dev via `tsx`; release build via `bun build --compile` → single
+`dist/eh` binary. All clack imports are isolated in `src/ui/`; flag-driven paths
+never touch that module, which keeps non-TTY use clean and a future
+Ink/miller-column UI swappable.
 
 ## File map
 
@@ -539,6 +543,7 @@ src/time-ago.ts   relative time for recents
 src/types.ts      shared types
 src/ui/defaults-screen.ts  home → defaults: global launch behavior
 src/ui/home.ts    home screen
+src/ui/letter-select.ts  select with a–e letter hotkeys on the first rows (src/ui/prompts.ts and screens)
 src/ui/output.ts  single re-export site for clack output helpers (+ bail, keyStoredText)
 src/ui/prompts.ts pickers + confirm
 src/ui/sessions.ts  resume session picker (autocomplete)

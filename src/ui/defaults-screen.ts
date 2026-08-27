@@ -1,10 +1,11 @@
-import { isCancel, select } from '@clack/prompts'
+import { isCancel } from '@clack/prompts'
 
 import type { Config } from '../config.js'
 import type { ApprovalMode } from '../types.js'
 
 import { approvalModeLabel } from '../approval-mode.js'
 import { saveConfig } from '../config.js'
+import { letterSelect } from './letter-select.js'
 import { bail, log } from './output.js'
 
 const APPROVALS = '__approvals__'
@@ -13,7 +14,7 @@ const BACK = '__back__'
 export async function defaultsScreen(config: Config) {
   let currentConfig = config
   for (;;) {
-    const value = await select({
+    const value = await letterSelect({
       message: 'defaults',
       options: [
         {
@@ -27,7 +28,7 @@ export async function defaultsScreen(config: Config) {
     if (isCancel(value)) bail()
     if (value === BACK) return currentConfig
 
-    const approvalMode = await select<ApprovalMode | typeof BACK>({
+    const approvalMode = await letterSelect<ApprovalMode | typeof BACK>({
       message: 'approvals',
       options: [
         {

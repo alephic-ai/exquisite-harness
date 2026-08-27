@@ -1,11 +1,4 @@
-import {
-  autocomplete,
-  confirm,
-  isCancel,
-  password,
-  select,
-  text,
-} from '@clack/prompts'
+import { autocomplete, confirm, isCancel, password, text } from '@clack/prompts'
 import { ZodError } from 'zod'
 
 import type { ResolvedProvider, ResolvedSearchProvider } from '../config.js'
@@ -32,6 +25,7 @@ import {
   listModelsCached,
 } from '../providers.js'
 import { findBin } from '../which.js'
+import { letterSelect } from './letter-select.js'
 import { bail, keyStoredText, log, note, spinner } from './output.js'
 
 type ProviderRowState = 'incompatible' | 'key-missing' | 'key-set' | 'no-key'
@@ -39,7 +33,7 @@ type ProviderRowState = 'incompatible' | 'key-missing' | 'key-set' | 'no-key'
 // Effort defaults to `auto` (model default); anything else is an override.
 export async function pickEffort(efforts: readonly ModelEffortLevel[]) {
   if (efforts.length === 0) return 'auto' as const
-  const value = await select({
+  const value = await letterSelect({
     message: 'effort',
     options: (['auto', ...efforts] as const).map((level) => ({
       hint:
@@ -57,7 +51,7 @@ export async function pickEffort(efforts: readonly ModelEffortLevel[]) {
 }
 
 export async function pickHarness() {
-  const value = await select({
+  const value = await letterSelect({
     message: 'harness',
     options: Object.entries(HARNESSES).map(([name, def]) => ({
       hint: findBin(def.bin)
@@ -121,7 +115,7 @@ export async function pickProvider(
       }),
     )
     rows.sort((a, b) => ROW_ORDER[a.state] - ROW_ORDER[b.state])
-    const value = await select({
+    const value = await letterSelect({
       message: 'provider',
       options: rows.map((r) => r.option),
     })
@@ -179,7 +173,7 @@ export async function pickSearchProvider(
         }
       }),
     )
-    const value = await select({
+    const value = await letterSelect({
       initialValue: pickerInitialValue(providers, defaultProvider),
       message: 'web search',
       options: [
@@ -305,7 +299,7 @@ export async function askProfileName() {
 
 export async function confirmLaunch(summary: string) {
   note(summary, 'launch plan')
-  const value = await select<'back' | 'go' | 'save'>({
+  const value = await letterSelect<'back' | 'go' | 'save'>({
     message: 'launch?',
     options: [
       { label: 'go', value: 'go' },

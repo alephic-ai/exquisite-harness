@@ -1,4 +1,4 @@
-import { confirm, isCancel, select, text } from '@clack/prompts'
+import { confirm, isCancel, text } from '@clack/prompts'
 
 import type { Config } from '../config.js'
 import type { ProviderType } from '../types.js'
@@ -12,6 +12,7 @@ import { HARNESSES } from '../harnesses.js'
 import { storeApiKey } from '../keys.js'
 import { checkProvider } from '../providers.js'
 import { findBin } from '../which.js'
+import { letterSelect } from './letter-select.js'
 import { bail, keyStoredText, log, note } from './output.js'
 import { askApiKey } from './prompts.js'
 
@@ -91,7 +92,7 @@ export async function addProvider(config: Config) {
   })
   if (isCancel(name)) bail()
 
-  const type = await select<ProviderType>({
+  const type = await letterSelect<ProviderType>({
     message: 'type',
     options: [
       {
