@@ -1,6 +1,8 @@
-// Select with letter hotkeys: the first few selectable rows each get a letter
-// (a–e) and pressing it picks that row directly — no arrow round-trip. Up/down
-// + enter keep working, so this is a strict upgrade over clack's `select`.
+// Select with letter hotkeys: rows show a bracketed letter (`[a]`) and
+// pressing it picks that row directly — no arrow round-trip. Rows can declare
+// their own mnemonic letter (`hotkey: 'n'`), the rest auto-assign from a.
+// Up/down + enter keep working, so this is a strict upgrade over clack's
+// `select`.
 //
 // Why not @clack/prompts' own pieces: `select` has no per-option keys, and
 // `selectKey` (the API built for this) drops arrow navigation entirely. So we
@@ -23,17 +25,24 @@ import {
 } from '@clack/prompts'
 import { styleText } from 'node:util'
 
-// Keys clack binds globally (j/k/h/l cursor aliases, y/n confirm events) — a
-// hotkey letter must never collide with one, or a keypress does two things.
-export const CLACK_ALIAS_KEYS = new Set(['h', 'j', 'k', 'l', 'n', 'y'])
+// Keys a hotkey must never take: j/k/h/l are clack's vim cursor aliases (the
+// press would also move the cursor) and y is clack's confirm-yes key. n also
+// emits clack's confirm event, but SelectPrompt has no confirm listener, so n
+// is safe here — and worth taking for "new".
+export const CLACK_RESERVED_KEYS = new Set(['h', 'j', 'k', 'l', 'y'])
 
-// Rows that get a letter. a–e deliberately stays clear of clack's alias keys
-// — raise this cap and that stops holding (see letter-select.test.ts).
+// Rows that get an auto-assigned letter. a–e deliberately stays clear of
+// clack's reserved keys — raise this cap and that stops holding (see
+// letter-select.test.ts). Explicit per-row hotkeys are validated against
+// CLACK_RESERVED_KEYS instead and don't count against this cap.
 export const HOTKEY_MAX_ROWS = 5
 
 export interface LetterSelectOption<Value extends string> {
   disabled?: boolean
   hint?: string
+  // Fixed letter for this row (e.g. 'n' for "new") instead of an
+  // auto-assigned one. Validated in hotkeyLetters.
+  hotkey?: string
   label?: string
   value: Value
 }
@@ -44,20 +53,77 @@ export interface LetterSelectOptions<Value extends string> {
   options: LetterSelectOption<Value>[]
 }
 
-// One letter per selectable row, in order (a, b, c, …). Disabled rows and
-// rows past HOTKEY_MAX_ROWS get undefined.
-export function hotkeyLetters(options: readonly { disabled?: boolean }[]) {
-  const letters: (string | undefined)[] = []
-  let assigned = 0
-  for (const option of options) {
-    if (option.disabled || assigned >= HOTKEY_MAX_ROWS) {
-      letters.push(undefined)
+// One letter per selectable row. Rows with an explicit `hotkey` claim that
+// letter first (reserved keys, duplicates, and non-letters are programmer
+// errors and throw); the rest auto-assign from `a`, skipping claimed letters.
+// Disabled rows and auto rows past HOTKEY_MAX_ROWS get undefined.
+export function hotkeyLetters(
+  options: readonly { disabled?: boolean; hotkey?: string }[],
+) {
+  const letters: (string | undefined)[] = options.map(() => undefined)
+  const taken = new Set<string>()
+  options.forEach((option, index) => {
+    if (option.hotkey === undefined) return
+    const letter = option.hotkey.toLowerCase()
+    if (!/^[a-z]$/.test(letter)) {
+      throw new Error(
+        `letterSelect: hotkey must be a single a-z letter, got ${JSON.stringify(option.hotkey)}`,
+      )
+    }
+    if (CLACK_RESERVED_KEYS.has(letter)) {
+      throw new Error(
+        `letterSelect: hotkey "${letter}" collides with a key clack binds globally`,
+      )
+    }
+    if (taken.has(letter)) {
+      throw new Error(`letterSelect: duplicate hotkey "${letter}"`)
+    }
+    taken.add(letter)
+    if (!option.disabled) letters[index] = letter
+  })
+  // candidate can only advance to HOTKEY_MAX_ROWS, so auto letters never pass
+  // 'e' — the skipping below doesn't dilute that guarantee.
+  let candidate = 0
+  options.forEach((option, index) => {
+    if (option.disabled || letters[index] !== undefined) return
+    if (candidate >= HOTKEY_MAX_ROWS) return
+    let letter = String.fromCharCode(97 + candidate)
+    while (taken.has(letter)) {
+      candidate += 1
+      if (candidate >= HOTKEY_MAX_ROWS) return
+      letter = String.fromCharCode(97 + candidate)
+    }
+    letters[index] = letter
+    taken.add(letter)
+    candidate += 1
+  })
+  return letters
+}
+
+// Condense letters (in row order) for the footer: contiguous runs become
+// ranges — [a, b, c, n, p] → "a–c, n, p".
+export function summarizeHotkeys(letters: string[]) {
+  const parts: string[] = []
+  let runStart: string | undefined
+  let previous: string | undefined
+  const flush = () => {
+    if (runStart === undefined || previous === undefined) return
+    parts.push(runStart === previous ? runStart : `${runStart}–${previous}`)
+  }
+  for (const letter of letters) {
+    if (
+      previous !== undefined &&
+      letter.charCodeAt(0) === previous.charCodeAt(0) + 1
+    ) {
+      previous = letter
       continue
     }
-    letters.push(String.fromCharCode(97 + assigned))
-    assigned += 1
+    flush()
+    runStart = letter
+    previous = letter
   }
-  return letters
+  flush()
+  return parts.join(', ')
 }
 
 // Drop-in for clack's select: every list answers to ↑/↓ + enter as before,
@@ -71,17 +137,15 @@ export async function letterSelect<Value extends string>(
     const letter = letters[index]
     if (!letter || option.disabled) return option
     byLetter.set(letter, option.value)
-    return { ...option, label: `${letter}) ${option.label ?? option.value}` }
+    return { ...option, label: `[${letter}] ${option.label ?? option.value}` }
   })
 
-  const first = 'a'
-  const last = String.fromCharCode(97 + byLetter.size - 1)
-  const hotkeyRange = first === last ? first : `${first}–${last}`
+  const assigned = letters.filter((letter) => letter !== undefined)
   const instructions =
-    byLetter.size === 0
+    assigned.length === 0
       ? SELECT_INSTRUCTIONS
       : [
-          `${styleText('dim', `${hotkeyRange} or ↑/↓`)} to select`,
+          `${styleText('dim', `${summarizeHotkeys(assigned)} or ↑/↓`)} to select`,
           `${styleText('dim', 'Enter:')} confirm`,
         ]
 
@@ -165,6 +229,12 @@ type RowState = 'active' | 'cancelled' | 'disabled' | 'inactive' | 'selected'
 
 function row(option: LetterSelectOption<string> | undefined, state: RowState) {
   if (option === undefined) return ''
+  // A disabled row with no label is a divider: no radio, no hotkey letter,
+  // and the cursor skips it like any disabled row. It renders as a dim rule
+  // separating the groups.
+  if (option.disabled && option.label === undefined) {
+    return styleText('gray', '─'.repeat(40))
+  }
   const label = option.label ?? option.value
   const hint = option.hint ? ` ${styleText('dim', `(${option.hint})`)}` : ''
   switch (state) {
