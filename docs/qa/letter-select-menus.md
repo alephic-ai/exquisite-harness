@@ -126,8 +126,9 @@ transcript for the `PICKED=` marker the driver prints.
    _selectable_ row.
 5. Two options, send Escape (`\033`). → `PICKED=CANCEL` — the prompt resolves to
    clack's cancel symbol, not a crash or a stale value.
-6. Three options, send uppercase `C`. → `PICKED=codex` — letter matching is
-   case-insensitive.
+6. Three options, send uppercase `C`. → `PICKED=grok` — letter matching is
+   case-insensitive; `c` is the third row's letter (letters follow row order,
+   not label initials).
 7. Render check (no key sent; kill after ~5s): the transcript shows rows as
    `a) <label>`, `b) <label>`, … and a footer line containing
    `a–c or ↑/↓ to select • Enter: confirm`.
