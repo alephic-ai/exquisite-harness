@@ -1,6 +1,7 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
 import { z } from 'zod'
 
+import { atomicWriteFileSync } from './atomic-write.js'
 import { cachePath, configDir } from './config.js'
 import { MODEL_EFFORT_LEVELS, type ModelInfo } from './types.js'
 
@@ -41,7 +42,7 @@ export function writeModels(provider: string, models: ModelInfo[]) {
     mkdirSync(configDir(), { recursive: true })
     const cache = readCache()
     cache.set(provider, { fetchedAt: Date.now(), models })
-    writeFileSync(
+    atomicWriteFileSync(
       cachePath(),
       `${JSON.stringify(Object.fromEntries(cache), null, 2)}\n`,
     )

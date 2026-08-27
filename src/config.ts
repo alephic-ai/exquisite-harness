@@ -1,10 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
 
 import type { ProviderType, SearchProviderType, Selection } from './types.js'
 
+import { atomicWriteFileSync } from './atomic-write.js'
 import {
   APPROVAL_MODES,
   EFFORT_LEVELS,
@@ -245,6 +246,7 @@ export function providerKeyAccounts(name: string) {
 // Commander subcommands shadow a same-named profile: `eh doctor` always runs
 // the subcommand, so a profile called "doctor" could never be launched.
 const RESERVED_PROFILE_NAMES = [
+  'ask',
   'doctor',
   'models',
   'profile',
@@ -253,6 +255,7 @@ const RESERVED_PROFILE_NAMES = [
   'run',
   'search',
   'setup',
+  'skill',
   'statusline',
   'update',
   'web-fetch-hook',
@@ -334,5 +337,5 @@ export function reservedProfileNameMessage(name: string) {
 
 export function saveConfig(config: Config) {
   mkdirSync(configDir(), { recursive: true })
-  writeFileSync(configPath(), `${JSON.stringify(config, null, 2)}\n`)
+  atomicWriteFileSync(configPath(), `${JSON.stringify(config, null, 2)}\n`)
 }

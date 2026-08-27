@@ -77,9 +77,11 @@ export async function runUpdate() {
     }
 
     // Resolve symlinks so the staged temp and the atomic rename land on the
-    // real binary's filesystem.
+    // real binary's filesystem. The staged name is unique per run — two
+    // concurrent `eh update`s sharing one name would truncate each other's
+    // bytes and install a corrupt binary.
     const destPath = await realpath(process.execPath)
-    const stagedPath = `${destPath}.staged`
+    const stagedPath = `${destPath}.${process.pid}.staged`
 
     const mb = (n: number) => (n / 1e6).toFixed(1)
     s.message(`downloading eh v${latest} …`)

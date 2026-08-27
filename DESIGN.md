@@ -105,7 +105,38 @@ spawned), `65` (spawn failure — binary missing/unspawnable), and `66` (semanti
 harness failure — `resultIsError` while the child exited `0`). Every other code
 is the raw child exit code passed through unchanged (including `128 + signal`),
 so a harness's own code can collide with the reserved block only in that
-passthrough case.
+passthrough case. `eh ask` is the single-agent delegation entry point for the
+same contract — identical stdin, options, and NDJSON output, with no UI,
+recents, statusline, or config mutation. The bundled delegation skill that
+teaches an agent to use it is exposed by `eh skill print` and
+`eh skill install --dir <dir>`.
+
+**Headless computed cost:** `eh run` does not trust the inner harness's
+self-reported cost as authoritative. It accumulates its own normalized usage
+across the run (a `cumulative: true` total from the harness wins outright;
+otherwise per-event deltas are summed, so a harness like grok that emits both is
+not double-counted) and, before `run.completed`, emits one final summary `usage`
+event carrying `costUsd` that it computes from that usage times the resolved
+model's gateway rates. Rates come from the model's per-endpoint pricing when
+`--gateway-provider` is pinned (honoring prompt/completion tiers as context
+brackets), else the model-aggregate rates. `costSource` records provenance:
+`gateway-rates`, `free` (zero-rate providers like ollama), or `unavailable` —
+and when unavailable no `costUsd` is emitted, never a fabricated `$0`. Cache
+read/write tokens bill at the endpoint's published cache rates; when an endpoint
+publishes none they bill at the regular input rate (a provider that gives no
+cache discount charges cache tokens as ordinary input). Any harness-reported
+cost is preserved separately as `harnessCostUsd`, never promoted to `costUsd`.
+Because the event shape changed, the NDJSON stream version `v` is now `2`.
+
+`run.completed` is by construction the final NDJSON line: it is emitted exactly
+once per run, after stdout EOF and child close, and every completion path
+returns immediately after emitting it, so no event can follow — orchestrators
+treat it as the end-of-run marker. `--result-file <path>` writes the run's final
+result text — the harness-native terminal result string where a harness defines
+one (only Claude's `result` event does today), otherwise every `assistant.text`
+value joined in stream order — and always creates the file, empty for no-result
+or error runs. The write completes before `run.completed` is emitted, so the
+file is ready once that line appears.
 
 **Phase 2 (later): local router.** An opt-in localhost proxy that receives
 Anthropic Messages / OpenAI requests and fulfills them via the Vercel AI SDK
@@ -148,11 +179,14 @@ eh setup                            # re-run first-run wizard
 eh update                           # self-update to the latest GitHub release
 ```
 
-Picker flow (via `@clack/prompts`, skipped per already-specified args):
+Picker flow (via `@clack/prompts`, skipped per already-specified args; the short
+menus also answer to letter hotkeys — press a row's bracketed letter (`[a]`,
+`[n]`, …) to pick it directly, ↑/↓ + enter as before):
 
-1. **Home** — recent combos (Enter relaunches last), new session, providers,
-   defaults, or doctor. Home → defaults → approvals sets a global launch-time
-   choice between each harness's platform behavior and native auto mode.
+1. **Home** — recent combos (`a`–`e`; Enter relaunches last), new session (`n`),
+   providers (`p`), defaults (`f`), or doctor (`o`). Home → defaults → approvals
+   sets a global launch-time choice between each harness's platform behavior and
+   native auto mode.
 2. **Harness** — installed status in the hint.
 3. **Provider** — filtered to protocol-compatible; incompatible rows shown with
    a `needs router` hint or the harness's own providerCompat reason (pi:
@@ -484,11 +518,13 @@ resume args (harness picker / most recent), which is the scripting escape hatch.
 
 ## Stack
 
-TypeScript (strict, tools/main shared configs), `@clack/prompts` (UI),
-`commander` (args), `zod` (config + API response validation). Dev via `tsx`;
-release build via `bun build --compile` → single `dist/eh` binary. All clack
-imports are isolated in `src/ui/`; flag-driven paths never touch that module,
-which keeps non-TTY use clean and a future Ink/miller-column UI swappable.
+TypeScript (strict, tools/main shared configs), `@clack/prompts` + `@clack/core`
+(UI; core is the prompt-class layer prompts builds on, pinned at the same
+version prompts requires), `commander` (args), `zod` (config + API response
+validation). Dev via `tsx`; release build via `bun build --compile` → single
+`dist/eh` binary. All clack imports are isolated in `src/ui/`; flag-driven paths
+never touch that module, which keeps non-TTY use clean and a future
+Ink/miller-column UI swappable.
 
 ## File map
 
@@ -496,11 +532,13 @@ which keeps non-TTY use clean and a future Ink/miller-column UI swappable.
 src/main.ts       entry: commander wiring
 src/flow.ts       positional/profile resolution → pickers → launch
 src/headless-run.ts  non-interactive harness execution + NDJSON normalization
+src/skill.ts       embedded delegation skill printing and installation
+skills/eh-delegate/SKILL.md  installable delegation instructions
 src/approval-mode.ts  approval labels + per-harness native argument mapping
 src/permission-posture.ts  read-only + approval resolution (one point, both axes)
 src/config.ts     schema, load/save, recents, profiles, XDG paths
 src/providers.ts  provider types: protocols, model listing, status checks
-src/pricing.ts    provider rates/ranges ($/1M) and fallback cost estimates
+src/pricing.ts    provider rates/ranges ($/1M), headless rate cards + computed cost
 src/gateway-costs.ts transparent Vercel stream proxy + exact session ledger
 src/gateway-routing.ts process-scoped request rewriter for Gateway provider pins / ZDR-only routing
 src/statusline.ts Claude statusline render + session settings writer
@@ -521,9 +559,11 @@ src/manage.ts     non-interactive commands: models, profiles, provider keys
 src/cache.ts      model-list cache
 src/which.ts      PATH binary lookup (PATHEXT-aware)
 src/time-ago.ts   relative time for recents
+src/atomic-write.ts  crash-safe file writes (staged temp + atomic rename)
 src/types.ts      shared types
 src/ui/defaults-screen.ts  home → defaults: global launch behavior
 src/ui/home.ts    home screen
+src/ui/letter-select.ts  select with letter hotkeys — auto a–e or per-row mnemonic (src/ui/prompts.ts and screens)
 src/ui/output.ts  single re-export site for clack output helpers (+ bail, keyStoredText)
 src/ui/prompts.ts pickers + confirm
 src/ui/sessions.ts  resume session picker (autocomplete)

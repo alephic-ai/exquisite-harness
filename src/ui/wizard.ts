@@ -1,4 +1,4 @@
-import { confirm, isCancel, select, text } from '@clack/prompts'
+import { confirm, isCancel, text } from '@clack/prompts'
 
 import type { Config } from '../config.js'
 import type { ProviderType } from '../types.js'
@@ -12,6 +12,7 @@ import { HARNESSES } from '../harnesses.js'
 import { storeApiKey } from '../keys.js'
 import { checkProvider } from '../providers.js'
 import { findBin } from '../which.js'
+import { letterSelect } from './letter-select.js'
 import { bail, keyStoredText, log, note } from './output.js'
 import { askApiKey } from './prompts.js'
 
@@ -91,7 +92,24 @@ export async function addProvider(config: Config) {
   })
   if (isCancel(name)) bail()
 
-  const type = await select<ProviderType>({
+  // A name collision either replaces a custom definition or shadows a
+  // built-in (config.ts folds config entries over BUILTIN_PROVIDERS) —
+  // confirm before writing either way.
+  if (getProvider(config, name)) {
+    const overwrite = await confirm({
+      initialValue: false,
+      message: Object.hasOwn(config.providers, name)
+        ? `provider "${name}" already exists — overwrite it?`
+        : `provider "${name}" is built in — override it?`,
+    })
+    if (isCancel(overwrite)) bail()
+    if (!overwrite) {
+      log.warn(`provider "${name}" left unchanged`)
+      return config
+    }
+  }
+
+  const type = await letterSelect<ProviderType>({
     message: 'type',
     options: [
       {

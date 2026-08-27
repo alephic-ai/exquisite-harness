@@ -1,11 +1,4 @@
-import {
-  autocomplete,
-  confirm,
-  isCancel,
-  password,
-  select,
-  text,
-} from '@clack/prompts'
+import { autocomplete, confirm, isCancel, password, text } from '@clack/prompts'
 import { ZodError } from 'zod'
 
 import type { ResolvedProvider, ResolvedSearchProvider } from '../config.js'
@@ -32,6 +25,7 @@ import {
   listModelsCached,
 } from '../providers.js'
 import { findBin } from '../which.js'
+import { letterSelect } from './letter-select.js'
 import { bail, keyStoredText, log, note, spinner } from './output.js'
 
 type ProviderRowState = 'incompatible' | 'key-missing' | 'key-set' | 'no-key'
@@ -39,7 +33,7 @@ type ProviderRowState = 'incompatible' | 'key-missing' | 'key-set' | 'no-key'
 // Effort defaults to `auto` (model default); anything else is an override.
 export async function pickEffort(efforts: readonly ModelEffortLevel[]) {
   if (efforts.length === 0) return 'auto' as const
-  const value = await select({
+  const value = await letterSelect({
     message: 'effort',
     options: (['auto', ...efforts] as const).map((level) => ({
       hint:
@@ -48,6 +42,9 @@ export async function pickEffort(efforts: readonly ModelEffortLevel[]) {
           : level === 'none'
             ? 'disable reasoning'
             : undefined,
+      // m is the only useful mnemonic free of the auto letters (a–e): h and l
+      // are clack's cursor aliases, so "high"/"low" can't take theirs.
+      hotkey: level === 'max' ? 'm' : undefined,
       label: level,
       value: level,
     })),
@@ -57,7 +54,7 @@ export async function pickEffort(efforts: readonly ModelEffortLevel[]) {
 }
 
 export async function pickHarness() {
-  const value = await select({
+  const value = await letterSelect({
     message: 'harness',
     options: Object.entries(HARNESSES).map(([name, def]) => ({
       hint: findBin(def.bin)
@@ -121,7 +118,7 @@ export async function pickProvider(
       }),
     )
     rows.sort((a, b) => ROW_ORDER[a.state] - ROW_ORDER[b.state])
-    const value = await select({
+    const value = await letterSelect({
       message: 'provider',
       options: rows.map((r) => r.option),
     })
@@ -179,7 +176,7 @@ export async function pickSearchProvider(
         }
       }),
     )
-    const value = await select({
+    const value = await letterSelect({
       initialValue: pickerInitialValue(providers, defaultProvider),
       message: 'web search',
       options: [
@@ -305,7 +302,7 @@ export async function askProfileName() {
 
 export async function confirmLaunch(summary: string) {
   note(summary, 'launch plan')
-  const value = await select<'back' | 'go' | 'save'>({
+  const value = await letterSelect<'back' | 'go' | 'save'>({
     message: 'launch?',
     options: [
       { label: 'go', value: 'go' },
@@ -344,47 +341,56 @@ export async function pickGatewayProvider(
   }
 
   const product = provider.type === 'openrouter' ? 'OpenRouter' : 'AI Gateway'
-  const value = await autocomplete({
-    maxItems: 12,
-    message: `${product} provider · ${model}`,
-    options: [
-      {
-        hint:
-          provider.type === 'openrouter'
-            ? 'OpenRouter routing and fallback'
-            : 'Vercel routing and fallback',
-        label: 'automatic (recommended)',
-        value: GATEWAY_AUTO,
-      },
-      {
-        hint: 'route only to zero-data-retention providers',
-        label: 'ZDR only',
-        value: GATEWAY_ZDR,
-      },
-      ...providers.map((info) => ({
-        hint: 'pin every request; no provider fallback',
-        label: gatewayProviderLabel(info),
-        value: info.name,
-      })),
-      { hint: 'type a provider slug', label: 'other…', value: MANUAL },
-    ],
-    placeholder: 'type to filter…',
-  })
-  if (isCancel(value)) bail()
-  if (value === GATEWAY_AUTO) return {}
-  if (value === GATEWAY_ZDR) return { zeroDataRetention: true }
-  if (value === MANUAL) {
-    const typed = await text({
-      message: `${product} provider slug`,
-      validate: (v) =>
-        v != null && /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(v)
-          ? undefined
-          : 'use the provider slug from the model page',
+  for (;;) {
+    const value = await autocomplete({
+      maxItems: 12,
+      message: `${product} provider · ${model}`,
+      options: [
+        {
+          hint:
+            provider.type === 'openrouter'
+              ? 'OpenRouter routing and fallback'
+              : 'Vercel routing and fallback',
+          label: 'automatic (recommended)',
+          value: GATEWAY_AUTO,
+        },
+        {
+          hint: 'route only to zero-data-retention providers',
+          label: 'ZDR only',
+          value: GATEWAY_ZDR,
+        },
+        ...providers.map((info) => ({
+          hint: 'pin every request; no provider fallback',
+          label: gatewayProviderLabel(info),
+          value: info.name,
+        })),
+        { hint: 'type a provider slug', label: 'other…', value: MANUAL },
+      ],
+      placeholder: 'type to filter…',
     })
-    if (isCancel(typed)) bail()
-    return { provider: typed }
+    if (isCancel(value)) bail()
+    // Enter on a zero-match filter submits undefined (clack has no guard);
+    // letting it through would silently select automatic routing, so
+    // re-prompt instead.
+    if (typeof value !== 'string') {
+      log.warn('no provider selected — clear the filter or pick one')
+      continue
+    }
+    if (value === GATEWAY_AUTO) return {}
+    if (value === GATEWAY_ZDR) return { zeroDataRetention: true }
+    if (value === MANUAL) {
+      const typed = await text({
+        message: `${product} provider slug`,
+        validate: (v) =>
+          v != null && /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(v)
+            ? undefined
+            : 'use the provider slug from the model page',
+      })
+      if (isCancel(typed)) bail()
+      return { provider: typed }
+    }
+    return { provider: value }
   }
-  return { provider: value }
 }
 
 export async function pickModel(provider: ResolvedProvider) {
@@ -418,62 +424,80 @@ export async function pickModel(provider: ResolvedProvider) {
   }
   // Manual-entry escape hatch — never offer it if a real model id collides.
   const hasManual = models.some((m) => m.id === MANUAL)
-  const value = await autocomplete({
-    maxItems: MODEL_PICKER_ROWS,
-    message: `model · ${provider.name}`,
-    // Dynamic options getter (re-run by clack on each keystroke): for the
-    // gateway, enrich the labels of the models currently shown with throughput
-    // as fast as it arrives, fetching it for exactly those models.
-    options(this: { cursor?: number; filteredOptions?: { value: string }[] }) {
-      if (isGateway) {
-        // filteredOptions is clack's whole filtered list, not the rendered
-        // window. The rendered window always contains the cursor and holds at
-        // most MODEL_PICKER_ROWS rows, so every visible row sits within
-        // MODEL_PICKER_ROWS - 1 of it — prefetch that span instead of fanning
-        // out /endpoints requests for rows never shown. .catch keeps a
-        // rejection here from becoming a fatal unhandled rejection mid-prompt.
-        const filtered = this.filteredOptions ?? []
-        const start = Math.max(0, (this.cursor ?? 0) - (MODEL_PICKER_ROWS - 1))
-        void prefetchVisibleThroughput(
-          provider,
-          filtered
-            .slice(start, start + 2 * MODEL_PICKER_ROWS - 1)
-            .map((r) => ({ id: r.value })),
-          throughputState,
-        ).catch(() => undefined)
-      }
-      const options: { hint?: string; label: string; value: string }[] =
-        models.map((m) => ({
-          hint: m.hint,
-          label: modelLabel(
-            throughputState.throughputs.has(m.id)
-              ? { ...m, throughputLabel: throughputState.throughputs.get(m.id) }
-              : m,
-          ),
-          value: m.id,
-        }))
-      if (!hasManual) {
-        options.push({
-          hint: 'type a model id',
-          label: 'other…',
-          value: MANUAL,
-        })
-      }
-      return options
-    },
-    placeholder: 'type to filter…',
-  })
-  if (isCancel(value)) bail()
-  warnThroughputFailure(throughputState)
-  if (value === MANUAL) {
-    const typed = await text({
-      message: 'model id',
-      validate: (v) => (v == null || v.length === 0 ? 'required' : undefined),
+  for (;;) {
+    const value = await autocomplete({
+      maxItems: MODEL_PICKER_ROWS,
+      message: `model · ${provider.name}`,
+      // Dynamic options getter (re-run by clack on each keystroke): for the
+      // gateway, enrich the labels of the models currently shown with throughput
+      // as fast as it arrives, fetching it for exactly those models.
+      options(this: {
+        cursor?: number
+        filteredOptions?: { value: string }[]
+      }) {
+        if (isGateway) {
+          // filteredOptions is clack's whole filtered list, not the rendered
+          // window. The rendered window always contains the cursor and holds at
+          // most MODEL_PICKER_ROWS rows, so every visible row sits within
+          // MODEL_PICKER_ROWS - 1 of it — prefetch that span instead of fanning
+          // out /endpoints requests for rows never shown. .catch keeps a
+          // rejection here from becoming a fatal unhandled rejection mid-prompt.
+          const filtered = this.filteredOptions ?? []
+          const start = Math.max(
+            0,
+            (this.cursor ?? 0) - (MODEL_PICKER_ROWS - 1),
+          )
+          void prefetchVisibleThroughput(
+            provider,
+            filtered
+              .slice(start, start + 2 * MODEL_PICKER_ROWS - 1)
+              .map((r) => ({ id: r.value })),
+            throughputState,
+          ).catch(() => undefined)
+        }
+        const options: { hint?: string; label: string; value: string }[] =
+          models.map((m) => ({
+            hint: m.hint,
+            label: modelLabel(
+              throughputState.throughputs.has(m.id)
+                ? {
+                    ...m,
+                    throughputLabel: throughputState.throughputs.get(m.id),
+                  }
+                : m,
+            ),
+            value: m.id,
+          }))
+        if (!hasManual) {
+          options.push({
+            hint: 'type a model id',
+            label: 'other…',
+            value: MANUAL,
+          })
+        }
+        return options
+      },
+      placeholder: 'type to filter…',
     })
-    if (isCancel(typed)) bail()
-    return typed
+    if (isCancel(value)) bail()
+    // Enter on a zero-match filter submits undefined (clack has no guard);
+    // letting it through surfaces later as a cryptic "incomplete
+    // selection" error, so re-prompt instead.
+    if (typeof value !== 'string') {
+      log.warn('no model selected — clear the filter or pick one')
+      continue
+    }
+    warnThroughputFailure(throughputState)
+    if (value === MANUAL) {
+      const typed = await text({
+        message: 'model id',
+        validate: (v) => (v == null || v.length === 0 ? 'required' : undefined),
+      })
+      if (isCancel(typed)) bail()
+      return typed
+    }
+    return value
   }
-  return value
 }
 
 function warnThroughputFailure(state: ThroughputState) {

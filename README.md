@@ -64,7 +64,8 @@ configuration, so OpenCode's own session-spend display stays populated.
 eh                                    # interactive: recents, or harness → provider → model
 eh claude ollama qwen3-coder          # launch, zero prompts
 eh --harness codex -p ollama -m qwen3-coder
-                                      # same, with flags (flags win over positionals)
+                                      # same, with flags (mixing flags and
+                                      # positionals for one slot errors)
 eh cheap-local                        # launch a saved profile
 eh claude -p ollama -s cheap-local    # save combo as a profile, then launch
 eh -r                                 # pick from this dir's sessions (all harnesses)
@@ -150,6 +151,20 @@ to launch through eh; this includes Grok's isolated home and Pi Gateway routes.
 
 ### Headless runs
 
+`eh ask` is a single-agent delegation wrapper around `eh run`:
+
+```bash
+printf 'review this parser for bugs' | eh ask codex ollama qwen3-coder
+eh skill print
+eh skill install --dir ~/.claude/skills/eh-delegate
+```
+
+It reads one prompt from stdin, emits the same versioned NDJSON contract, and
+never opens UI, updates recents, or mutates configuration. It supports the
+headless options below, including `--reasoning-effort`, `--native-args-json`,
+`--gateway-provider`, and `--resume-session`. Installation is idempotent and
+refuses to overwrite a differing file unless `--force` is supplied.
+
 `eh run` is the non-interactive execution contract for orchestrators. It reads
 one prompt from stdin, runs the selected harness in its native JSON streaming
 mode, and writes versioned NDJSON to stdout:
@@ -159,12 +174,27 @@ printf 'fix the parser' |
   eh run codex ollama qwen3-coder --reasoning-effort high
 ```
 
-Every output object carries `v: 1`. The normalized events are `run.started`,
+Every output object carries `v: 2`. The normalized events are `run.started`,
 `session.started`, `assistant.text`, `usage`, `run.error`, and `run.completed`.
 Native machine events are preserved as `harness.event`; non-JSON output is
 preserved as `harness.output`. Harness stderr remains stderr. A semantically
 failed native result makes both `run.completed.exitCode` and the `eh` process
 exit code non-zero, even when the child process exits zero.
+
+Per-event `usage` objects carry the harness's own cost estimate (when it reports
+one) as `harnessCostUsd`. Before `run.completed`, `eh` emits one final
+`cumulative: true` summary `usage` event that adds `costUsd` — the cost `eh`
+computes itself from its own accumulated normalized usage times the resolved
+model's gateway rates (per-endpoint and tiered when `--gateway-provider` is
+pinned) — and `costSource`: `gateway-rates` when computed, `free` for zero-rate
+providers such as ollama, or `unavailable` when no rates could be resolved (in
+which case `costUsd` is omitted rather than fabricated). Any `harnessCostUsd` is
+preserved on the summary too, never promoted to `costUsd`.
+
+`run.completed` is emitted exactly once and is always the last NDJSON line —
+every completion path (success, spawn failure, preflight/usage error, timeout)
+ends by emitting it, and nothing follows. Orchestrators can rely on it as the
+end-of-run signal.
 
 #### Exit codes
 
@@ -200,7 +230,12 @@ runs through Claude, Codex, Grok, opencode, or pi may also use
 loudly: on expiry `eh` emits a `run.error` naming the limit, sends `SIGTERM`,
 then escalates to `SIGKILL` after a 10s grace period; `run.completed` is still
 the final event and a timed-out child exits `143`. Omitting the flag keeps
-today's no-deadline behavior.
+today's no-deadline behavior. Pass `--result-file <path>` to capture the run's
+final result text: the harness-native terminal result string where the harness
+defines one (only Claude does today), otherwise every `assistant.text` value
+joined in stream order. The file is always created — empty when the run produced
+no result text, including error and preflight runs — and is written before
+`run.completed`, so a `run.completed` on stdout means the file is ready to read.
 
 Pass `--read-only` to engage each harness's strongest own file-write
 restriction: Claude and Grok `--permission-mode plan`, Codex
