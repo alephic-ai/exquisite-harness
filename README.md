@@ -28,7 +28,13 @@ don't.
 
 ## Install
 
-Install the latest self-contained binary with no runtime or GitHub account:
+With [Homebrew](https://brew.sh), on macOS or Linux:
+
+```bash
+brew install alephic-ai/tap/eh
+```
+
+Or install the latest self-contained binary with no runtime or GitHub account:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/alephic-ai/exquisite-harness/main/install.sh | bash
@@ -41,7 +47,9 @@ are also available from
 `eh doctor` after installation to check your harnesses, providers, and keys.
 
 No runtime needed — the binary is self-contained. Later, `eh update`
-self-updates to the latest public release.
+self-updates to the latest public release — except on a Homebrew install, where
+it points you at `brew upgrade eh` instead (brew owns that binary and would
+overwrite a self-replaced one).
 
 ![Claude Code launched via eh, with a powerline statusline showing Vercel AI Gateway, model, list rates, session cost, and context usage](docs/images/eh-statusline.jpg)
 

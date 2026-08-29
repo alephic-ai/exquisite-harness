@@ -38,6 +38,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      published: ${{ steps.rel.outputs.exists == 'false' }}
+      version: ${{ steps.ver.outputs.version }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -175,3 +178,91 @@ jobs:
             --title "eh v$version" \
             --notes "$notes" \
             "${binaries[@]}"
+
+  # Point `brew install alephic-ai/tap/eh` at the release that just shipped.
+  # Runs only when the release job actually published one — a no-op push must
+  # not rewrite the formula.
+  homebrew:
+    name: Update Homebrew tap
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      # The bot is a bypass actor on the org rulesets that gate every default
+      # branch; github.token would be rejected pushing to the tap's main.
+      - name: Generate Alephic Bot token
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.ALEPHIC_BOT_APP_ID }}
+          private-key: ${{ secrets.ALEPHIC_BOT_SECRET }}
+          repositories: homebrew-tap
+          permission-contents: write
+      - uses: actions/checkout@v6
+        with:
+          repository: alephic-ai/homebrew-tap
+          token: ${{ steps.app-token.outputs.token }}
+      # The formula is generated, never hand-edited. Fix a bad one here, not
+      # in the tap.
+      - env:
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          base="https://github.com/alephic-ai/exquisite-harness/releases/download/eh-v${VERSION}"
+          # ponytail: the release ships bare binaries with no .sha256 sidecars,
+          # so hash them here. Emit sidecars in the release job if this gets slow.
+          sha() { curl -fsSL "${base}/eh-$1" | sha256sum | cut -d' ' -f1; }
+          mkdir -p Formula
+          # `brew style` rejects a desc opening with an article or with the
+          # formula name, so this is not the repo's own description.
+          cat > Formula/eh.rb <<EOF
+          class Eh < Formula
+            desc "Pick a coding harness, pick a model provider, go"
+            homepage "https://github.com/alephic-ai/exquisite-harness"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              on_arm do
+                url "${base}/eh-darwin-arm64"
+                sha256 "$(sha darwin-arm64)"
+              end
+              on_intel do
+                url "${base}/eh-darwin-x64"
+                sha256 "$(sha darwin-x64)"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "${base}/eh-linux-arm64"
+                sha256 "$(sha linux-arm64)"
+              end
+              on_intel do
+                url "${base}/eh-linux-x64"
+                sha256 "$(sha linux-x64)"
+              end
+            end
+
+            # The assets are bare binaries, not archives, so Homebrew stages
+            # the single downloaded file under its own name.
+            def install
+              bin.install Dir["eh-*"].first => "eh"
+            end
+
+            def caveats
+              "Use 'brew upgrade eh', not 'eh update': the next brew upgrade overwrites a self-replaced binary."
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/eh --version")
+            end
+          end
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/eh.rb
+          git diff --quiet --cached || git commit -m "eh ${VERSION}"
+          # Another tool releasing at once pushes here too; concurrency groups
+          # are per-repo, so the loser rebases instead of failing the release.
+          git push || { git pull --rebase && git push; }
