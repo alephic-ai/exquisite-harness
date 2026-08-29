@@ -187,6 +187,8 @@ jobs:
     needs: release
     if: needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
+    # Every step here uses the app token, never GITHUB_TOKEN.
+    permissions: {}
     steps:
       # The bot is a bypass actor on the org rulesets that gate every default
       # branch; github.token would be rejected pushing to the tap's main.
