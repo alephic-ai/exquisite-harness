@@ -380,8 +380,10 @@ A `ZDR only` routing choice (picker, recents, or profile) starts the same proxy
 but injects the provider's ZDR flag without pinning an upstream (Vercel
 `providerOptions.gateway.zeroDataRetention: true`, OpenRouter
 `provider.zdr: true`), so only zero-data-retention endpoints may serve the
-model. Launch validates up front against `/models/{model}/endpoints`: when every
-active endpoint reports explicit `has_zdr: false`, eh fails before launch
+model. The picker hides the `ZDR only` row when every active endpoint reports
+explicit `has_zdr: false` (unknown endpoints keep it). Launch validates up front
+against `/models/{model}/endpoints`: when every active endpoint reports explicit
+`has_zdr: false`, eh fails before launch
 (`has no ZDR providers on the gateway … relaunch without ZDR-only routing`)
 instead of surfacing the gateway's raw mid-session 400. Provider cost/throughput
 hints come from the same `/models/{model}/endpoints` response the picker already

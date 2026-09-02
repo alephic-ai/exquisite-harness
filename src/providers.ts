@@ -81,6 +81,7 @@ const gatewayEndpointsSchema = z.object({
   data: z.looseObject({
     endpoints: z.array(
       z.looseObject({
+        has_zdr: z.boolean().optional(),
         pricing: z
           .looseObject({
             completion: z.union([z.string(), z.number()]).optional(),
@@ -409,6 +410,8 @@ export async function listModels(provider: ResolvedProvider) {
 export interface GatewayProviderInfo {
   costInputPerMillion: number | undefined
   costOutputPerMillion: number | undefined
+  // ZDR support as reported by the endpoint (absent = predates the signal).
+  hasZdr?: boolean
   // Display name when it differs from the pin slug (OpenRouter tag vs name).
   label?: string
   name: string
@@ -445,6 +448,7 @@ export async function listGatewayProviders(
     providers.push({
       costInputPerMillion: perTokenToPerMillion(endpoint.pricing?.prompt),
       costOutputPerMillion: perTokenToPerMillion(endpoint.pricing?.completion),
+      ...(endpoint.has_zdr === undefined ? {} : { hasZdr: endpoint.has_zdr }),
       ...(endpoint.provider_name !== name
         ? { label: endpoint.provider_name }
         : {}),
