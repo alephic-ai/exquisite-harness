@@ -341,6 +341,10 @@ export async function pickGatewayProvider(
   }
 
   const product = provider.type === 'openrouter' ? 'OpenRouter' : 'AI Gateway'
+  // Hide the ZDR-only row when every endpoint explicitly reports no ZDR
+  // support — offering it could only fail at launch. Unknown (field absent)
+  // keeps the row: the endpoint may support ZDR.
+  const zdrAvailable = zdrRoutingAvailable(providers)
   for (;;) {
     const value = await autocomplete({
       maxItems: 12,
@@ -354,11 +358,15 @@ export async function pickGatewayProvider(
           label: 'automatic (recommended)',
           value: GATEWAY_AUTO,
         },
-        {
-          hint: 'route only to zero-data-retention providers',
-          label: 'ZDR only',
-          value: GATEWAY_ZDR,
-        },
+        ...(zdrAvailable
+          ? [
+              {
+                hint: 'route only to zero-data-retention providers',
+                label: 'ZDR only',
+                value: GATEWAY_ZDR,
+              },
+            ]
+          : []),
         ...providers.map((info) => ({
           hint: 'pin every request; no provider fallback',
           label: gatewayProviderLabel(info),
@@ -559,6 +567,15 @@ async function prefetchVisibleThroughput(
     }
   })
   await Promise.all(workers)
+}
+
+// Whether the gateway picker offers the ZDR-only row: hidden only when every
+// endpoint explicitly reports no ZDR support. Unknown (field absent) keeps
+// the row — the endpoint may support ZDR. Exported for tests.
+export function zdrRoutingAvailable(providers: GatewayProviderInfo[]) {
+  return !(
+    providers.length > 0 && providers.every((info) => info.hasZdr === false)
+  )
 }
 
 // Cost/throughput go in the label so they're visible across the whole list

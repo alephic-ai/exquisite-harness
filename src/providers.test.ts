@@ -9,6 +9,51 @@ import {
   listGatewayProviders,
   listModels,
 } from './providers.js'
+import { zdrRoutingAvailable } from './ui/prompts.js'
+
+test('parses has_zdr on Gateway endpoints and gates the ZDR row', async () => {
+  const upstream = await startUpstream((_request, response) => {
+    response.setHeader('content-type', 'application/json')
+    response.end(
+      JSON.stringify({
+        data: {
+          endpoints: [
+            { has_zdr: false, provider_name: 'meta' },
+            { provider_name: 'legacy' },
+          ],
+        },
+      }),
+    )
+  })
+
+  try {
+    const providers = await listGatewayProviders(
+      {
+        baseURL: `${upstream.baseURL}/v1`,
+        name: 'vercel-ai-gateway',
+        type: 'vercel-gateway',
+      },
+      'meta/muse-spark-1.3',
+    )
+    expect(providers.map((p) => p.hasZdr)).toEqual([undefined, false])
+    // One explicit false + one unknown keeps the row (unknown may support it).
+    expect(zdrRoutingAvailable(providers)).toBeTrue()
+    expect(
+      zdrRoutingAvailable([
+        {
+          costInputPerMillion: undefined,
+          costOutputPerMillion: undefined,
+          hasZdr: false,
+          name: 'meta',
+          throughputTokensPerSec: undefined,
+        },
+      ]),
+    ).toBeFalse()
+    expect(zdrRoutingAvailable([])).toBeTrue()
+  } finally {
+    await upstream.close()
+  }
+})
 
 test('lists active Gateway providers with cost and throughput', async () => {
   let requestedPath = ''
@@ -141,6 +186,7 @@ test('tolerates endpoints whose throughput_last_1h is null', async () => {
     )
     expect(providers.map((p) => p.name)).toEqual(['anthropic', 'bedrock'])
     expect(providers[0]?.throughputTokensPerSec).toBeUndefined()
+    expect(providers[0]?.hasZdr).toBeUndefined()
     expect(providers[1]?.throughputTokensPerSec).toBe(80)
   } finally {
     await upstream.close()
