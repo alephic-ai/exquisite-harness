@@ -559,7 +559,7 @@ src/search-proxy.ts  Claude WebSearch/WebFetch interception + upstream passthrou
 src/search-proxy.test.ts  loopback boundary tests with fake upstreams
 src/web-fetch-hook.ts  Claude command-hook bridge to the process-scoped proxy
 src/doctor.ts     doctor report
-src/update.ts     self-update: gh-auth release lookup → staged download → atomic swap
+src/update.ts     self-update: release lookup → staged download → atomic swap (refuses on a Homebrew install)
 src/runtime.ts    build-time constants (standalone-binary detection)
 src/manage.ts     non-interactive commands: models, profiles, provider keys
 src/cache.ts      model-list cache

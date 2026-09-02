@@ -45,6 +45,17 @@ export async function runUpdate() {
     )
     throw new Error('not a standalone binary')
   }
+  // Resolve symlinks once: Homebrew's `bin/eh` points into the Cellar, and the
+  // staged temp + atomic rename below must land on the real binary's
+  // filesystem.
+  const destPath = await realpath(process.execPath)
+  // Homebrew owns the binary it installed, so self-replacing it would be
+  // undone by the next `brew upgrade`. `Cellar/eh` is the marker under every
+  // prefix (/opt/homebrew, /usr/local, linuxbrew).
+  if (destPath.includes('/Cellar/eh/')) {
+    log.error('Homebrew manages this eh — run `brew upgrade eh` instead.')
+    throw new Error('homebrew-managed install')
+  }
   // One spinner drives the whole flow: it animates on a TTY and degrades to
   // plain status lines when piped. On any failure we report it with s.error
   // and rethrow so the caller can still set a non-zero exit code.
@@ -76,11 +87,8 @@ export async function runUpdate() {
       )
     }
 
-    // Resolve symlinks so the staged temp and the atomic rename land on the
-    // real binary's filesystem. The staged name is unique per run — two
-    // concurrent `eh update`s sharing one name would truncate each other's
-    // bytes and install a corrupt binary.
-    const destPath = await realpath(process.execPath)
+    // The staged name is unique per run — two concurrent `eh update`s sharing
+    // one name would truncate each other's bytes and install a corrupt binary.
     const stagedPath = `${destPath}.${process.pid}.staged`
 
     const mb = (n: number) => (n / 1e6).toFixed(1)
