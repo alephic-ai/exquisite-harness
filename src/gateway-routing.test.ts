@@ -207,6 +207,17 @@ describe('gateway provider routing', () => {
   test('OpenRouter ZDR-only routing injects provider.zdr without pinning', async () => {
     let receivedBody = ''
     const upstream = await startUpstream(async (request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [{ has_zdr: true, provider_name: 'anthropic' }],
+            },
+          }),
+        )
+        return
+      }
       receivedBody = await readBody(request)
       response.end('data: {"type":"response.completed"}\n\n')
     })
@@ -309,6 +320,17 @@ describe('gateway provider routing', () => {
   test('ZDR-only routing injects zeroDataRetention without pinning a provider', async () => {
     let receivedBody = ''
     const upstream = await startUpstream(async (request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [{ has_zdr: true, provider_name: 'anthropic' }],
+            },
+          }),
+        )
+        return
+      }
       receivedBody = await readBody(request)
       response.end('data: {"type":"response.completed"}\n\n')
     })
@@ -353,6 +375,58 @@ describe('gateway provider routing', () => {
           },
         },
       })
+    } finally {
+      await upstream.close()
+    }
+  })
+
+  test('fails closed before launch when ZDR-only has no ZDR endpoint', async () => {
+    let inferenceReached = false
+    let runReached = false
+    const upstream = await startUpstream((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: {
+              endpoints: [{ has_zdr: false, provider_name: 'meta' }],
+            },
+          }),
+        )
+        return
+      }
+      inferenceReached = true
+      response.end('unexpected')
+    })
+
+    try {
+      let message = ''
+      try {
+        await withGatewayRouting(
+          {
+            args: [],
+            bin: 'test-harness',
+            env: { TEST_GATEWAY_BASE_URL: upstream.baseURL },
+            gatewayRouting: {
+              model: 'meta/muse-spark-1.3',
+              targetBaseURL: upstream.baseURL,
+              zdr: true,
+            },
+            notes: [],
+          },
+          async () => {
+            runReached = true
+            return Promise.resolve()
+          },
+        )
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      }
+      expect(message).toContain(
+        'model "meta/muse-spark-1.3" has no ZDR providers on the gateway (only: meta) — relaunch without ZDR-only routing',
+      )
+      expect(inferenceReached).toBeFalse()
+      expect(runReached).toBeFalse()
     } finally {
       await upstream.close()
     }

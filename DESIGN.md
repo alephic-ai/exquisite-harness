@@ -380,8 +380,12 @@ A `ZDR only` routing choice (picker, recents, or profile) starts the same proxy
 but injects the provider's ZDR flag without pinning an upstream (Vercel
 `providerOptions.gateway.zeroDataRetention: true`, OpenRouter
 `provider.zdr: true`), so only zero-data-retention endpoints may serve the
-model. Provider cost/throughput hints come from the same
-`/models/{model}/endpoints` response the picker already fetches.
+model. Launch validates up front against `/models/{model}/endpoints`: when every
+active endpoint reports explicit `has_zdr: false`, eh fails before launch
+(`has no ZDR providers on the gateway … relaunch without ZDR-only routing`)
+instead of surfacing the gateway's raw mid-session 400. Provider cost/throughput
+hints come from the same `/models/{model}/endpoints` response the picker already
+fetches.
 
 - **claude**: env `ANTHROPIC_BASE_URL` (provider's Anthropic endpoint),
   `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_MODEL`, `ANTHROPIC_SMALL_FAST_MODEL`.
