@@ -432,6 +432,54 @@ describe('gateway provider routing', () => {
     }
   })
 
+  test('ZDR-only passes through when endpoints predate the has_zdr signal', async () => {
+    let inferenceReached = false
+    const upstream = await startUpstream((request, response) => {
+      if (request.url?.endsWith('/endpoints')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(
+          JSON.stringify({
+            data: { endpoints: [{ provider_name: 'meta' }] },
+          }),
+        )
+        return
+      }
+      inferenceReached = true
+      response.end('ok')
+    })
+    const targetBaseURL = `${upstream.baseURL}/v1`
+
+    try {
+      await withGatewayRouting(
+        {
+          args: [`base_url="${targetBaseURL}"`],
+          bin: 'test-harness',
+          env: { TEST_GATEWAY_BASE_URL: targetBaseURL },
+          gatewayRouting: {
+            model: 'meta/muse-spark-1.3',
+            targetBaseURL,
+            zdr: true,
+          },
+          notes: [],
+        },
+        async (plan) => {
+          const response = await fetch(
+            `${plan.env.TEST_GATEWAY_BASE_URL}/messages`,
+            {
+              body: JSON.stringify({ model: 'meta/muse-spark-1.3' }),
+              headers: { 'content-type': 'application/json' },
+              method: 'POST',
+            },
+          )
+          expect(await response.text()).toBe('ok')
+        },
+      )
+      expect(inferenceReached).toBeTrue()
+    } finally {
+      await upstream.close()
+    }
+  })
+
   test('fails closed before inference when the provider cannot serve the model', async () => {
     let inferenceReached = false
     let runReached = false
