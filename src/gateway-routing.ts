@@ -17,6 +17,7 @@ const gatewayEndpointsSchema = z.object({
   data: z.looseObject({
     endpoints: z.array(
       z.looseObject({
+        has_zdr: z.boolean().optional(),
         provider_name: z.string(),
         status: z.number().optional(),
         tag: z.string().optional(),
@@ -44,6 +45,7 @@ export async function withGatewayRouting<T>(
     provider: plan.gatewayRouting.provider,
     target: validateTargetBaseURL(plan.gatewayRouting.targetBaseURL),
     validatedModels,
+    zdr: plan.gatewayRouting.zdr,
   })
   const proxy = await startGatewayRoutingProxy({
     kind: plan.gatewayRouting.kind ?? 'vercel',
@@ -110,16 +112,19 @@ async function fetchGatewayProviders(props: {
     )
   }
   const body: unknown = await response.json()
-  const endpoints = gatewayEndpointsSchema.parse(body).data.endpoints
-  return [
-    ...new Set(
-      endpoints
-        .filter(
-          (endpoint) => endpoint.status === undefined || endpoint.status === 0,
-        )
-        .map((endpoint) => endpoint.tag ?? endpoint.provider_name),
-    ),
-  ]
+  const active = gatewayEndpointsSchema
+    .parse(body)
+    .data.endpoints.filter(
+      (endpoint) => endpoint.status === undefined || endpoint.status === 0,
+    )
+  return {
+    active,
+    names: [
+      ...new Set(
+        active.map((endpoint) => endpoint.tag ?? endpoint.provider_name),
+      ),
+    ],
+  }
 }
 
 async function forwardRequest(props: {
@@ -167,6 +172,7 @@ async function forwardRequest(props: {
         provider: props.provider,
         target: props.target,
         validatedModels: props.validatedModels,
+        zdr: props.zdr,
       })
     }
     const upstream = await fetch(upstreamURL, {
@@ -429,22 +435,38 @@ async function validateGatewayProvider(props: {
   provider: string | undefined
   target: URL
   validatedModels: Map<string, Promise<void>>
+  zdr?: boolean
 }) {
-  // ZDR-only routing has no pinned provider to validate — Vercel handles the
-  // ZDR restriction itself, so validation only applies to a pinned slug.
-  if (props.provider === undefined) return
   const { provider } = props
-  const cacheKey = `${props.model}\0${provider}`
+  const zdrOnly = provider === undefined && props.zdr === true
+  if (provider === undefined && !zdrOnly) return
+  const cacheKey = `${props.model}\0${provider ?? ''}\0zdr:${zdrOnly ? '1' : '0'}`
   let validation = props.validatedModels.get(cacheKey)
   if (!validation) {
-    validation = fetchGatewayProviders(props).then((providers) => {
-      if (
-        !providers.some((available) => gatewaySlugMatches(available, provider))
-      ) {
-        const available = providers.length > 0 ? providers.join(', ') : 'none'
-        throw new Error(
-          `gateway provider "${provider}" is unavailable for model "${props.model}" (available: ${available})`,
-        )
+    validation = fetchGatewayProviders(props).then(({ active, names }) => {
+      if (provider !== undefined) {
+        if (
+          !names.some((available) => gatewaySlugMatches(available, provider))
+        ) {
+          const available = names.length > 0 ? names.join(', ') : 'none'
+          throw new Error(
+            `gateway provider "${provider}" is unavailable for model "${props.model}" (available: ${available})`,
+          )
+        }
+        return
+      }
+      // ZDR-only routing: fail before launch when no active endpoint
+      // reports ZDR support, instead of surfacing the gateway's raw 400
+      // mid-session. Endpoints without a has_zdr field predate the signal
+      // and are treated as unknown — validation only fails on explicit
+      // has_zdr: false across every active endpoint.
+      if (!active.some((endpoint) => endpoint.has_zdr === undefined)) {
+        if (!active.some((endpoint) => endpoint.has_zdr === true)) {
+          const available = names.length > 0 ? names.join(', ') : 'none'
+          throw new Error(
+            `model "${props.model}" has no ZDR providers on the gateway (only: ${available}) — relaunch without ZDR-only routing`,
+          )
+        }
       }
     })
     props.validatedModels.set(cacheKey, validation)
