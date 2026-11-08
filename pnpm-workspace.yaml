@@ -6,8 +6,11 @@ allowBuilds:
 # makes the check unsatisfiable at resolution time. Exclude just those.
 minimumReleaseAgeExclude:
   - '@typescript-eslint/*'
-# Force the patched shell-quote (transitive via concurrently, dev-only): 1.8.4
-# has a quadratic-complexity DoS in parse() (GHSA / CWE-407), fixed in 1.9.0.
+# Force the patched shell-quote (transitive via concurrently, dev-only):
+# >=1.8.4 <1.11.0 is affected by GHSA-pqg4-j6r4-53mv (critical, AI-5089),
+# fixed in 1.11.0 (earlier: 1.8.4 parse() DoS, CWE-407, fixed in 1.9.0).
+# concurrently 10.0.7 pins shell-quote 1.12.0, so this can be removed once
+# no other dependency resolves an older shell-quote.
 overrides:
-  shell-quote: '^1.9.0'
+  shell-quote: '^1.11.0'
 savePrefix: ''

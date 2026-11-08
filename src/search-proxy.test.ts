@@ -489,7 +489,9 @@ describe('search proxy', () => {
       await settleWithin(proxy.close(), 'active-stream proxy close')
       proxyClosed = true
       await settleWithin(upstreamClosed, 'proxy-close upstream cancellation')
-      await response.body?.cancel()
+      // Bun 1.4 rejects cancel() with ECONNRESET once the proxy has closed the
+      // socket; the stream is already gone, so that rejection is expected.
+      await response.body?.cancel().catch(() => undefined)
     } finally {
       destroyUpstream?.()
       if (!proxyClosed) {
