@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  shell-quote: ^1.9.0
+  shell-quote: ^1.11.0
 
 importers:
 
@@ -46,8 +46,8 @@ importers:
         specifier: 24.13.0
         version: 24.13.0
       concurrently:
-        specifier: 10.0.3
-        version: 10.0.3
+        specifier: 10.0.7
+        version: 10.0.7
       eslint:
         specifier: 10.6.0
         version: 10.6.0
@@ -635,8 +635,8 @@ packages:
     resolution: {integrity: sha512-0h+uSNtQGW3D98eQt3jJ8L06Fves8hncB4V/PKdw/Qb8Hnk19VaKuTr55UNRYiSoVa7WwrFls+rh3ux9agmkeQ==}
     engines: {node: '>= 12.0.0'}
 
-  concurrently@10.0.3:
-    resolution: {integrity: sha512-hc3LH4UaKWd/bbyDK/IGVa4RB6PtQ3CUYwtrkzqHn+wIG3Hr5fhpRlk0L/gCa8ZE1L/Ufj50Zho69cI5w8SQBA==}
+  concurrently@10.0.7:
+    resolution: {integrity: sha512-zMCeLhawVIj3SLbpg0/BWCdJl1wcBSpcHKbNrhaM01P3xAlEWcH30Lea2q+F4uGZ7YM0scDK0dgpWyn1uCJj6w==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1065,8 +1065,8 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  shell-quote@1.10.0:
-    resolution: {integrity: sha512-w1aiOKwKuRgtwAReIIj89puqg+I7GvX4IbLrvmhXbzQsj1+Zwi4VO3+fa6ZF91TWSjIxoEkKnMeHcLEODK5ZXA==}
+  shell-quote@1.12.0:
+    resolution: {integrity: sha512-PcByqNyT/38F2kDNi006HAMRJaULuBzq/FOsw3qdZvX/GA9W/jamDaRskgHjubHiftXK5sIFxLNkvrXUwcof6Q==}
     engines: {node: '>= 0.4'}
 
   sisteransi@1.0.5:
@@ -1681,11 +1681,11 @@ snapshots:
 
   comment-parser@1.4.7: {}
 
-  concurrently@10.0.3:
+  concurrently@10.0.7:
     dependencies:
       chalk: 5.6.2
       rxjs: 7.8.2
-      shell-quote: 1.10.0
+      shell-quote: 1.12.0
       supports-color: 10.2.2
       tree-kill: 1.2.2
       yargs: 18.0.0
@@ -2104,7 +2104,7 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  shell-quote@1.10.0: {}
+  shell-quote@1.12.0: {}
 
   sisteransi@1.0.5: {}
 
